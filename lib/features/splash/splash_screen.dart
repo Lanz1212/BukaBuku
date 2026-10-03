@@ -1,7 +1,9 @@
 import 'dart:ui';
+import 'dart:async';
 import 'package:flutter/material.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_typography.dart';
+import '../onboarding/onboarding_1_screen.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -21,6 +23,14 @@ class _SplashScreenState extends State<SplashScreen>
       vsync: this,
       duration: const Duration(milliseconds: 1200),
     )..repeat();
+
+    Timer(const Duration(seconds: 3), () {
+      if (mounted) {
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (context) => const Onboarding1Screen()),
+        );
+      }
+    });
   }
 
   @override
@@ -124,7 +134,9 @@ class _SplashScreenState extends State<SplashScreen>
                       borderRadius: BorderRadius.circular(16),
                       boxShadow: [
                         BoxShadow(
-                          color: AppColors.primaryFixedDim.withValues(alpha: 0.6),
+                          color: AppColors.primaryFixedDim.withValues(
+                            alpha: 0.6,
+                          ),
                           blurRadius: 24,
                           spreadRadius: 4,
                         ),
