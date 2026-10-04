@@ -2,6 +2,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_typography.dart';
+import 'onboarding_2_screen.dart';
 
 class Onboarding1Screen extends StatelessWidget {
   const Onboarding1Screen({super.key});
@@ -52,7 +53,14 @@ class Onboarding1Screen extends StatelessWidget {
                   ),
                   // Lewati Button
                   TextButton(
-                    onPressed: () {},
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const Onboarding2Screen(),
+                        ),
+                      );
+                    },
                     style: TextButton.styleFrom(
                       padding: const EdgeInsets.symmetric(
                         horizontal: 4,
@@ -254,36 +262,6 @@ class Onboarding1Screen extends StatelessWidget {
                       const SizedBox(height: 32),
 
                       // Texts & Indicator
-                      // Pill: Langkah 1 dari 3
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 4,
-                        ),
-                        decoration: BoxDecoration(
-                          color: AppColors.surfaceContainer,
-                          borderRadius: BorderRadius.circular(9999),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const Icon(
-                              Icons.local_cafe,
-                              size: 14,
-                              color: AppColors.primary,
-                            ),
-                            const SizedBox(width: 6),
-                            Text(
-                              'Langkah 1 dari 3',
-                              style: AppTypography.labelMd.copyWith(
-                                color: AppColors.onSurface,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: 8),
                       Text(
                         'Temukan Buku Favoritmu',
                         style: AppTypography.headlineLg.copyWith(
@@ -342,7 +320,14 @@ class Onboarding1Screen extends StatelessWidget {
               // Bottom Buttons
               const SizedBox(height: 24),
               ElevatedButton(
-                onPressed: () {},
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const Onboarding2Screen(),
+                    ),
+                  );
+                },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primaryContainer,
                   foregroundColor: AppColors.onPrimary,
@@ -363,7 +348,14 @@ class Onboarding1Screen extends StatelessWidget {
               ),
               const SizedBox(height: 8),
               TextButton(
-                onPressed: () {},
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const Onboarding2Screen(),
+                    ),
+                  );
+                },
                 style: TextButton.styleFrom(
                   minimumSize: const Size(double.infinity, 44),
                   foregroundColor: AppColors.onSurfaceVariant,
