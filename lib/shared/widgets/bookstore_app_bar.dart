@@ -9,8 +9,10 @@ class BookstoreAppBar extends StatelessWidget implements PreferredSizeWidget {
   final bool showBackButton;
   final bool showSearchButton;
   final bool showShareButton;
+  final bool showHelpButton;
   final VoidCallback? onSearchPressed;
   final VoidCallback? onSharePressed;
+  final VoidCallback? onHelpPressed;
   final VoidCallback? onProfilePressed;
   final VoidCallback? onBackPressed;
 
@@ -20,8 +22,10 @@ class BookstoreAppBar extends StatelessWidget implements PreferredSizeWidget {
     this.showBackButton = false,
     this.showSearchButton = false,
     this.showShareButton = false,
+    this.showHelpButton = false,
     this.onSearchPressed,
     this.onSharePressed,
+    this.onHelpPressed,
     this.onProfilePressed,
     this.onBackPressed,
   });
@@ -172,6 +176,26 @@ class BookstoreAppBar extends StatelessWidget implements PreferredSizeWidget {
                           child: const Icon(
                             Icons.share_outlined,
                             size: 20,
+                            color: AppColors.onSurfaceVariant,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                  ],
+                  if (showHelpButton) ...[
+                    Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        borderRadius: BorderRadius.circular(9999),
+                        onTap: onHelpPressed,
+                        child: Container(
+                          width: 40,
+                          height: 40,
+                          alignment: Alignment.center,
+                          child: const Icon(
+                            Icons.help_outline,
+                            size: 22,
                             color: AppColors.onSurfaceVariant,
                           ),
                         ),

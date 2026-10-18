@@ -4,6 +4,7 @@ import '../../core/theme/app_typography.dart';
 import '../category/screens/category_screen.dart';
 import '../search/screens/search_screen.dart';
 import '../book_detail/screens/book_detail_screen.dart';
+import '../cart/screens/cart_screen.dart';
 import '../../shared/widgets/bookstore_bottom_nav.dart';
 
 /// Home Page — Toko Buku Budi
@@ -612,11 +613,18 @@ class _HomeScreenState extends State<HomeScreen> {
               builder: (context) => const CategoryScreen(),
             ),
           );
+        } else if (index == 2) {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const CartScreen(),
+            ),
+          );
         } else if (index != 0) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(
-                'Fitur tab ${index == 2 ? "Keranjang" : index == 3 ? "Pesanan" : "Profil"} segera hadir!',
+                'Fitur tab ${index == 3 ? "Pesanan" : "Profil"} segera hadir!',
               ),
               duration: const Duration(seconds: 1),
               behavior: SnackBarBehavior.floating,
