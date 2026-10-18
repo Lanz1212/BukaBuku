@@ -5,6 +5,7 @@ import '../category/screens/category_screen.dart';
 import '../search/screens/search_screen.dart';
 import '../book_detail/screens/book_detail_screen.dart';
 import '../cart/screens/cart_screen.dart';
+import '../favorite/screens/favorite_screen.dart';
 import '../../shared/widgets/bookstore_bottom_nav.dart';
 
 /// Home Page — Toko Buku Budi
@@ -146,7 +147,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     child: Container(
                       width: 40,
                       height: 40,
-                      decoration: BoxDecoration(
+                      decoration: const BoxDecoration(
                         color: AppColors.surfaceContainer,
                         shape: BoxShape.circle,
                       ),
@@ -157,7 +158,31 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                     ),
                   ),
-                  const SizedBox(width: 12),
+                  const SizedBox(width: 8),
+                  GestureDetector(
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const FavoriteScreen(),
+                        ),
+                      );
+                    },
+                    child: Container(
+                      width: 40,
+                      height: 40,
+                      decoration: const BoxDecoration(
+                        color: AppColors.surfaceContainer,
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        Icons.favorite_rounded,
+                        size: 20,
+                        color: AppColors.secondary,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
                   Container(
                     width: 40,
                     height: 40,

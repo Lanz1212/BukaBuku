@@ -11,6 +11,7 @@ import '../widgets/book_specs_grid.dart';
 import '../widgets/guarantee_badge.dart';
 import '../widgets/reader_reviews_section.dart';
 import '../widgets/stock_simulator_banner.dart';
+import '../../favorite/screens/favorite_screen.dart';
 
 /// Screen for displaying full book details in Toko Buku Budi
 class BookDetailScreen extends StatefulWidget {
@@ -70,14 +71,15 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
     });
   }
 
-  void _showNotification(String message, {bool isSuccess = true}) {
+  void _showNotification(String message, {bool isSuccess = true, SnackBarAction? action}) {
     ScaffoldMessenger.of(context).hideCurrentSnackBar();
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message),
         backgroundColor: isSuccess ? AppColors.primaryContainer : AppColors.error,
         behavior: SnackBarBehavior.floating,
-        duration: const Duration(seconds: 2),
+        duration: const Duration(seconds: 3),
+        action: action,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(10),
         ),
@@ -99,6 +101,20 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
             _isFavorite
                 ? 'Buku disimpan ke daftar favorit'
                 : 'Buku dihapus dari daftar favorit',
+            action: _isFavorite
+                ? SnackBarAction(
+                    label: 'LIHAT',
+                    textColor: AppColors.secondaryFixed,
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const FavoriteScreen(),
+                        ),
+                      );
+                    },
+                  )
+                : null,
           );
         },
         onSharePressed: () {
