@@ -30,6 +30,7 @@ class AppColors {
 
   static const Color secondaryFixed = Color(0xFFFFDCBD);
   static const Color secondaryFixedDim = Color(0xFFEEBD8E);
+  static const Color onSecondaryFixed = Color(0xFF2C1600);
 
   static const Color error = Color(0xFFBA1A1A);
   static const Color onError = Color(0xFFFFFFFF);
