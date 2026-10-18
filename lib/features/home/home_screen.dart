@@ -3,6 +3,7 @@ import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_typography.dart';
 import '../category/screens/category_screen.dart';
 import '../search/screens/search_screen.dart';
+import '../book_detail/screens/book_detail_screen.dart';
 import '../../shared/widgets/bookstore_bottom_nav.dart';
 
 /// Home Page — Toko Buku Budi
@@ -409,81 +410,90 @@ class _HomeScreenState extends State<HomeScreen> {
     required String author,
     required String price,
   }) {
-    return Container(
-      width: 140,
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.outlineVariant),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.primaryContainer.withValues(alpha: 0.08),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
+    return GestureDetector(
+      onTap: () {
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (context) => const BookDetailScreen(),
           ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Book Cover Placeholder
-          Expanded(
-            flex: 3,
-            child: Container(
-              decoration: BoxDecoration(
-                color: AppColors.surfaceContainerLow,
-                borderRadius: const BorderRadius.vertical(
-                  top: Radius.circular(16),
+        );
+      },
+      child: Container(
+        width: 140,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: AppColors.outlineVariant),
+          boxShadow: [
+            BoxShadow(
+              color: AppColors.primaryContainer.withValues(alpha: 0.08),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Book Cover Placeholder
+            Expanded(
+              flex: 3,
+              child: Container(
+                decoration: BoxDecoration(
+                  color: AppColors.surfaceContainerLow,
+                  borderRadius: const BorderRadius.vertical(
+                    top: Radius.circular(16),
+                  ),
                 ),
-              ),
-              child: const Center(
-                child: Icon(
-                  Icons.menu_book,
-                  size: 40,
-                  color: AppColors.outline,
+                child: const Center(
+                  child: Icon(
+                    Icons.menu_book,
+                    size: 40,
+                    color: AppColors.outline,
+                  ),
                 ),
               ),
             ),
-          ),
-          // Book Info
-          Expanded(
-            flex: 2,
-            child: Padding(
-              padding: const EdgeInsets.all(8),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: AppTypography.labelMd.copyWith(
-                      color: AppColors.onSurface,
-                      fontWeight: FontWeight.w600,
+            // Book Info
+            Expanded(
+              flex: 2,
+              child: Padding(
+                padding: const EdgeInsets.all(8),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: AppTypography.labelMd.copyWith(
+                        color: AppColors.onSurface,
+                        fontWeight: FontWeight.w600,
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
                     ),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    author,
-                    style: AppTypography.caption.copyWith(
-                      color: AppColors.onSurfaceVariant,
+                    const SizedBox(height: 2),
+                    Text(
+                      author,
+                      style: AppTypography.caption.copyWith(
+                        color: AppColors.onSurfaceVariant,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  const Spacer(),
-                  Text(
-                    price,
-                    style: AppTypography.labelMd.copyWith(
-                      color: AppColors.primaryContainer,
-                      fontWeight: FontWeight.w600,
+                    const Spacer(),
+                    Text(
+                      price,
+                      style: AppTypography.labelMd.copyWith(
+                        color: AppColors.primaryContainer,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

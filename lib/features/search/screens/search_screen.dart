@@ -7,6 +7,7 @@ import '../widgets/book_search_card.dart';
 import '../widgets/filter_bottom_sheet.dart';
 import '../widgets/search_empty_state.dart';
 import '../widgets/search_filter_chips.dart';
+import '../../book_detail/screens/book_detail_screen.dart';
 
 /// Screen for searching and browsing books in Toko Buku Budi
 class SearchScreen extends StatefulWidget {
@@ -532,13 +533,9 @@ class _SearchScreenState extends State<SearchScreen> {
                           );
                         },
                         onTap: () {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text('Membuka detail buku ${book.title}...'),
-                              backgroundColor: AppColors.primaryContainer,
-                              behavior: SnackBarBehavior.floating,
-                              duration: const Duration(seconds: 1),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                          Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (context) => BookDetailScreen(searchItem: book),
                             ),
                           );
                         },
