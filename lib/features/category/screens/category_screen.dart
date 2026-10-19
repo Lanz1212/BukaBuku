@@ -9,6 +9,7 @@ import '../widgets/curator_banner.dart';
 import '../../search/screens/search_screen.dart';
 import '../../home/home_screen.dart';
 import '../../cart/screens/cart_screen.dart';
+import '../../order/screens/order_list_screen.dart';
 
 /// Screen displaying all book categories in Toko Buku Budi
 class CategoryScreen extends StatefulWidget {
@@ -353,11 +354,15 @@ class _CategoryScreenState extends State<CategoryScreen> {
             Navigator.of(context).pushReplacement(
               MaterialPageRoute(builder: (context) => const CartScreen()),
             );
+          } else if (index == 3) {
+            Navigator.of(context).pushReplacement(
+              MaterialPageRoute(builder: (context) => const OrderListScreen()),
+            );
           } else {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
-                content: Text(
-                  'Fitur tab ${index == 3 ? "Pesanan" : "Profil"} segera hadir!',
+                content: const Text(
+                  'Fitur tab Profil segera hadir!',
                 ),
                 duration: const Duration(seconds: 1),
                 behavior: SnackBarBehavior.floating,

@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
+import '../models/order_model.dart';
 import '../models/order_simulation_flow.dart';
 import '../widgets/order_flow_panel.dart';
 import '../widgets/order_simulation_tabs.dart';
 import '../widgets/order_success_summary_card.dart';
 import '../widgets/order_timeline_stepper.dart';
+import 'order_detail_screen.dart';
 
 /// Halaman Pesanan Berhasil Dibuat (Konfirmasi Pesanan)
 /// Conforms to DESIGN.md, AppColors, AppTypography, and Stitch screen ecf4c766eb544d318976098afeb67cee.
@@ -191,15 +193,14 @@ class _OrderSuccessScreenState extends State<OrderSuccessScreen> {
                     if (widget.onViewOrderDetails != null) {
                       widget.onViewOrderDetails!();
                     } else {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text(
-                              'Membuka Detail Pesanan ${widget.orderId}...'),
-                          backgroundColor: AppColors.primaryContainer,
-                          behavior: SnackBarBehavior.floating,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
-                          ),
+                      final targetOrder = mockOrders.firstWhere(
+                        (o) => o.id == widget.orderId,
+                        orElse: () => mockOrders.first,
+                      );
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => OrderDetailScreen(order: targetOrder),
                         ),
                       );
                     }

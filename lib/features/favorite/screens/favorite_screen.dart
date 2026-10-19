@@ -5,6 +5,7 @@ import '../../../shared/widgets/bookstore_app_bar.dart';
 import '../../../shared/widgets/bookstore_bottom_nav.dart';
 import '../../category/screens/category_screen.dart';
 import '../../cart/screens/cart_screen.dart';
+import '../../order/screens/order_list_screen.dart';
 import '../../search/screens/search_screen.dart';
 import '../../book_detail/screens/book_detail_screen.dart';
 import '../models/favorite_item.dart';
@@ -245,11 +246,17 @@ class _FavoriteScreenState extends State<FavoriteScreen> {
                 builder: (context) => const CartScreen(),
               ),
             );
+          } else if (index == 3) {
+            Navigator.of(context).pushReplacement(
+              MaterialPageRoute(
+                builder: (context) => const OrderListScreen(),
+              ),
+            );
           } else {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
-                content: Text(
-                  'Fitur tab ${index == 3 ? "Pesanan" : "Profil"} segera hadir!',
+                content: const Text(
+                  'Fitur tab Profil segera hadir!',
                 ),
                 duration: const Duration(seconds: 1),
                 behavior: SnackBarBehavior.floating,

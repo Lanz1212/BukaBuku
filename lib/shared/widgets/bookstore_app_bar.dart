@@ -7,9 +7,11 @@ import '../../core/theme/app_typography.dart';
 class BookstoreAppBar extends StatelessWidget implements PreferredSizeWidget {
   final String title;
   final bool showBackButton;
+  final bool showNotificationButton;
   final bool showSearchButton;
   final bool showShareButton;
   final bool showHelpButton;
+  final VoidCallback? onNotificationPressed;
   final VoidCallback? onSearchPressed;
   final VoidCallback? onSharePressed;
   final VoidCallback? onHelpPressed;
@@ -20,9 +22,11 @@ class BookstoreAppBar extends StatelessWidget implements PreferredSizeWidget {
     super.key,
     required this.title,
     this.showBackButton = false,
+    this.showNotificationButton = false,
     this.showSearchButton = false,
     this.showShareButton = false,
     this.showHelpButton = false,
+    this.onNotificationPressed,
     this.onSearchPressed,
     this.onSharePressed,
     this.onHelpPressed,
@@ -139,10 +143,30 @@ class BookstoreAppBar extends StatelessWidget implements PreferredSizeWidget {
                 ),
               ),
 
-              // Right: Action Buttons (Search / Share / Profile)
+              // Right: Action Buttons (Notification / Search / Share / Profile)
               Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
+                  if (showNotificationButton) ...[
+                    Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        borderRadius: BorderRadius.circular(9999),
+                        onTap: onNotificationPressed,
+                        child: Container(
+                          width: 40,
+                          height: 40,
+                          alignment: Alignment.center,
+                          child: const Icon(
+                            Icons.notifications_none_rounded,
+                            size: 22,
+                            color: AppColors.onSurfaceVariant,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                  ],
                   if (showSearchButton) ...[
                     Material(
                       color: Colors.transparent,
