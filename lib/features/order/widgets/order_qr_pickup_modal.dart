@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
 import '../models/order_model.dart';
+import '../screens/qr_pickup_screen.dart';
 
 class OrderQrPickupModal extends StatelessWidget {
   final OrderModel order;
@@ -213,12 +214,27 @@ class OrderQrPickupModal extends StatelessWidget {
 
           const SizedBox(height: 20),
 
-          // Close button
+          // Full screen button
           SizedBox(
             width: double.infinity,
-            height: 50,
-            child: ElevatedButton(
-              onPressed: () => Navigator.of(context).pop(),
+            height: 48,
+            child: ElevatedButton.icon(
+              onPressed: () {
+                Navigator.of(context).pop();
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => QrPickupScreen(order: order),
+                  ),
+                );
+              },
+              icon: const Icon(Icons.fullscreen, size: 20),
+              label: Text(
+                'Buka Tiket Layar Penuh',
+                style: AppTypography.labelLg.copyWith(
+                  color: AppColors.onPrimary,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primaryContainer,
                 foregroundColor: AppColors.onPrimary,
@@ -227,10 +243,30 @@ class OrderQrPickupModal extends StatelessWidget {
                   borderRadius: BorderRadius.circular(16),
                 ),
               ),
+            ),
+          ),
+
+          const SizedBox(height: 8),
+
+          // Close button
+          SizedBox(
+            width: double.infinity,
+            height: 44,
+            child: OutlinedButton(
+              onPressed: () => Navigator.of(context).pop(),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: AppColors.primary,
+                side: BorderSide(
+                  color: AppColors.outlineVariant.withValues(alpha: 0.6),
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+              ),
               child: Text(
                 'Tutup',
-                style: AppTypography.labelLg.copyWith(
-                  color: AppColors.onPrimary,
+                style: AppTypography.labelMd.copyWith(
+                  color: AppColors.primary,
                   fontWeight: FontWeight.w600,
                 ),
               ),

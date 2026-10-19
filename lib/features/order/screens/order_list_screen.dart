@@ -11,6 +11,7 @@ import '../widgets/order_brand_story_card.dart';
 import '../widgets/order_card_item.dart';
 import '../widgets/order_filter_chips.dart';
 import '../widgets/order_qr_pickup_modal.dart';
+import '../../notification/screens/notification_screen.dart';
 import 'order_detail_screen.dart';
 
 class OrderListScreen extends StatefulWidget {
@@ -101,13 +102,9 @@ class _OrderListScreenState extends State<OrderListScreen> {
         title: 'Pesanan Saya',
         showNotificationButton: true,
         onNotificationPressed: () {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: const Text('Tidak ada notifikasi baru pesanan saat ini.'),
-              behavior: SnackBarBehavior.floating,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10),
-              ),
+          Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (_) => const NotificationScreen(),
             ),
           );
         },

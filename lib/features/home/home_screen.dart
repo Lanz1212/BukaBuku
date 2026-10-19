@@ -7,6 +7,7 @@ import '../book_detail/screens/book_detail_screen.dart';
 import '../cart/screens/cart_screen.dart';
 import '../favorite/screens/favorite_screen.dart';
 import '../order/screens/order_list_screen.dart';
+import '../notification/screens/notification_screen.dart';
 import '../../shared/widgets/bookstore_bottom_nav.dart';
 
 /// Home Page — Toko Buku Budi
@@ -284,34 +285,43 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
 
               // Notification Bell
-              Stack(
-                children: [
-                  Container(
-                    width: 40,
-                    height: 40,
-                    decoration: BoxDecoration(
-                      color: AppColors.surfaceContainer,
-                      shape: BoxShape.circle,
+              GestureDetector(
+                onTap: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => const NotificationScreen(),
                     ),
-                    child: const Icon(
-                      Icons.notifications_outlined,
-                      size: 20,
-                      color: AppColors.onSurfaceVariant,
-                    ),
-                  ),
-                  Positioned(
-                    top: 2,
-                    right: 2,
-                    child: Container(
-                      width: 10,
-                      height: 10,
-                      decoration: BoxDecoration(
-                        color: AppColors.error,
+                  );
+                },
+                child: Stack(
+                  children: [
+                    Container(
+                      width: 40,
+                      height: 40,
+                      decoration: const BoxDecoration(
+                        color: AppColors.surfaceContainer,
                         shape: BoxShape.circle,
                       ),
+                      child: const Icon(
+                        Icons.notifications_outlined,
+                        size: 20,
+                        color: AppColors.onSurfaceVariant,
+                      ),
                     ),
-                  ),
-                ],
+                    Positioned(
+                      top: 2,
+                      right: 2,
+                      child: Container(
+                        width: 10,
+                        height: 10,
+                        decoration: const BoxDecoration(
+                          color: AppColors.error,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ],
           ),
