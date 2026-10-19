@@ -11,7 +11,8 @@ import '../widgets/checkout_order_summary.dart';
 import '../widgets/checkout_payment_selector.dart';
 import '../widgets/checkout_payment_summary.dart';
 import '../widgets/checkout_store_pickup_card.dart';
-import '../widgets/checkout_success_sheet.dart';
+import '../../order/screens/order_success_screen.dart';
+import '../../order/models/order_simulation_flow.dart';
 import '../../payment/screens/payment_method_screen.dart';
 import '../../payment/screens/qris_payment_screen.dart';
 import '../../payment/models/payment_method_item.dart';
@@ -188,18 +189,18 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       return;
     }
 
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) => CheckoutSuccessSheet(
-        orderId: orderId,
-        totalAmount: _totalPayment,
-        fulfillmentMode: _fulfillmentMode,
-        paymentMethod: _selectedPayment,
-        onBackToHome: () {
-          Navigator.of(context).popUntil((route) => route.isFirst);
-        },
+    final initialFlow = _fulfillmentMode == FulfillmentMode.delivery
+        ? OrderSimulationFlow.delivery
+        : (_selectedPayment.id == 'cash'
+            ? OrderSimulationFlow.pickupCash
+            : OrderSimulationFlow.pickupOnline);
+
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => OrderSuccessScreen(
+          orderId: orderId,
+          initialFlow: initialFlow,
+        ),
       ),
     );
   }

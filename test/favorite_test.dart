@@ -100,7 +100,7 @@ void main() {
     expect(find.text('Habis'), findsOneWidget);
 
     // Switch to Empty State demo tab
-    await tester.tap(find.text('Tampilan Kosong (Demo)'));
+    await tester.tap(find.text('Lihat Empty State'));
     await tester.pumpAndSettle();
 
     // Verify empty state content
@@ -115,6 +115,10 @@ void main() {
   });
 
   testWidgets('FavoriteScreen handles add-to-cart and item removal with undo', (WidgetTester tester) async {
+    tester.view.physicalSize = const Size(800, 1400);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(() => tester.view.resetPhysicalSize());
+
     await tester.pumpWidget(
       const MaterialApp(
         home: FavoriteScreen(),
@@ -123,13 +127,13 @@ void main() {
     await tester.pumpAndSettle();
 
     // Tap Add to cart on Atomic Habits
-    final addToCartButtons = find.byIcon(Icons.shopping_bag_outlined);
+    final addToCartButtons = find.text('+ Keranjang');
     expect(addToCartButtons, findsWidgets);
     await tester.tap(addToCartButtons.first);
     await tester.pump();
 
     expect(find.textContaining('dimasukkan ke keranjang'), findsOneWidget);
-    await tester.pump(const Duration(seconds: 3));
+    await tester.pumpAndSettle();
 
     // Tap Favorite Heart to remove first item
     final heartButtons = find.byIcon(Icons.favorite);
@@ -141,7 +145,8 @@ void main() {
     expect(find.textContaining('dihapus dari favorit'), findsOneWidget);
     expect(find.text('BATAL'), findsOneWidget);
 
-    // Tap Undo
+    // Tap Undo after snackbar finishes animating in
+    await tester.pump(const Duration(milliseconds: 350));
     await tester.tap(find.text('BATAL'));
     await tester.pumpAndSettle();
 

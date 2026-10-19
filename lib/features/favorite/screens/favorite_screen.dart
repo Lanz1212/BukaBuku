@@ -41,6 +41,7 @@ class _FavoriteScreenState extends State<FavoriteScreen> {
       }
     });
 
+    ScaffoldMessenger.of(context).removeCurrentSnackBar();
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text('"${removed.title}" dihapus dari favorit'),
@@ -62,6 +63,7 @@ class _FavoriteScreenState extends State<FavoriteScreen> {
   }
 
   void _addToCart(FavoriteItem item) {
+    ScaffoldMessenger.of(context).removeCurrentSnackBar();
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Row(
@@ -147,125 +149,117 @@ class _FavoriteScreenState extends State<FavoriteScreen> {
       ),
       body: SafeArea(
         top: false,
-        child: Column(
-          children: [
-            Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const SizedBox(height: 12),
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const SizedBox(height: 12),
 
-                    // 1. Header: Title and Badge
-                    _buildHeader(),
-                    const SizedBox(height: 6),
+              // 1. Header: Title and Badge
+              _buildHeader(),
+              const SizedBox(height: 6),
 
-                    // Subtitle description
-                    Text(
-                      'Daftar buku impian yang kamu simpan untuk dibaca nanti.',
-                      style: AppTypography.bodyMd.copyWith(
-                        color: AppColors.onSurfaceVariant,
-                      ),
-                    ),
-                    const SizedBox(height: 14),
-
-                    // 2. Interactive State Demo Switcher Tabs
-                    _buildStateSwitcher(),
-                    const SizedBox(height: 16),
-
-                    // 3. Conditional Content: Favorite List vs Empty State
-                    if (showFavoriteContent) ...[
-                      // Favorite Items List
-                      ListView.separated(
-                        shrinkWrap: true,
-                        physics: const NeverScrollableScrollPhysics(),
-                        itemCount: _items.length,
-                        separatorBuilder: (context, index) =>
-                            const SizedBox(height: 12),
-                        itemBuilder: (context, index) {
-                          final item = _items[index];
-                          return FavoriteItemCard(
-                            item: item,
-                            onTap: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => BookDetailScreen(
-                                    searchItem: item.toSearchItem(),
-                                  ),
-                                ),
-                              );
-                            },
-                            onRemoveFavorite: () => _removeFavorite(index),
-                            onAddToCart: () => _addToCart(item),
-                            onRemind: () => _remindWhenAvailable(item),
-                          );
-                        },
-                      ),
-                      const SizedBox(height: 16),
-
-                      // Promo note card
-                      const FavoritePromoNote(),
-                      const SizedBox(height: 24),
-                    ] else ...[
-                      // Empty State View
-                      FavoriteEmptyState(
-                        onStartBrowsing: () {
-                          if (_items.isEmpty) {
-                            _resetDefaultFavorites();
-                          }
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => const SearchScreen(),
-                            ),
-                          );
-                        },
-                      ),
-                      const SizedBox(height: 24),
-                    ],
-                  ],
+              // Subtitle description
+              Text(
+                'Daftar buku impian yang kamu simpan untuk dibaca nanti.',
+                style: AppTypography.bodyMd.copyWith(
+                  color: AppColors.onSurfaceVariant,
                 ),
               ),
-            ),
+              const SizedBox(height: 14),
 
-            // Bottom Navigation Bar
-            BookstoreBottomNav(
-              currentIndex: 0, // No dedicated tab for Favorite
-              onTabSelected: (index) {
-                if (index == 0) {
-                  Navigator.of(context).popUntil((route) => route.isFirst);
-                } else if (index == 1) {
-                  Navigator.of(context).pushReplacement(
-                    MaterialPageRoute(
-                      builder: (context) => const CategoryScreen(),
-                    ),
-                  );
-                } else if (index == 2) {
-                  Navigator.of(context).pushReplacement(
-                    MaterialPageRoute(
-                      builder: (context) => const CartScreen(),
-                    ),
-                  );
-                } else {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(
-                        'Fitur tab ${index == 3 ? "Pesanan" : "Profil"} segera hadir!',
+              // 2. Interactive State Demo Switcher Tabs
+              _buildStateSwitcher(),
+              const SizedBox(height: 16),
+
+              // 3. Conditional Content: Favorite List vs Empty State
+              if (showFavoriteContent) ...[
+                // Favorite Items List
+                ListView.separated(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemCount: _items.length,
+                  separatorBuilder: (context, index) =>
+                      const SizedBox(height: 12),
+                  itemBuilder: (context, index) {
+                    final item = _items[index];
+                    return FavoriteItemCard(
+                      item: item,
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => BookDetailScreen(
+                              searchItem: item.toSearchItem(),
+                            ),
+                          ),
+                        );
+                      },
+                      onRemoveFavorite: () => _removeFavorite(index),
+                      onAddToCart: () => _addToCart(item),
+                      onRemind: () => _remindWhenAvailable(item),
+                    );
+                  },
+                ),
+                const SizedBox(height: 16),
+
+                // Promo note card
+                const FavoritePromoNote(),
+                const SizedBox(height: 24),
+              ] else ...[
+                // Empty State View
+                FavoriteEmptyState(
+                  onStartBrowsing: () {
+                    if (_items.isEmpty) {
+                      _resetDefaultFavorites();
+                    }
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const SearchScreen(),
                       ),
-                      duration: const Duration(seconds: 1),
-                      behavior: SnackBarBehavior.floating,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                    ),
-                  );
-                }
-              },
-            ),
-          ],
+                    );
+                  },
+                ),
+                const SizedBox(height: 24),
+              ],
+            ],
+          ),
         ),
+      ),
+      bottomNavigationBar: BookstoreBottomNav(
+        currentIndex: 0, // No dedicated tab for Favorite
+        onTabSelected: (index) {
+          if (index == 0) {
+            Navigator.of(context).popUntil((route) => route.isFirst);
+          } else if (index == 1) {
+            Navigator.of(context).pushReplacement(
+              MaterialPageRoute(
+                builder: (context) => const CategoryScreen(),
+              ),
+            );
+          } else if (index == 2) {
+            Navigator.of(context).pushReplacement(
+              MaterialPageRoute(
+                builder: (context) => const CartScreen(),
+              ),
+            );
+          } else {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(
+                  'Fitur tab ${index == 3 ? "Pesanan" : "Profil"} segera hadir!',
+                ),
+                duration: const Duration(seconds: 1),
+                behavior: SnackBarBehavior.floating,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
+            );
+          }
+        },
       ),
     );
   }

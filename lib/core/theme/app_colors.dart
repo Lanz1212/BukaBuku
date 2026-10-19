@@ -37,4 +37,10 @@ class AppColors {
   static const Color onError = Color(0xFFFFFFFF);
   static const Color errorContainer = Color(0xFFFFDAD6);
   static const Color onErrorContainer = Color(0xFF93000A);
+
+  // Semantic status colors matching DESIGN.md
+  static const Color success = Color(0xFF3F8F5F);
+  static const Color successContainer = Color(0xFFF2F8F4);
+  static const Color warning = Color(0xFFD99A35);
+  static const Color info = Color(0xFF4E7FA6);
 }

@@ -10,6 +10,7 @@ import '../widgets/qris_guide_accordion.dart';
 import '../widgets/qris_order_header_card.dart';
 import '../widgets/qris_simulation_bar.dart';
 import '../widgets/qris_status_views.dart';
+import 'payment_success_screen.dart';
 
 /// Screen 2: Halaman Pembayaran Online QRIS
 /// Conforms to DESIGN.md, AppColors, AppTypography, and Stitch screen 9fd9b16950e747439b6f91a11ffffb87.
@@ -106,122 +107,6 @@ class _QrisPaymentScreenState extends State<QrisPaymentScreen> {
           ],
         );
       },
-    );
-  }
-
-  void _showReceiptDialog() {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) {
-        return Container(
-          padding: const EdgeInsets.all(24),
-          decoration: const BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Center(
-                child: Container(
-                  width: 40,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: AppColors.surfaceContainerHigh,
-                    borderRadius: BorderRadius.circular(9999),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 16),
-              Text(
-                'Struk Pembayaran Resmi',
-                style: AppTypography.headlineSm.copyWith(
-                  fontWeight: FontWeight.w800,
-                  color: AppColors.onSurface,
-                ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                'Toko Buku Budi Cikini • Bukti Transaksi QRIS',
-                style: AppTypography.caption.copyWith(
-                  color: AppColors.onSurfaceVariant,
-                ),
-              ),
-              const Divider(height: 28, color: AppColors.outlineVariant),
-              _receiptRow('Nomor Pesanan', widget.orderId),
-              const SizedBox(height: 8),
-              _receiptRow('ID Transaksi', 'TRX-99482103B'),
-              const SizedBox(height: 8),
-              _receiptRow('Metode', 'QRIS BI Standar'),
-              const SizedBox(height: 8),
-              _receiptRow('Waktu Bayar', 'Hari ini, 15:42 WIB'),
-              const SizedBox(height: 8),
-              _receiptRow('Status', 'Lunas (Diterima)', isSuccess: true),
-              const Divider(height: 28, color: AppColors.outlineVariant),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    'Total Pembayaran',
-                    style: AppTypography.labelLg.copyWith(
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.onSurface,
-                    ),
-                  ),
-                  Text(
-                    _formatRupiah(widget.totalAmount),
-                    style: AppTypography.headlineMd.copyWith(
-                      color: AppColors.primary,
-                      fontWeight: FontWeight.w800,
-                      fontSize: 20,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 24),
-              SizedBox(
-                width: double.infinity,
-                height: 48,
-                child: ElevatedButton(
-                  onPressed: () => Navigator.pop(context),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primaryContainer,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14),
-                    ),
-                  ),
-                  child: const Text(
-                    'Tutup Struk',
-                    style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _receiptRow(String label, String value, {bool isSuccess = false}) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Text(
-          label,
-          style: AppTypography.caption.copyWith(color: AppColors.onSurfaceVariant),
-        ),
-        Text(
-          value,
-          style: AppTypography.labelMd.copyWith(
-            fontWeight: FontWeight.w600,
-            color: isSuccess ? const Color(0xFF3F8F5F) : AppColors.onSurface,
-          ),
-        ),
-      ],
     );
   }
 
@@ -353,7 +238,16 @@ class _QrisPaymentScreenState extends State<QrisPaymentScreen> {
                   onBackToHome: () {
                     Navigator.of(context).popUntil((route) => route.isFirst);
                   },
-                  onViewReceipt: _showReceiptDialog,
+                  onViewReceipt: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (context) => PaymentSuccessScreen(
+                          orderId: widget.orderId,
+                          totalAmount: widget.totalAmount,
+                        ),
+                      ),
+                    );
+                  },
                 ),
               ] else if (_currentStatus == PaymentSimulationStatus.failed) ...[
                 QrisFailedView(
