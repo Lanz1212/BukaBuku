@@ -1,4 +1,3 @@
-import 'dart:math';
 import 'package:flutter/material.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
@@ -13,6 +12,9 @@ import '../widgets/checkout_payment_selector.dart';
 import '../widgets/checkout_payment_summary.dart';
 import '../widgets/checkout_store_pickup_card.dart';
 import '../widgets/checkout_success_sheet.dart';
+import '../../payment/screens/payment_method_screen.dart';
+import '../../payment/screens/qris_payment_screen.dart';
+import '../../payment/models/payment_method_item.dart';
 
 /// Checkout Screen for Toko Buku Budi
 /// Follows DESIGN.md, AppColors, AppTypography, and Stitch Toko Buku Budi Mobile UI.
@@ -149,15 +151,49 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     );
   }
 
+  void _openPaymentMethodScreen() async {
+    final result = await Navigator.of(context).push<PaymentMethodItem>(
+      MaterialPageRoute(
+        builder: (context) => PaymentMethodScreen(
+          orderId: '#ORD00125',
+          totalAmount: _totalPayment,
+          bookCount: _totalBookCount,
+          initialSelectedId: _selectedPayment.id,
+        ),
+      ),
+    );
+    if (result != null) {
+      final matching = PaymentMethodOption.allOptions.firstWhere(
+        (o) => o.id == result.id,
+        orElse: () => PaymentMethodOption.allOptions.first,
+      );
+      setState(() {
+        _selectedPayment = matching;
+      });
+    }
+  }
+
   void _submitOrder() {
-    final randomId = '#TBB-${10000 + Random().nextInt(89999)}';
+    const orderId = '#ORD00125';
+
+    if (_selectedPayment.id == 'qris') {
+      Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (context) => const QrisPaymentScreen(
+            orderId: orderId,
+            totalAmount: 181000,
+          ),
+        ),
+      );
+      return;
+    }
 
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (context) => CheckoutSuccessSheet(
-        orderId: randomId,
+        orderId: orderId,
         totalAmount: _totalPayment,
         fulfillmentMode: _fulfillmentMode,
         paymentMethod: _selectedPayment,
@@ -299,6 +335,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                           _selectedPayment = payment;
                         });
                       },
+                      onOpenPaymentMethods: _openPaymentMethodScreen,
                     ),
 
                     const SizedBox(height: 20),

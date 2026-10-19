@@ -4,7 +4,6 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:buka_buku/features/favorite/screens/favorite_screen.dart';
-import 'package:buka_buku/features/favorite/models/favorite_item.dart';
 
 // Minimal 1x1 transparent PNG for mocking NetworkImage
 final Uint8List _transparentPng = Uint8List.fromList(<int>[

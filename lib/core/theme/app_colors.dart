@@ -22,6 +22,7 @@ class AppColors {
 
   static const Color primaryFixed = Color(0xFFFCDDC7);
   static const Color primaryFixedDim = Color(0xFFDFC1AC);
+  static const Color onPrimaryFixed = Color(0xFF28180B);
 
   static const Color secondary = Color(0xFF7C5730);
   static const Color onSecondary = Color(0xFFFFFFFF);

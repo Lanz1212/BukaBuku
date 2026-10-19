@@ -8,12 +8,14 @@ class CheckoutPaymentSelector extends StatefulWidget {
   final PaymentMethodOption selectedPayment;
   final FulfillmentMode fulfillmentMode;
   final ValueChanged<PaymentMethodOption> onPaymentChanged;
+  final VoidCallback? onOpenPaymentMethods;
 
   const CheckoutPaymentSelector({
     super.key,
     required this.selectedPayment,
     required this.fulfillmentMode,
     required this.onPaymentChanged,
+    this.onOpenPaymentMethods,
   });
 
   @override
@@ -52,13 +54,26 @@ class _CheckoutPaymentSelectorState extends State<CheckoutPaymentSelector> {
               ),
             ),
             const SizedBox(width: 8),
-            Text(
-              'Aman & Terverifikasi',
-              style: AppTypography.caption.copyWith(
-                color: AppColors.secondary,
-                fontWeight: FontWeight.w600,
+            if (widget.onOpenPaymentMethods != null)
+              GestureDetector(
+                onTap: widget.onOpenPaymentMethods,
+                child: Text(
+                  'Lihat Semua',
+                  style: AppTypography.caption.copyWith(
+                    color: AppColors.primary,
+                    fontWeight: FontWeight.w700,
+                    decoration: TextDecoration.underline,
+                  ),
+                ),
+              )
+            else
+              Text(
+                'Aman & Terverifikasi',
+                style: AppTypography.caption.copyWith(
+                  color: AppColors.secondary,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
-            ),
           ],
         ),
 
