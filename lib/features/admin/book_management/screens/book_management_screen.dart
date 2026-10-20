@@ -4,6 +4,7 @@ import '../../../../core/theme/app_typography.dart';
 import '../models/admin_book_item.dart';
 import '../widgets/book_management_card.dart';
 import '../widgets/book_management_filter.dart';
+import 'add_book_screen.dart';
 
 class BookManagementScreen extends StatefulWidget {
   const BookManagementScreen({super.key});
@@ -132,8 +133,39 @@ class _BookManagementScreenState extends State<BookManagementScreen> {
     );
   }
 
-  void _showAddBookDialog() {
-    _showNotice('Form Tambah Buku Baru dibuka');
+  Future<void> _navigateToAddBook() async {
+    final newBook = await Navigator.push<AdminBookItem>(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const AddBookScreen(),
+      ),
+    );
+
+    if (newBook != null) {
+      setState(() {
+        _books.insert(0, newBook);
+      });
+      _showNotice('Buku "${newBook.title}" berhasil ditambahkan ke rak');
+    }
+  }
+
+  Future<void> _navigateToEditBook(AdminBookItem book) async {
+    final updatedBook = await Navigator.push<AdminBookItem>(
+      context,
+      MaterialPageRoute(
+        builder: (context) => AddBookScreen(initialBook: book),
+      ),
+    );
+
+    if (updatedBook != null) {
+      setState(() {
+        final index = _books.indexWhere((b) => b.id == updatedBook.id);
+        if (index != -1) {
+          _books[index] = updatedBook;
+        }
+      });
+      _showNotice('Buku "${updatedBook.title}" berhasil diperbarui');
+    }
   }
 
   @override
@@ -214,7 +246,7 @@ class _BookManagementScreenState extends State<BookManagementScreen> {
                     return BookManagementCard(
                       book: book,
                       onToggleStatus: () => _toggleBookStatus(index, book),
-                      onEdit: () => _showNotice('Ubah info "${book.title}"'),
+                      onEdit: () => _navigateToEditBook(book),
                       onDelete: () => _deleteBook(book),
                     );
                   },
@@ -232,7 +264,7 @@ class _BookManagementScreenState extends State<BookManagementScreen> {
           bottom: 16,
           right: 16,
           child: ElevatedButton.icon(
-            onPressed: _showAddBookDialog,
+            onPressed: _navigateToAddBook,
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.primaryContainer,
               foregroundColor: AppColors.onPrimary,

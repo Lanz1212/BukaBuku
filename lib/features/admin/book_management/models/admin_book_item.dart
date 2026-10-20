@@ -16,6 +16,9 @@ class AdminBookItem {
   final bool isActive;
   final String category;
   final String coverUrl;
+  final String? publisher;
+  final int? publishYear;
+  final String? description;
 
   const AdminBookItem({
     required this.id,
@@ -29,6 +32,9 @@ class AdminBookItem {
     required this.isActive,
     required this.category,
     required this.coverUrl,
+    this.publisher,
+    this.publishYear,
+    this.description,
   });
 
   AdminBookItem copyWith({
@@ -43,6 +49,9 @@ class AdminBookItem {
     bool? isActive,
     String? category,
     String? coverUrl,
+    String? publisher,
+    int? publishYear,
+    String? description,
   }) {
     return AdminBookItem(
       id: id ?? this.id,
@@ -56,6 +65,9 @@ class AdminBookItem {
       isActive: isActive ?? this.isActive,
       category: category ?? this.category,
       coverUrl: coverUrl ?? this.coverUrl,
+      publisher: publisher ?? this.publisher,
+      publishYear: publishYear ?? this.publishYear,
+      description: description ?? this.description,
     );
   }
 
@@ -71,6 +83,10 @@ class AdminBookItem {
           status: AdminBookStatus.menipis,
           isActive: true,
           category: 'Pengembangan Diri',
+          publisher: 'Gramedia Pustaka Utama',
+          publishYear: 2019,
+          description:
+              'Perubahan kecil yang memberikan hasil luar biasa melalui pembentukan kebiasaan harian secara konsisten.',
           coverUrl:
               'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&q=80&w=400',
         ),
@@ -85,6 +101,10 @@ class AdminBookItem {
           status: AdminBookStatus.tersedia,
           isActive: true,
           category: 'Non-Fiksi',
+          publisher: 'Penerbit Buku Kompas',
+          publishYear: 2018,
+          description:
+              'Penerapan filsafat Stoisisme kuno untuk mental tangguh di era modern yang penuh tantangan.',
           coverUrl:
               'https://images.unsplash.com/photo-1497633762265-9d179a990aa6?auto=format&fit=crop&q=80&w=400',
         ),
@@ -99,6 +119,10 @@ class AdminBookItem {
           status: AdminBookStatus.menipis,
           isActive: true,
           category: 'Novel',
+          publisher: 'Kepustakaan Populer Gramedia',
+          publishYear: 2017,
+          description:
+              'Kisah persahabatan, cinta, dan kehilangan para aktivis mahasiswa di masa pergolakan politik 1998.',
           coverUrl:
               'https://images.unsplash.com/photo-1512820790803-83ca734da794?auto=format&fit=crop&q=80&w=400',
         ),
@@ -113,6 +137,10 @@ class AdminBookItem {
           status: AdminBookStatus.outOfStock,
           isActive: false,
           category: 'Non-Fiksi',
+          publisher: 'Kepustakaan Populer Gramedia',
+          publishYear: 2014,
+          description:
+              'Penjelajahan sejarah evolusi Homo sapiens dari kera tak berarti hingga menjadi penguasa bumi.',
           coverUrl:
               'https://images.unsplash.com/photo-1495446815901-a7297e633e8d?auto=format&fit=crop&q=80&w=400',
         ),
@@ -127,6 +155,10 @@ class AdminBookItem {
           status: AdminBookStatus.tersedia,
           isActive: true,
           category: 'Novel',
+          publisher: 'Republika Penerbit',
+          publishYear: 2015,
+          description:
+              'Kisah tentang perjalanan pulang seorang anak petarung bayangan menyusuri arti sejati kehidupan.',
           coverUrl:
               'https://images.unsplash.com/photo-1476275466078-4007374efbbe?auto=format&fit=crop&q=80&w=400',
         ),
@@ -141,6 +173,10 @@ class AdminBookItem {
           status: AdminBookStatus.tersedia,
           isActive: true,
           category: 'Non-Fiksi',
+          publisher: 'Kompas Gramedia',
+          publishYear: 2012,
+          description:
+              'Biografi inspiratif perjalanan hidup Chairul Tanjung dari masa kecil penuh keterbatasan hingga sukses.',
           coverUrl:
               'https://images.unsplash.com/photo-1532012164546-f432f2e3777f?auto=format&fit=crop&q=80&w=400',
         ),

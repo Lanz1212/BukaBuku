@@ -8,6 +8,7 @@ import '../widgets/admin_quick_actions.dart';
 import '../widgets/admin_recent_orders.dart';
 import '../widgets/admin_low_stock_section.dart';
 import '../widgets/admin_sales_chart.dart';
+import '../../book_management/screens/add_book_screen.dart';
 
 class AdminDashboardScreen extends StatefulWidget {
   final VoidCallback? onNavigateToBooks;
@@ -55,8 +56,14 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
           // Aksi Cepat Admin
           AdminQuickActions(
             onScanQr: () => _showNotice('Membuka kamera pemindai QR pesanan kasir...'),
-            onAddBook: widget.onNavigateToBooks ??
-                () => _showNotice('Buka form Tambah Buku Baru'),
+            onAddBook: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const AddBookScreen(),
+                ),
+              );
+            },
             onManageStock: widget.onNavigateToBooks ??
                 () => _showNotice('Buka kelola stok'),
           ),
