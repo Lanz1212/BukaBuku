@@ -6,6 +6,7 @@ import '../../../shared/widgets/bookstore_bottom_nav.dart';
 import '../../category/screens/category_screen.dart';
 import '../../checkout/screens/checkout_screen.dart';
 import '../../order/screens/order_list_screen.dart';
+import '../../profile/screens/profile_screen.dart';
 import '../models/cart_item.dart';
 import '../widgets/cart_bottom_bar.dart';
 import '../widgets/cart_empty_state.dart';
@@ -454,17 +455,10 @@ class _CartScreenState extends State<CartScreen> {
                       builder: (context) => const OrderListScreen(),
                     ),
                   );
-                } else if (index != 2) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: const Text(
-                        'Fitur tab Profil segera hadir!',
-                      ),
-                      duration: const Duration(seconds: 1),
-                      behavior: SnackBarBehavior.floating,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
+                } else if (index == 4) {
+                  Navigator.of(context).pushReplacement(
+                    MaterialPageRoute(
+                      builder: (context) => const ProfileScreen(),
                     ),
                   );
                 }

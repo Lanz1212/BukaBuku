@@ -12,6 +12,7 @@ import '../widgets/order_card_item.dart';
 import '../widgets/order_filter_chips.dart';
 import '../widgets/order_qr_pickup_modal.dart';
 import '../../notification/screens/notification_screen.dart';
+import '../../profile/screens/profile_screen.dart';
 import 'order_detail_screen.dart';
 
 class OrderListScreen extends StatefulWidget {
@@ -80,14 +81,9 @@ class _OrderListScreenState extends State<OrderListScreen> {
         MaterialPageRoute(builder: (context) => const CartScreen()),
       );
     } else if (index == 4) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text('Halaman profil segera hadir!'),
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10),
-          ),
-        ),
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => const ProfileScreen()),
       );
     }
   }

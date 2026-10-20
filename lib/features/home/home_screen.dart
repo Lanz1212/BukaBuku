@@ -8,6 +8,7 @@ import '../cart/screens/cart_screen.dart';
 import '../favorite/screens/favorite_screen.dart';
 import '../order/screens/order_list_screen.dart';
 import '../notification/screens/notification_screen.dart';
+import '../profile/screens/profile_screen.dart';
 import '../../shared/widgets/bookstore_bottom_nav.dart';
 
 /// Home Page — Toko Buku Budi
@@ -185,24 +186,34 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                   ),
                   const SizedBox(width: 8),
-                  Container(
-                    width: 40,
-                    height: 40,
-                    decoration: BoxDecoration(
-                      color: AppColors.primaryContainer,
-                      shape: BoxShape.circle,
-                    ),
-                    child: ClipOval(
-                      child: Image.asset(
-                        'assets/images/Profile.png',
-                        fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) {
-                          return const Icon(
-                            Icons.person,
-                            size: 20,
-                            color: AppColors.onPrimary,
-                          );
-                        },
+                  GestureDetector(
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const ProfileScreen(),
+                        ),
+                      );
+                    },
+                    child: Container(
+                      width: 40,
+                      height: 40,
+                      decoration: const BoxDecoration(
+                        color: AppColors.primaryContainer,
+                        shape: BoxShape.circle,
+                      ),
+                      child: ClipOval(
+                        child: Image.asset(
+                          'assets/images/Profile.png',
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) {
+                            return const Icon(
+                              Icons.person,
+                              size: 20,
+                              color: AppColors.onPrimary,
+                            );
+                          },
+                        ),
                       ),
                     ),
                   ),
@@ -663,15 +674,11 @@ class _HomeScreenState extends State<HomeScreen> {
               builder: (context) => const OrderListScreen(),
             ),
           );
-        } else if (index != 0) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: const Text(
-                'Fitur tab Profil segera hadir!',
-              ),
-              duration: const Duration(seconds: 1),
-              behavior: SnackBarBehavior.floating,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        } else if (index == 4) {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const ProfileScreen(),
             ),
           );
         }
