@@ -17,6 +17,7 @@ import '../widgets/profile_quote_banner.dart';
 import '../widgets/profile_stats_row.dart';
 import 'edit_profile_screen.dart';
 import 'shipping_address_screen.dart';
+import '../../admin/shared/screens/admin_main_screen.dart';
 
 /// Main Profile Screen for Toko Buku Budi
 /// Follows DESIGN.md, AppColors, AppTypography, and Stitch Toko Buku Budi Mobile UI.
@@ -298,6 +299,30 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           title: 'Keamanan Akun',
                           subtitle: 'Kata sandi & verifikasi login',
                           onTap: () => _showFeatureNotice('Keamanan Akun'),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 18),
+
+                    // Section Khusus: Pengelola Toko
+                    ProfileMenuSection(
+                      title: 'Pengelola Toko',
+                      items: [
+                        ProfileMenuTile(
+                          icon: Icons.admin_panel_settings_rounded,
+                          title: 'Panel Admin Toko',
+                          subtitle: 'Dashboard statistik, kelola buku & pesanan',
+                          badgeText: 'Admin',
+                          iconColor: AppColors.onPrimary,
+                          iconBackgroundColor: AppColors.primary,
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => const AdminMainScreen(),
+                              ),
+                            );
+                          },
                         ),
                       ],
                     ),
