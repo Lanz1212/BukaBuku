@@ -143,15 +143,16 @@ void main() {
 
       // Tap "Buka Hasil Validasi"
       await tester.tap(find.text('Buka Hasil Validasi'), warnIfMissed: false);
-      await tester.pump(const Duration(milliseconds: 400));
+      await tester.pumpAndSettle();
 
-      // Verify validation sheet
-      expect(find.text('Validasi Berhasil & Siap Diserahkan'), findsOneWidget);
-      expect(find.text('Konfirmasi & Selesaikan Pesanan'), findsOneWidget);
+      // Verify validation screen
+      expect(find.text('Hasil Scan Qr'), findsOneWidget);
+      expect(find.text('QR Valid'), findsOneWidget);
+      expect(find.text('Konfirmasi Pengambilan'), findsOneWidget);
 
       // Tap confirm
-      await tester.tap(find.text('Konfirmasi & Selesaikan Pesanan'), warnIfMissed: false);
-      await tester.pump(const Duration(milliseconds: 400));
+      await tester.tap(find.text('Konfirmasi Pengambilan'), warnIfMissed: false);
+      await tester.pumpAndSettle();
     });
   });
 }

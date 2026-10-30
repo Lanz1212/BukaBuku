@@ -152,7 +152,24 @@ void main() {
       // Switch to Tab 4: Profil
       await tester.tap(find.text('Profil'));
       await tester.pumpAndSettle();
-      expect(find.text('Owner & Admin Utama Toko'), findsOneWidget);
+      expect(find.text('Budi Pratama'), findsOneWidget);
+      expect(find.text('Owner / Super Admin'), findsOneWidget);
+      expect(find.text('Pengaturan Toko'), findsOneWidget);
+
+      // Tap on Pengaturan Toko to open StoreSettingsScreen
+      await tester.tap(find.text('Pengaturan Toko'));
+      await tester.pumpAndSettle();
+
+      // Verify StoreSettingsScreen opened
+      expect(find.text('PROFIL GERAI FISIK'), findsOneWidget);
+      expect(find.text('Logo & Identitas Visual'), findsOneWidget);
+      expect(find.text('Nama Toko Resmi'), findsOneWidget);
+      expect(find.text('Simpan Perubahan'), findsOneWidget);
+
+      // Pop back to AdminProfileScreen
+      await tester.tap(find.byTooltip('Kembali'));
+      await tester.pumpAndSettle();
+      expect(find.text('Budi Pratama'), findsOneWidget);
     });
   });
 }
