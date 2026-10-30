@@ -4,6 +4,7 @@ import '../../../../core/theme/app_typography.dart';
 import '../models/admin_book_item.dart';
 import '../widgets/book_management_card.dart';
 import '../widgets/book_management_filter.dart';
+import '../../category_management/screens/category_management_screen.dart';
 import 'add_book_screen.dart';
 
 class BookManagementScreen extends StatefulWidget {
@@ -316,31 +317,65 @@ class _BookManagementScreenState extends State<BookManagementScreen> {
             ),
           ],
         ),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-          decoration: BoxDecoration(
-            color: AppColors.secondaryContainer,
-            borderRadius: BorderRadius.circular(9999),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Icon(
-                Icons.menu_book_rounded,
-                size: 15,
-                color: AppColors.onSecondaryContainer,
-              ),
-              const SizedBox(width: 5),
-              Text(
-                '${_books.length} Judul',
-                style: AppTypography.labelMd.copyWith(
-                  color: AppColors.onSecondaryContainer,
-                  fontWeight: FontWeight.w700,
-                  fontSize: 12,
+        Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            OutlinedButton.icon(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const CategoryManagementScreen(),
+                  ),
+                );
+              },
+              style: OutlinedButton.styleFrom(
+                foregroundColor: AppColors.primary,
+                side: const BorderSide(color: AppColors.primary, width: 1.2),
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                minimumSize: Size.zero,
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
                 ),
               ),
-            ],
-          ),
+              icon: const Icon(Icons.category_outlined, size: 14),
+              label: Text(
+                'Kategori',
+                style: AppTypography.caption.copyWith(
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.primary,
+                ),
+              ),
+            ),
+            const SizedBox(width: 8),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+              decoration: BoxDecoration(
+                color: AppColors.secondaryContainer,
+                borderRadius: BorderRadius.circular(9999),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(
+                    Icons.menu_book_rounded,
+                    size: 15,
+                    color: AppColors.onSecondaryContainer,
+                  ),
+                  const SizedBox(width: 5),
+                  Text(
+                    '${_books.length} Judul',
+                    style: AppTypography.labelMd.copyWith(
+                      color: AppColors.onSecondaryContainer,
+                      fontWeight: FontWeight.w700,
+                      fontSize: 12,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ),
       ],
     );

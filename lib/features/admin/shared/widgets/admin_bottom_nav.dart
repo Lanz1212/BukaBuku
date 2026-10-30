@@ -54,15 +54,17 @@ class AdminBottomNav extends StatelessWidget {
               ),
               _buildNavItem(
                 index: 2,
+                icon: Icons.inventory_2_outlined,
+                activeIcon: Icons.inventory_2_rounded,
+                label: 'Stok',
+                badgeCount: 2,
+              ),
+              _buildNavItem(
+                index: 3,
                 icon: Icons.receipt_long_outlined,
                 activeIcon: Icons.receipt_long_rounded,
                 label: 'Pesanan',
                 badgeCount: 5,
-              ),
-              _buildCenterScanItem(
-                index: 3,
-                icon: Icons.qr_code_scanner_rounded,
-                label: 'Scan QR',
               ),
               _buildNavItem(
                 index: 4,
@@ -143,56 +145,6 @@ class AdminBottomNav extends StatelessWidget {
                 style: AppTypography.caption.copyWith(
                   color: itemColor,
                   fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
-                  fontSize: 11,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildCenterScanItem({
-    required int index,
-    required IconData icon,
-    required String label,
-  }) {
-    final bool isSelected = currentIndex == index;
-
-    return Expanded(
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: () => onTabSelected(index),
-          splashColor: AppColors.primaryFixed.withValues(alpha: 0.2),
-          highlightColor: Colors.transparent,
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Container(
-                width: 32,
-                height: 32,
-                decoration: BoxDecoration(
-                  color: isSelected
-                      ? AppColors.primary
-                      : AppColors.surfaceContainerHigh,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Icon(
-                  icon,
-                  size: 20,
-                  color: isSelected ? AppColors.onPrimary : AppColors.primary,
-                ),
-              ),
-              const SizedBox(height: 2),
-              Text(
-                label,
-                style: AppTypography.caption.copyWith(
-                  color: isSelected
-                      ? AppColors.primaryContainer
-                      : AppColors.onSurfaceVariant,
-                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
                   fontSize: 11,
                 ),
               ),
