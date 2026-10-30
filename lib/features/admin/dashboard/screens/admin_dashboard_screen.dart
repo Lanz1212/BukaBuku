@@ -9,6 +9,8 @@ import '../widgets/admin_recent_orders.dart';
 import '../widgets/admin_low_stock_section.dart';
 import '../widgets/admin_sales_chart.dart';
 import '../../book_management/screens/add_book_screen.dart';
+import '../../payment_management/screens/payment_management_screen.dart';
+import '../../scan_qr_pickup/screens/scan_qr_pickup_screen.dart';
 
 class AdminDashboardScreen extends StatefulWidget {
   final VoidCallback? onNavigateToBooks;
@@ -55,7 +57,22 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
 
           // Aksi Cepat Admin
           AdminQuickActions(
-            onScanQr: () => _showNotice('Membuka kamera pemindai QR pesanan kasir...'),
+            onScanQr: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const ScanQrPickupScreen(),
+                ),
+              );
+            },
+            onPayment: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const PaymentManagementScreen(),
+                ),
+              );
+            },
             onAddBook: () {
               Navigator.push(
                 context,
@@ -225,7 +242,14 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
             Expanded(
               child: AdminStatCard(
                 item: _stats[3],
-                onTap: () => _showNotice('Laporan pendapatan penjualan hari ini'),
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const PaymentManagementScreen(),
+                    ),
+                  );
+                },
               ),
             ),
           ],

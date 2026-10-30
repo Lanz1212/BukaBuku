@@ -6,12 +6,14 @@ class AdminQuickActions extends StatelessWidget {
   final VoidCallback? onScanQr;
   final VoidCallback? onAddBook;
   final VoidCallback? onManageStock;
+  final VoidCallback? onPayment;
 
   const AdminQuickActions({
     super.key,
     this.onScanQr,
     this.onAddBook,
     this.onManageStock,
+    this.onPayment,
   });
 
   @override
@@ -38,41 +40,87 @@ class AdminQuickActions extends StatelessWidget {
           ],
         ),
         const SizedBox(height: 10),
-        Row(
-          children: [
-            // Shortcut 1: QR Scanner (Dark Hero Action)
-            Expanded(
-              child: _buildHeroAction(
-                icon: Icons.qr_code_scanner_rounded,
-                title: 'Scan QR',
-                subtitle: 'Pickup Kasir',
-                onTap: onScanQr,
+        if (onPayment != null) ...[
+          Row(
+            children: [
+              Expanded(
+                child: _buildHeroAction(
+                  icon: Icons.qr_code_scanner_rounded,
+                  title: 'Scan QR',
+                  subtitle: 'Pickup Kasir',
+                  onTap: onScanQr,
+                ),
               ),
-            ),
-            const SizedBox(width: 10),
+              const SizedBox(width: 10),
+              Expanded(
+                child: _buildStandardAction(
+                  icon: Icons.payments_outlined,
+                  title: 'Pembayaran',
+                  subtitle: 'Arus Kas Realtime',
+                  onTap: onPayment,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Row(
+            children: [
+              Expanded(
+                child: _buildStandardAction(
+                  icon: Icons.library_add_rounded,
+                  title: 'Tambah Buku',
+                  subtitle: 'Katalog Baru',
+                  onTap: onAddBook,
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: _buildStandardAction(
+                  icon: Icons.inventory_2_outlined,
+                  title: 'Atur Stok',
+                  subtitle: 'Opname Rak',
+                  onTap: onManageStock,
+                ),
+              ),
+            ],
+          ),
+        ] else ...[
+          Row(
+            children: [
+              // Shortcut 1: QR Scanner (Dark Hero Action)
+              Expanded(
+                child: _buildHeroAction(
+                  icon: Icons.qr_code_scanner_rounded,
+                  title: 'Scan QR',
+                  subtitle: 'Pickup Kasir',
+                  onTap: onScanQr,
+                ),
+              ),
+              const SizedBox(width: 10),
 
-            // Shortcut 2: Tambah Buku
-            Expanded(
-              child: _buildStandardAction(
-                icon: Icons.library_add_rounded,
-                title: 'Tambah Buku',
-                subtitle: 'Katalog Baru',
-                onTap: onAddBook,
+              // Shortcut 2: Tambah Buku
+              Expanded(
+                child: _buildStandardAction(
+                  icon: Icons.library_add_rounded,
+                  title: 'Tambah Buku',
+                  subtitle: 'Katalog Baru',
+                  onTap: onAddBook,
+                ),
               ),
-            ),
-            const SizedBox(width: 10),
+              const SizedBox(width: 10),
 
-            // Shortcut 3: Atur Stok
-            Expanded(
-              child: _buildStandardAction(
-                icon: Icons.inventory_2_outlined,
-                title: 'Atur Stok',
-                subtitle: 'Opname Rak',
-                onTap: onManageStock,
+              // Shortcut 3: Atur Stok
+              Expanded(
+                child: _buildStandardAction(
+                  icon: Icons.inventory_2_outlined,
+                  title: 'Atur Stok',
+                  subtitle: 'Opname Rak',
+                  onTap: onManageStock,
+                ),
               ),
-            ),
-          ],
-        ),
+            ],
+          ),
+        ],
       ],
     );
   }

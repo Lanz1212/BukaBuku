@@ -8,6 +8,7 @@ import '../widgets/qr_action_buttons.dart';
 import '../widgets/qr_detection_card.dart';
 import '../widgets/qr_mode_banner.dart';
 import '../widgets/qr_viewfinder_widget.dart';
+import 'qr_scan_result_screen.dart';
 
 class ScanQrPickupScreen extends StatefulWidget {
   final AdminOrderDetail? preloadedOrder;
@@ -104,121 +105,19 @@ class _ScanQrPickupScreenState extends State<ScanQrPickupScreen> {
     );
   }
 
-  void _handleValidationComplete() {
+  void _handleValidationComplete() async {
     if (_detectedResult == null) return;
 
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: AppColors.surfaceContainerLowest,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      builder: (ctx) => Padding(
-        padding: const EdgeInsets.fromLTRB(24, 20, 24, 24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Center(
-              child: Container(
-                width: 38,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: AppColors.outlineVariant.withValues(alpha: 0.6),
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-            ),
-            const SizedBox(height: 20),
-            Center(
-              child: Container(
-                width: 68,
-                height: 68,
-                decoration: BoxDecoration(
-                  color: AppColors.successContainer,
-                  shape: BoxShape.circle,
-                  border: Border.all(
-                    color: AppColors.success.withValues(alpha: 0.3),
-                    width: 2,
-                  ),
-                ),
-                child: const Icon(
-                  Icons.check_rounded,
-                  color: AppColors.success,
-                  size: 38,
-                ),
-              ),
-            ),
-            const SizedBox(height: 16),
-            Text(
-              'Validasi Berhasil & Siap Diserahkan',
-              textAlign: TextAlign.center,
-              style: AppTypography.titleMd.copyWith(
-                fontWeight: FontWeight.w700,
-                color: AppColors.onSurface,
-                fontSize: 18,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'QR Code valid milik ${_detectedResult!.customerName} untuk pesanan ${_detectedResult!.orderId}. Seluruh buku sudah terkonfirmasi.',
-              textAlign: TextAlign.center,
-              style: AppTypography.bodyMd.copyWith(
-                color: AppColors.onSurfaceVariant,
-                fontSize: 13.5,
-                height: 1.4,
-              ),
-            ),
-            const SizedBox(height: 22),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primaryContainer,
-                foregroundColor: Colors.white,
-                minimumSize: const Size.fromHeight(50),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(14),
-                ),
-                elevation: 0,
-              ),
-              onPressed: () {
-                Navigator.pop(ctx); // Close sheet
-                // Return updated order or status to caller
-                AdminOrderDetail? updatedOrder = widget.preloadedOrder?.copyWith(
-                  status: AdminOrderStatus.selesai,
-                );
-                Navigator.pop(context, updatedOrder ?? true);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(
-                      'Buku ${_detectedResult!.orderId} berhasil diserahkan ke ${_detectedResult!.customerName}!',
-                    ),
-                    backgroundColor: AppColors.success,
-                    behavior: SnackBarBehavior.floating,
-                  ),
-                );
-              },
-              child: Text(
-                'Konfirmasi & Selesaikan Pesanan',
-                style: AppTypography.labelLg.copyWith(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-            ),
-            const SizedBox(height: 8),
-            TextButton(
-              onPressed: () => Navigator.pop(ctx),
-              child: Text(
-                'Tutup',
-                style: AppTypography.labelMd.copyWith(
-                  color: AppColors.onSurfaceVariant,
-                ),
-              ),
-            ),
-          ],
-        ),
+    final result = await Navigator.push<dynamic>(
+      context,
+      MaterialPageRoute(
+        builder: (context) => QrScanResultScreen(result: _detectedResult!),
       ),
     );
+
+    if (result != null && mounted) {
+      Navigator.pop(context, result);
+    }
   }
 
   @override
