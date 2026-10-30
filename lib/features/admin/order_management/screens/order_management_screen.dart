@@ -5,6 +5,7 @@ import '../models/admin_order_detail.dart';
 import '../widgets/order_card.dart';
 import '../widgets/order_status_chip.dart';
 import '../widgets/order_summary_bar.dart';
+import 'admin_order_detail_screen.dart';
 
 class OrderManagementScreen extends StatefulWidget {
   const OrderManagementScreen({super.key});
@@ -124,6 +125,23 @@ class _OrderManagementScreenState extends State<OrderManagementScreen> {
         _orders[index] = _orders[index].copyWith(status: newStatus);
       }
     });
+  }
+
+  Future<void> _navigateToDetail(AdminOrderDetail order) async {
+    final updated = await Navigator.push<AdminOrderDetail>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => AdminOrderDetailScreen(order: order),
+      ),
+    );
+    if (updated != null && mounted) {
+      setState(() {
+        final index = _orders.indexWhere((o) => o.orderId == updated.orderId);
+        if (index != -1) {
+          _orders[index] = updated;
+        }
+      });
+    }
   }
 
   void _showQrScanPickupDialog(AdminOrderDetail order) {
@@ -617,7 +635,7 @@ class _OrderManagementScreenState extends State<OrderManagementScreen> {
                       final order = displayedList[index];
                       return OrderCard(
                         order: order,
-                        onDetailTap: () => _showDetailModal(order),
+                        onDetailTap: () => _navigateToDetail(order),
                         onActionTap: () => _handleContextualAction(order),
                       );
                     },

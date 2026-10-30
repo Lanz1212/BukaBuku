@@ -15,18 +15,23 @@ class AdminOrderBookItem {
   final String author;
   final int qty;
   final int price;
+  final String? rackLocation;
+  final String? imageUrl;
 
   const AdminOrderBookItem({
     required this.title,
     required this.author,
     required this.qty,
     required this.price,
+    this.rackLocation,
+    this.imageUrl,
   });
 }
 
 class AdminOrderDetail {
   final String orderId;
   final String orderTime;
+  final String? orderDate;
   final String customerName;
   final String customerPhone;
   final String deliveryType; // 'Ambil di Toko (Pickup)' | 'Kurir Toko (Delivery)'
@@ -38,10 +43,16 @@ class AdminOrderDetail {
   final String? specialNote;
   final String? address;
   final String? pickupCode;
+  final String? pickupPoint;
+  final String? accountAddress;
+  final String? paymentChannel;
+  final bool isVerifiedUser;
+  final int cashierFee;
 
   const AdminOrderDetail({
     required this.orderId,
     required this.orderTime,
+    this.orderDate,
     required this.customerName,
     required this.customerPhone,
     required this.deliveryType,
@@ -53,11 +64,17 @@ class AdminOrderDetail {
     this.specialNote,
     this.address,
     this.pickupCode,
+    this.pickupPoint,
+    this.accountAddress,
+    this.paymentChannel,
+    this.isVerifiedUser = true,
+    this.cashierFee = 0,
   });
 
   AdminOrderDetail copyWith({
     String? orderId,
     String? orderTime,
+    String? orderDate,
     String? customerName,
     String? customerPhone,
     String? deliveryType,
@@ -69,10 +86,16 @@ class AdminOrderDetail {
     String? specialNote,
     String? address,
     String? pickupCode,
+    String? pickupPoint,
+    String? accountAddress,
+    String? paymentChannel,
+    bool? isVerifiedUser,
+    int? cashierFee,
   }) {
     return AdminOrderDetail(
       orderId: orderId ?? this.orderId,
       orderTime: orderTime ?? this.orderTime,
+      orderDate: orderDate ?? this.orderDate,
       customerName: customerName ?? this.customerName,
       customerPhone: customerPhone ?? this.customerPhone,
       deliveryType: deliveryType ?? this.deliveryType,
@@ -84,6 +107,11 @@ class AdminOrderDetail {
       specialNote: specialNote ?? this.specialNote,
       address: address ?? this.address,
       pickupCode: pickupCode ?? this.pickupCode,
+      pickupPoint: pickupPoint ?? this.pickupPoint,
+      accountAddress: accountAddress ?? this.accountAddress,
+      paymentChannel: paymentChannel ?? this.paymentChannel,
+      isVerifiedUser: isVerifiedUser ?? this.isVerifiedUser,
+      cashierFee: cashierFee ?? this.cashierFee,
     );
   }
 
@@ -151,28 +179,36 @@ class AdminOrderDetail {
   static List<AdminOrderDetail> get mockOrders => [
         const AdminOrderDetail(
           orderId: 'ORD00125',
-          orderTime: '10:45 WIB',
+          orderTime: '10:42 WIB',
+          orderDate: '12 Mei 2024, 10:42 WIB',
           customerName: 'Budi Santoso',
           customerPhone: '0812-3456-7890',
-          deliveryType: 'Ambil di Toko (Pickup)',
-          paymentMethod: 'Transfer BCA • Lunas',
+          deliveryType: 'Ambil di Toko',
+          paymentMethod: 'Online QRIS',
+          paymentChannel: 'BCA / GoPay Instan',
           isPaid: true,
           status: AdminOrderStatus.siapDiambil,
+          pickupPoint: 'Gerai Utama Cikini, Meja Kasir 1 (Jl. Cikini Raya No. 45)',
+          accountAddress:
+              'Jl. Cikini Raya No. 42, Menteng, Jakarta Pusat, DKI Jakarta 10330',
           books: [
             AdminOrderBookItem(
               title: 'Atomic Habits',
               author: 'James Clear',
+              rackLocation: 'Rak A-04 (Lantai 1)',
               qty: 1,
-              price: 108000,
+              price: 85000,
             ),
             AdminOrderBookItem(
               title: 'Filosofi Teras',
               author: 'Henry Manampiring',
+              rackLocation: 'Rak B-12 (Lantai 1)',
               qty: 1,
-              price: 98000,
+              price: 65000,
             ),
           ],
-          totalPrice: 206000,
+          totalPrice: 150000,
+          cashierFee: 0,
           specialNote: 'Pelanggan minta dibungkus kado cokelat rapi',
           pickupCode: 'PU-125-982',
         ),
