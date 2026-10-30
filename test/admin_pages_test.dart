@@ -110,16 +110,16 @@ void main() {
       expect(find.text('#ORD00125'), findsOneWidget);
       expect(find.text('Budi Santoso'), findsOneWidget);
 
-      // Tap Detail
+      // Tap Detail to navigate to AdminOrderDetailScreen
       final detailButtons = find.text('Detail');
       expect(detailButtons, findsWidgets);
       await tester.tap(detailButtons.first);
       await tester.pumpAndSettle();
 
-      // Modal detail should be open
-      expect(find.text('Data Pembeli'), findsOneWidget);
-      expect(find.text('Daftar Buku'), findsOneWidget);
-      await tester.tap(find.text('Tutup'));
+      // AdminOrderDetailScreen should be open
+      expect(find.text('Detail Pesanan Admin'), findsOneWidget);
+      expect(find.text('Informasi Pelanggan'), findsOneWidget);
+      await tester.tap(find.byIcon(Icons.arrow_back_rounded));
       await tester.pumpAndSettle();
     });
 

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
+import '../../scan_qr_pickup/screens/scan_qr_pickup_screen.dart';
 import '../models/admin_order_detail.dart';
 import '../widgets/detail/book_list_section.dart';
 import '../widgets/detail/customer_info_section.dart';
@@ -37,141 +38,22 @@ class _AdminOrderDetailScreenState extends State<AdminOrderDetailScreen> {
     });
   }
 
-  void _showQrScannerModal() {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: AppColors.surfaceContainerLowest,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      builder: (ctx) => Padding(
-        padding: EdgeInsets.fromLTRB(
-          24,
-          20,
-          24,
-          24 + MediaQuery.of(ctx).viewInsets.bottom,
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // Handle bar
-            Container(
-              width: 40,
-              height: 4,
-              decoration: BoxDecoration(
-                color: AppColors.outlineVariant.withValues(alpha: 0.6),
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-            const SizedBox(height: 20),
-
-            // Scanner Icon Target
-            Container(
-              width: 72,
-              height: 72,
-              decoration: BoxDecoration(
-                color: AppColors.primaryContainer.withValues(alpha: 0.08),
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(
-                  color: AppColors.primaryContainer.withValues(alpha: 0.25),
-                  width: 1.5,
-                ),
-              ),
-              child: const Icon(
-                Icons.qr_code_scanner_rounded,
-                color: AppColors.primaryContainer,
-                size: 38,
-              ),
-            ),
-            const SizedBox(height: 16),
-
-            Text(
-              'Pindai QR Pickup Customer',
-              style: AppTypography.titleMd.copyWith(
-                fontWeight: FontWeight.w700,
-                color: AppColors.onSurface,
-                fontSize: 18,
-              ),
-            ),
-            const SizedBox(height: 6),
-            Text(
-              'Arahkan kamera ke QR Code di layar aplikasi milik ${_currentOrder.customerName}.',
-              textAlign: TextAlign.center,
-              style: AppTypography.bodyMd.copyWith(
-                color: AppColors.onSurfaceVariant,
-                fontSize: 13,
-                height: 1.4,
-              ),
-            ),
-            const SizedBox(height: 14),
-
-            if (_currentOrder.pickupCode != null)
-              Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFFDECDA),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Text(
-                  'Kode Referensi: ${_currentOrder.pickupCode}',
-                  style: AppTypography.titleMd.copyWith(
-                    fontWeight: FontWeight.w700,
-                    color: const Color(0xFFB5702F),
-                    letterSpacing: 1.1,
-                    fontSize: 13,
-                  ),
-                ),
-              ),
-            const SizedBox(height: 20),
-
-            // Confirm Button
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primaryContainer,
-                foregroundColor: Colors.white,
-                minimumSize: const Size.fromHeight(50),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-              onPressed: () {
-                Navigator.pop(ctx);
-                _updateStatus(AdminOrderStatus.selesai);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(
-                      'Buku berhasil diserahkan ke ${_currentOrder.customerName}!',
-                    ),
-                    backgroundColor: AppColors.success,
-                    behavior: SnackBarBehavior.floating,
-                  ),
-                );
-              },
-              child: Text(
-                'Verifikasi & Selesaikan Pesanan',
-                style: AppTypography.labelLg.copyWith(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-            ),
-            const SizedBox(height: 8),
-
-            TextButton(
-              onPressed: () => Navigator.pop(ctx),
-              child: Text(
-                'Batal',
-                style: AppTypography.labelMd.copyWith(
-                  color: AppColors.onSurfaceVariant,
-                ),
-              ),
-            ),
-          ],
+  void _navigateToScanQrPickup() async {
+    final result = await Navigator.of(context).push<dynamic>(
+      MaterialPageRoute(
+        builder: (_) => ScanQrPickupScreen(
+          preloadedOrder: _currentOrder,
         ),
       ),
     );
+
+    if (result is AdminOrderDetail) {
+      setState(() {
+        _currentOrder = result;
+      });
+    } else if (result == true) {
+      _updateStatus(AdminOrderStatus.selesai);
+    }
   }
 
   void _showPrintReceiptModal() {
@@ -397,7 +279,7 @@ class _AdminOrderDetailScreenState extends State<AdminOrderDetailScreen> {
                 color: AppColors.onSurface,
               ),
               tooltip: 'Kamera Scanner',
-              onPressed: _showQrScannerModal,
+              onPressed: _navigateToScanQrPickup,
             ),
             const SizedBox(width: 8),
           ],
@@ -448,7 +330,7 @@ class _AdminOrderDetailScreenState extends State<AdminOrderDetailScreen> {
               // 5. Order Management Flow Section
               OrderFlowSection(
                 order: _currentOrder,
-                onScanQr: _showQrScannerModal,
+                onScanQr: _navigateToScanQrPickup,
                 onStatusChanged: _updateStatus,
               ),
               const SizedBox(height: 20),
@@ -457,7 +339,7 @@ class _AdminOrderDetailScreenState extends State<AdminOrderDetailScreen> {
         ),
         bottomNavigationBar: PickupActionBar(
           onPrintReceipt: _showPrintReceiptModal,
-          onScanQr: _showQrScannerModal,
+          onScanQr: _navigateToScanQrPickup,
           onChatCustomer: () {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(

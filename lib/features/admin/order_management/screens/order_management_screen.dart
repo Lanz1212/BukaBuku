@@ -6,6 +6,7 @@ import '../widgets/order_card.dart';
 import '../widgets/order_status_chip.dart';
 import '../widgets/order_summary_bar.dart';
 import 'admin_order_detail_screen.dart';
+import '../../scan_qr_pickup/screens/scan_qr_pickup_screen.dart';
 
 class OrderManagementScreen extends StatefulWidget {
   const OrderManagementScreen({super.key});
@@ -144,92 +145,20 @@ class _OrderManagementScreenState extends State<OrderManagementScreen> {
     }
   }
 
-  void _showQrScanPickupDialog(AdminOrderDetail order) {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: AppColors.surfaceContainerLowest,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (ctx) => Padding(
-        padding: const EdgeInsets.all(24.0),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 56,
-              height: 56,
-              decoration: BoxDecoration(
-                color: AppColors.success.withValues(alpha: 0.15),
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: const Icon(
-                Icons.qr_code_scanner_rounded,
-                color: AppColors.success,
-                size: 30,
-              ),
-            ),
-            const SizedBox(height: 16),
-            Text(
-              'Validasi Penyerahan Buku',
-              style: AppTypography.titleMd.copyWith(
-                fontWeight: FontWeight.w700,
-                color: AppColors.onSurface,
-              ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              'Pesanan #${order.orderId} • ${order.customerName}',
-              style: AppTypography.bodyMd.copyWith(
-                color: AppColors.onSurfaceVariant,
-              ),
-            ),
-            if (order.pickupCode != null) ...[
-              const SizedBox(height: 12),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                decoration: BoxDecoration(
-                  color: AppColors.surfaceContainerHigh,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Text(
-                  'Kode Pickup: ${order.pickupCode}',
-                  style: AppTypography.titleMd.copyWith(
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: 1.2,
-                    color: AppColors.primary,
-                  ),
-                ),
-              ),
-            ],
-            const SizedBox(height: 20),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.success,
-                foregroundColor: Colors.white,
-                minimumSize: const Size.fromHeight(46),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-              onPressed: () {
-                Navigator.pop(ctx);
-                _updateOrderStatus(order.orderId, AdminOrderStatus.selesai);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(
-                      'Buku #${order.orderId} telah diserahkan & status pesanan Selesai!',
-                    ),
-                    behavior: SnackBarBehavior.floating,
-                  ),
-                );
-              },
-              child: const Text('Konfirmasi Serah Terima Buku'),
-            ),
-          ],
+  void _showQrScanPickupDialog(AdminOrderDetail order) async {
+    final result = await Navigator.of(context).push<dynamic>(
+      MaterialPageRoute(
+        builder: (_) => ScanQrPickupScreen(
+          preloadedOrder: order,
         ),
       ),
     );
+
+    if (result is AdminOrderDetail) {
+      _updateOrderStatus(order.orderId, result.status);
+    } else if (result == true) {
+      _updateOrderStatus(order.orderId, AdminOrderStatus.selesai);
+    }
   }
 
   void _showCourierTrackingDialog(AdminOrderDetail order) {
