@@ -6,6 +6,8 @@ import '../widgets/admin_shift_card.dart';
 import '../widgets/admin_info_tile.dart';
 import '../widgets/admin_section_header.dart';
 import '../../store_settings/screens/store_settings_screen.dart';
+import '../../../auth/login_screen.dart';
+import '../../../auth/services/auth_service.dart';
 
 /// Admin Profile & System Settings Screen (Tab 4 in Admin Panel)
 /// Matches design from Stitch Toko Buku Budi Mobile UI & DESIGN.md
@@ -59,13 +61,14 @@ class AdminProfileScreen extends StatelessWidget {
             ),
           ),
           ElevatedButton(
-            onPressed: () {
+            onPressed: () async {
               Navigator.of(ctx).pop();
-              if (onExitAdmin != null) {
-                onExitAdmin!();
-              } else {
-                Navigator.of(context).pop();
-              }
+              await AuthService.signOut();
+              if (!context.mounted) return;
+              Navigator.of(context).pushAndRemoveUntil(
+                MaterialPageRoute(builder: (_) => const LoginScreen()),
+                (route) => false,
+              );
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.error,

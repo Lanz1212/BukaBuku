@@ -18,6 +18,8 @@ import '../widgets/profile_stats_row.dart';
 import 'edit_profile_screen.dart';
 import 'shipping_address_screen.dart';
 import '../../admin/shared/screens/admin_main_screen.dart';
+import '../../auth/login_screen.dart';
+import '../../auth/services/auth_service.dart';
 
 /// Main Profile Screen for Toko Buku Budi
 /// Follows DESIGN.md, AppColors, AppTypography, and Stitch Toko Buku Budi Mobile UI.
@@ -86,17 +88,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
           ),
           ElevatedButton(
-            onPressed: () {
+            onPressed: () async {
               Navigator.pop(ctx);
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: const Text('Anda telah berhasil keluar dari akun.'),
-                  behavior: SnackBarBehavior.floating,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  duration: const Duration(seconds: 2),
+              await AuthService.signOut();
+              if (!mounted) return;
+              Navigator.pushAndRemoveUntil(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const LoginScreen(),
                 ),
+                (route) => false,
               );
             },
             style: ElevatedButton.styleFrom(

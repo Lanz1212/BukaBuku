@@ -2,12 +2,15 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_typography.dart';
+import '../admin/shared/screens/admin_main_screen.dart';
 import 'register_screen.dart';
 import 'forgot_password_screen.dart';
 import '../home/home_screen.dart';
+import 'services/auth_service.dart';
 
 /// Login Page — Toko Buku Budi
 /// Design: DESIGN.md | AppColors | AppTypography
@@ -23,6 +26,7 @@ class _LoginScreenState extends State<LoginScreen> {
   final _passwordController = TextEditingController();
   bool _obscurePassword = true;
   bool _rememberMe = true;
+  bool _isLoading = false;
 
   @override
   void dispose() {
@@ -331,43 +335,121 @@ Widget _buildLogo() {
     );
   }
 
+  // ─── Login Actions & Validation ─────────────────────────────────────────────
+
+  void _showError(String message) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: AppColors.error,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      ),
+    );
+  }
+
+  String _translateAuthError(String message) {
+    final lower = message.toLowerCase();
+    if (lower.contains('invalid login credentials') || lower.contains('invalid_credentials')) {
+      return 'Email atau kata sandi tidak sesuai.';
+    }
+    if (lower.contains('email not confirmed')) {
+      return 'Email belum diverifikasi. Silakan periksa kotak masuk email Anda.';
+    }
+    if (lower.contains('too many requests')) {
+      return 'Terlalu banyak percobaan masuk. Coba lagi beberapa saat.';
+    }
+    return 'Gagal masuk: $message';
+  }
+
+  Future<void> _handleLogin() async {
+    final email = _emailController.text.trim();
+    final password = _passwordController.text;
+
+    if (email.isEmpty || password.isEmpty) {
+      _showError('Email dan kata sandi wajib diisi.');
+      return;
+    }
+
+    if (!email.contains('@')) {
+      _showError('Format email tidak valid.');
+      return;
+    }
+
+    setState(() => _isLoading = true);
+
+    try {
+      await AuthService.signIn(email: email, password: password);
+
+      // Ambil role akun dari profiles
+      final role = await AuthService.getCurrentUserRole();
+
+      if (!mounted) return;
+
+      if (role == 'admin') {
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(builder: (context) => const AdminMainScreen()),
+          (route) => false,
+        );
+      } else {
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(builder: (context) => const HomeScreen()),
+          (route) => false,
+        );
+      }
+    } on AuthException catch (e) {
+      _showError(_translateAuthError(e.message));
+    } catch (e) {
+      _showError('Terjadi kesalahan saat masuk: ${e.toString()}');
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
+  }
+
   // ─── Login Button ─────────────────────────────────────────────────────────────
 
   Widget _buildLoginButton() {
     return SizedBox(
       height: 50,
       child: ElevatedButton(
-        onPressed: () {
-          Navigator.pushAndRemoveUntil(
-            context,
-            MaterialPageRoute(
-              builder: (context) => const HomeScreen(),
-            ),
-            (route) => false,
-          );
-        },
+        onPressed: _isLoading ? null : _handleLogin,
         style: ElevatedButton.styleFrom(
           backgroundColor: AppColors.primaryContainer,
           foregroundColor: AppColors.onPrimary,
           elevation: 0,
           shadowColor: Colors.transparent,
+          disabledBackgroundColor: AppColors.primaryContainer.withValues(alpha: 0.6),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
           ),
         ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              'Masuk ke Akun',
-              style: AppTypography.labelLg.copyWith(
-                color: AppColors.onPrimary,
+        child: _isLoading
+            ? const SizedBox(
+                width: 22,
+                height: 22,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2.5,
+                  valueColor: AlwaysStoppedAnimation<Color>(AppColors.onPrimary),
+                ),
+              )
+            : Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    'Masuk ke Akun',
+                    style: AppTypography.labelLg.copyWith(
+                      color: AppColors.onPrimary,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  const Icon(Icons.arrow_forward_rounded, size: 18),
+                ],
               ),
-            ),
-            const SizedBox(width: 8),
-            const Icon(Icons.arrow_forward_rounded, size: 18),
-          ],
-        ),
       ),
     );
   }

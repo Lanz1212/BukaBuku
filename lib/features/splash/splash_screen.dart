@@ -4,6 +4,9 @@ import 'package:flutter/material.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_typography.dart';
 import '../onboarding/onboarding_1_screen.dart';
+import '../admin/shared/screens/admin_main_screen.dart';
+import '../home/home_screen.dart';
+import '../auth/services/auth_service.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -24,12 +27,27 @@ class _SplashScreenState extends State<SplashScreen>
       duration: const Duration(milliseconds: 1200),
     )..repeat();
 
-    Timer(const Duration(seconds: 3), () {
-      if (mounted) {
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (context) => const Onboarding1Screen()),
-        );
+    Timer(const Duration(seconds: 2), () async {
+      if (!mounted) return;
+      if (AuthService.isLoggedIn) {
+        final role = await AuthService.getCurrentUserRole();
+        if (!mounted) return;
+        if (role == 'admin') {
+          Navigator.of(context).pushReplacement(
+            MaterialPageRoute(builder: (context) => const AdminMainScreen()),
+          );
+          return;
+        } else {
+          Navigator.of(context).pushReplacement(
+            MaterialPageRoute(builder: (context) => const HomeScreen()),
+          );
+          return;
+        }
       }
+
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(builder: (context) => const Onboarding1Screen()),
+      );
     });
   }
 

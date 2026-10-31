@@ -2,10 +2,12 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_typography.dart';
-import '../home/home_screen.dart';
+import 'login_screen.dart';
+import 'services/auth_service.dart';
 
 /// Register Page — Toko Buku Budi
 /// Design: DESIGN.md | AppColors | AppTypography
@@ -26,6 +28,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
   bool _agreeToTerms = false;
+  bool _isLoading = false;
 
   @override
   void dispose() {
@@ -425,44 +428,148 @@ class _RegisterScreenState extends State<RegisterScreen> {
     );
   }
 
+  // ─── Register Actions & Validation ──────────────────────────────────────────
+
+  void _showError(String message) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: AppColors.error,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      ),
+    );
+  }
+
+  String _translateAuthError(String message) {
+    final lower = message.toLowerCase();
+    if (lower.contains('already registered') || lower.contains('already been registered')) {
+      return 'Email ini sudah terdaftar. Silakan langsung masuk.';
+    }
+    if (lower.contains('invalid email')) {
+      return 'Format email tidak valid.';
+    }
+    if (lower.contains('password') && (lower.contains('weak') || lower.contains('least') || lower.contains('short'))) {
+      return 'Kata sandi minimal 8 karakter.';
+    }
+    return 'Pendaftaran gagal: $message';
+  }
+
+  Future<void> _handleRegister() async {
+    final name = _nameController.text.trim();
+    final email = _emailController.text.trim();
+    final phone = _phoneController.text.trim();
+    final password = _passwordController.text;
+    final confirmPassword = _confirmPasswordController.text;
+    final address = _addressController.text.trim();
+
+    if (name.isEmpty || email.isEmpty || phone.isEmpty || password.isEmpty || confirmPassword.isEmpty || address.isEmpty) {
+      _showError('Semua kolom formulir wajib diisi.');
+      return;
+    }
+
+    if (!email.contains('@') || !email.contains('.')) {
+      _showError('Format email tidak valid.');
+      return;
+    }
+
+    if (password.length < 8) {
+      _showError('Kata sandi minimal 8 karakter.');
+      return;
+    }
+
+    if (password != confirmPassword) {
+      _showError('Kata sandi dan konfirmasi kata sandi tidak cocok.');
+      return;
+    }
+
+    if (!_agreeToTerms) {
+      _showError('Silakan setujui Syarat & Ketentuan terlebih dahulu.');
+      return;
+    }
+
+    setState(() => _isLoading = true);
+
+    try {
+      await AuthService.signUp(
+        email: email,
+        password: password,
+        fullName: name,
+        phone: phone,
+        addresses: address,
+      );
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('Pendaftaran berhasil! Silakan masuk ke akun Anda.'),
+          backgroundColor: AppColors.success,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+          duration: const Duration(seconds: 3),
+        ),
+      );
+
+      if (Navigator.canPop(context)) {
+        Navigator.pop(context);
+      } else {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const LoginScreen()),
+        );
+      }
+    } on AuthException catch (e) {
+      _showError(_translateAuthError(e.message));
+    } catch (e) {
+      _showError('Terjadi kesalahan saat mendaftar: ${e.toString()}');
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
+  }
+
   // ─── Register Button ───────────────────────────────────────────────────────────
 
   Widget _buildRegisterButton() {
     return SizedBox(
       height: 50,
       child: ElevatedButton(
-        onPressed: () {
-          // Navigate to home after successful registration
-          Navigator.pushAndRemoveUntil(
-            context,
-            MaterialPageRoute(
-              builder: (context) => const HomeScreen(),
-            ),
-            (route) => false,
-          );
-        },
+        onPressed: _isLoading ? null : _handleRegister,
         style: ElevatedButton.styleFrom(
           backgroundColor: AppColors.primaryContainer,
           foregroundColor: AppColors.onPrimary,
           elevation: 0,
           shadowColor: Colors.transparent,
+          disabledBackgroundColor: AppColors.primaryContainer.withValues(alpha: 0.6),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
           ),
         ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              'Daftar Akun',
-              style: AppTypography.labelLg.copyWith(
-                color: AppColors.onPrimary,
+        child: _isLoading
+            ? const SizedBox(
+                width: 22,
+                height: 22,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2.5,
+                  valueColor: AlwaysStoppedAnimation<Color>(AppColors.onPrimary),
+                ),
+              )
+            : Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    'Daftar Akun',
+                    style: AppTypography.labelLg.copyWith(
+                      color: AppColors.onPrimary,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  const Icon(Icons.arrow_forward_rounded, size: 18),
+                ],
               ),
-            ),
-            const SizedBox(width: 8),
-            const Icon(Icons.arrow_forward_rounded, size: 18),
-          ],
-        ),
       ),
     );
   }

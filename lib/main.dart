@@ -1,10 +1,17 @@
 //test push pakai laptop rendra
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'core/constants/supabase_constants.dart';
 import 'features/splash/splash_screen.dart';
 import 'core/theme/app_colors.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Supabase.initialize(
+    url: SupabaseConstants.supabaseUrl,
+    publishableKey: SupabaseConstants.supabaseAnonKey,
+  );
   runApp(const MyApp());
 }
 
