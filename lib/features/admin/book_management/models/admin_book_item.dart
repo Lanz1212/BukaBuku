@@ -11,6 +11,8 @@ class AdminBookItem {
   final String isbn;
   final int price;
   final int stock;
+  final int minStock;
+  final String rackCode;
   final String rackLocation;
   final AdminBookStatus status;
   final bool isActive;
@@ -19,6 +21,10 @@ class AdminBookItem {
   final String? publisher;
   final int? publishYear;
   final String? description;
+  final String format;
+  final int pageCount;
+  final double rating;
+  final int reviewCount;
 
   const AdminBookItem({
     required this.id,
@@ -27,6 +33,8 @@ class AdminBookItem {
     required this.isbn,
     required this.price,
     required this.stock,
+    this.minStock = 5,
+    this.rackCode = '',
     required this.rackLocation,
     required this.status,
     required this.isActive,
@@ -35,6 +43,10 @@ class AdminBookItem {
     this.publisher,
     this.publishYear,
     this.description,
+    this.format = 'Softcover',
+    this.pageCount = 0,
+    this.rating = 4.8,
+    this.reviewCount = 0,
   });
 
   AdminBookItem copyWith({
@@ -44,6 +56,8 @@ class AdminBookItem {
     String? isbn,
     int? price,
     int? stock,
+    int? minStock,
+    String? rackCode,
     String? rackLocation,
     AdminBookStatus? status,
     bool? isActive,
@@ -52,23 +66,109 @@ class AdminBookItem {
     String? publisher,
     int? publishYear,
     String? description,
+    String? format,
+    int? pageCount,
+    double? rating,
+    int? reviewCount,
   }) {
+    final updatedStock = stock ?? this.stock;
+    final updatedMinStock = minStock ?? this.minStock;
+
+    AdminBookStatus resolvedStatus = status ?? this.status;
+    if (status == null && stock != null) {
+      if (updatedStock <= 0) {
+        resolvedStatus = AdminBookStatus.outOfStock;
+      } else if (updatedStock <= updatedMinStock) {
+        resolvedStatus = AdminBookStatus.menipis;
+      } else {
+        resolvedStatus = AdminBookStatus.tersedia;
+      }
+    }
+
     return AdminBookItem(
       id: id ?? this.id,
       title: title ?? this.title,
       author: author ?? this.author,
       isbn: isbn ?? this.isbn,
       price: price ?? this.price,
-      stock: stock ?? this.stock,
+      stock: updatedStock,
+      minStock: updatedMinStock,
+      rackCode: rackCode ?? this.rackCode,
       rackLocation: rackLocation ?? this.rackLocation,
-      status: status ?? this.status,
+      status: resolvedStatus,
       isActive: isActive ?? this.isActive,
       category: category ?? this.category,
       coverUrl: coverUrl ?? this.coverUrl,
       publisher: publisher ?? this.publisher,
       publishYear: publishYear ?? this.publishYear,
       description: description ?? this.description,
+      format: format ?? this.format,
+      pageCount: pageCount ?? this.pageCount,
+      rating: rating ?? this.rating,
+      reviewCount: reviewCount ?? this.reviewCount,
     );
+  }
+
+  factory AdminBookItem.fromMap(Map<String, dynamic> map) {
+    final stockVal = (map['stock'] as num?)?.toInt() ?? 0;
+    final minStockVal = (map['min_stock'] as num?)?.toInt() ?? 5;
+
+    AdminBookStatus status;
+    if (stockVal <= 0) {
+      status = AdminBookStatus.outOfStock;
+    } else if (stockVal <= minStockVal) {
+      status = AdminBookStatus.menipis;
+    } else {
+      status = AdminBookStatus.tersedia;
+    }
+
+    return AdminBookItem(
+      id: map['id']?.toString() ?? '',
+      title: map['title'] as String? ?? '',
+      author: map['author'] as String? ?? '',
+      isbn: map['isbn'] as String? ?? '',
+      price: (map['price'] as num?)?.toInt() ?? 0,
+      stock: stockVal,
+      minStock: minStockVal,
+      rackCode: map['rack_code'] as String? ?? '',
+      rackLocation: map['rack_location'] as String? ?? '',
+      status: status,
+      isActive: map['is_active'] as bool? ?? true,
+      category: map['category'] as String? ?? 'Umum',
+      coverUrl: map['cover_url'] as String? ?? '',
+      publisher: map['publisher'] as String?,
+      publishYear: (map['publish_year'] as num?)?.toInt(),
+      description: map['description'] as String?,
+      format: map['format'] as String? ?? 'Softcover',
+      pageCount: (map['page_count'] as num?)?.toInt() ?? 0,
+      rating: (map['rating'] as num?)?.toDouble() ?? 4.8,
+      reviewCount: (map['review_count'] as num?)?.toInt() ?? 0,
+    );
+  }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'id': id,
+      'title': title,
+      'author': author,
+      'isbn': isbn,
+      'price': price,
+      'stock': stock,
+      'min_stock': minStock,
+      'rack_code': rackCode,
+      'rack_location': rackLocation,
+      'is_active': isActive,
+      'category': category,
+      'cover_url': coverUrl,
+      'publisher': publisher,
+      'publish_year': publishYear,
+      'description': description,
+      'format': format,
+      'page_count': pageCount,
+      'rating': rating,
+      'review_count': reviewCount,
+      'updated_at': DateTime.now().toIso8601String(),
+    };
   }
 
   static List<AdminBookItem> get mockBooks => [
@@ -79,7 +179,7 @@ class AdminBookItem {
           isbn: '978-602-06-3317-6',
           price: 85000,
           stock: 3,
-          rackLocation: 'G-04',
+          rackLocation: 'Rak B2 • Bisnis & Self-Help (Lantai 1)',
           status: AdminBookStatus.menipis,
           isActive: true,
           category: 'Pengembangan Diri',
@@ -97,7 +197,7 @@ class AdminBookItem {
           isbn: '978-602-412-518-9',
           price: 98000,
           stock: 14,
-          rackLocation: 'E-02',
+          rackLocation: 'Rak B1 • Filsafat & Psikologi (Lantai 1)',
           status: AdminBookStatus.tersedia,
           isActive: true,
           category: 'Non-Fiksi',
@@ -107,78 +207,6 @@ class AdminBookItem {
               'Penerapan filsafat Stoisisme kuno untuk mental tangguh di era modern yang penuh tantangan.',
           coverUrl:
               'https://images.unsplash.com/photo-1497633762265-9d179a990aa6?auto=format&fit=crop&q=80&w=400',
-        ),
-        const AdminBookItem(
-          id: 'B003',
-          title: 'Laut Bercerita',
-          author: 'Leila S. Chudori',
-          isbn: '978-602-424-694-5',
-          price: 105000,
-          stock: 2,
-          rackLocation: 'F-12',
-          status: AdminBookStatus.menipis,
-          isActive: true,
-          category: 'Novel',
-          publisher: 'Kepustakaan Populer Gramedia',
-          publishYear: 2017,
-          description:
-              'Kisah persahabatan, cinta, dan kehilangan para aktivis mahasiswa di masa pergolakan politik 1998.',
-          coverUrl:
-              'https://images.unsplash.com/photo-1512820790803-83ca734da794?auto=format&fit=crop&q=80&w=400',
-        ),
-        const AdminBookItem(
-          id: 'B004',
-          title: 'Sapiens: Riwayat Umat Manusia',
-          author: 'Yuval Noah Harari',
-          isbn: '978-602-444-180-7',
-          price: 125000,
-          stock: 0,
-          rackLocation: 'C-01',
-          status: AdminBookStatus.outOfStock,
-          isActive: false,
-          category: 'Non-Fiksi',
-          publisher: 'Kepustakaan Populer Gramedia',
-          publishYear: 2014,
-          description:
-              'Penjelajahan sejarah evolusi Homo sapiens dari kera tak berarti hingga menjadi penguasa bumi.',
-          coverUrl:
-              'https://images.unsplash.com/photo-1495446815901-a7297e633e8d?auto=format&fit=crop&q=80&w=400',
-        ),
-        const AdminBookItem(
-          id: 'B005',
-          title: 'Pulang',
-          author: 'Tere Liye',
-          isbn: '978-602-082-212-9',
-          price: 89000,
-          stock: 22,
-          rackLocation: 'A-01',
-          status: AdminBookStatus.tersedia,
-          isActive: true,
-          category: 'Novel',
-          publisher: 'Republika Penerbit',
-          publishYear: 2015,
-          description:
-              'Kisah tentang perjalanan pulang seorang anak petarung bayangan menyusuri arti sejati kehidupan.',
-          coverUrl:
-              'https://images.unsplash.com/photo-1476275466078-4007374efbbe?auto=format&fit=crop&q=80&w=400',
-        ),
-        const AdminBookItem(
-          id: 'B006',
-          title: 'Si Anak Singkong',
-          author: 'Chairul Tanjung',
-          isbn: '978-979-709-650-2',
-          price: 75000,
-          stock: 8,
-          rackLocation: 'D-05',
-          status: AdminBookStatus.tersedia,
-          isActive: true,
-          category: 'Non-Fiksi',
-          publisher: 'Kompas Gramedia',
-          publishYear: 2012,
-          description:
-              'Biografi inspiratif perjalanan hidup Chairul Tanjung dari masa kecil penuh keterbatasan hingga sukses.',
-          coverUrl:
-              'https://images.unsplash.com/photo-1532012164546-f432f2e3777f?auto=format&fit=crop&q=80&w=400',
         ),
       ];
 }

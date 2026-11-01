@@ -39,6 +39,80 @@ class AdminCategoryItem {
     );
   }
 
+  factory AdminCategoryItem.fromMap(
+    Map<String, dynamic> map, {
+    int bookCount = 0,
+  }) {
+    final code = map['code'] as String? ?? '';
+    final imageUrl = map['image_url'] as String?;
+
+    return AdminCategoryItem(
+      id: map['id']?.toString() ?? '',
+      name: map['name'] as String? ?? '',
+      code: code,
+      rackLocation: map['rack_location'] as String? ?? '',
+      floor: map['floor'] as int? ?? 1,
+      bookCount: bookCount,
+      icon: iconFromIdentifier(imageUrl, code: code),
+    );
+  }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'name': name,
+      'code': code,
+      'rack_location': rackLocation,
+      'floor': floor,
+      'image_url': identifierFromIcon(icon),
+    };
+  }
+
+  static const Map<String, IconData> _iconMap = {
+    'auto_stories': Icons.auto_stories_rounded,
+    'menu_book': Icons.menu_book_rounded,
+    'school': Icons.school_rounded,
+    'computer': Icons.computer_rounded,
+    'trending_up': Icons.trending_up_rounded,
+    'psychology': Icons.psychology_rounded,
+    'import_contacts': Icons.import_contacts_rounded,
+    'toys': Icons.toys_rounded,
+    'science': Icons.science_rounded,
+    'palette': Icons.palette_rounded,
+    'history_edu': Icons.history_edu_rounded,
+    'public': Icons.public_rounded,
+  };
+
+  static IconData iconFromIdentifier(String? identifier, {String? code}) {
+    if (identifier != null && identifier.startsWith('icon:')) {
+      final key = identifier.substring(5);
+      if (_iconMap.containsKey(key)) {
+        return _iconMap[key]!;
+      }
+    }
+
+    final c = (code ?? '').toUpperCase();
+    if (c.contains('NVL')) return Icons.auto_stories_rounded;
+    if (c.contains('KMK')) return Icons.menu_book_rounded;
+    if (c.contains('PDK')) return Icons.school_rounded;
+    if (c.contains('TEK')) return Icons.computer_rounded;
+    if (c.contains('BSN')) return Icons.trending_up_rounded;
+    if (c.contains('PSI') || c.contains('SLF')) return Icons.psychology_rounded;
+    if (c.contains('AGM') || c.contains('FLS')) return Icons.import_contacts_rounded;
+    if (c.contains('ANK')) return Icons.toys_rounded;
+    if (c.contains('SJR')) return Icons.history_edu_rounded;
+
+    return Icons.auto_stories_rounded;
+  }
+
+  static String identifierFromIcon(IconData icon) {
+    for (final entry in _iconMap.entries) {
+      if (entry.value == icon) {
+        return 'icon:${entry.key}';
+      }
+    }
+    return 'icon:auto_stories';
+  }
+
   static List<AdminCategoryItem> get mockCategories => [
         const AdminCategoryItem(
           id: 'cat-01',

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
+import '../../../../core/services/book_service.dart';
 import '../models/admin_book_item.dart';
 import '../widgets/book_form_cover_upload.dart';
 
@@ -24,23 +25,23 @@ class _AddBookScreenState extends State<AddBookScreen> {
   late final TextEditingController _isbnController;
   late final TextEditingController _priceController;
   late final TextEditingController _stockController;
-  late final TextEditingController _rackController;
+  late final TextEditingController _rackCodeController;
+  late final TextEditingController _rackLocationController;
+  late final TextEditingController _pageCountController;
   late final TextEditingController _descriptionController;
 
   String? _selectedCategory;
+  String? _selectedFormat;
   String? _coverUrl;
   int _charCount = 0;
+  bool _isSaving = false;
+  List<String> _categoryOptions = [];
+  bool _isCategoriesLoading = true;
 
-  final List<String> _categories = const [
-    'Pengembangan Diri',
-    'Novel & Sastra',
-    'Non-Fiksi',
-    'Komik & Grafis',
-    'Bisnis & Finansial',
-    'Filsafat & Pemikiran',
-    'Sejarah & Budaya',
-    'Buku Anak',
-    'Pendidikan',
+  final List<String> _formats = const [
+    'Softcover',
+    'Hardcover',
+    'E-Book',
   ];
 
   final List<String> _presetCovers = const [
@@ -70,21 +71,78 @@ class _AddBookScreenState extends State<AddBookScreen> {
     _stockController = TextEditingController(
       text: book != null ? '${book.stock}' : '',
     );
-    _rackController = TextEditingController(text: book?.rackLocation ?? '');
+    _rackCodeController = TextEditingController(text: book?.rackCode ?? '');
+    _rackLocationController =
+        TextEditingController(text: book?.rackLocation ?? '');
+    _pageCountController = TextEditingController(
+      text: (book != null && book.pageCount > 0) ? '${book.pageCount}' : '',
+    );
+
+    // Guard format value against strings like "Softcover • 356 Hal."
+    final rawFormat = book?.format.trim() ?? '';
+    if (_formats.contains(rawFormat)) {
+      _selectedFormat = rawFormat;
+    } else if (rawFormat.toLowerCase().contains('hard')) {
+      _selectedFormat = 'Hardcover';
+    } else if (rawFormat.toLowerCase().contains('e-book') ||
+        rawFormat.toLowerCase().contains('ebook')) {
+      _selectedFormat = 'E-Book';
+    } else {
+      _selectedFormat = 'Softcover';
+    }
+
     _descriptionController =
         TextEditingController(text: book?.description ?? '');
 
     _coverUrl = book?.coverUrl;
     _charCount = _descriptionController.text.length;
 
-    if (book != null) {
-      if (_categories.contains(book.category)) {
-        _selectedCategory = book.category;
-      } else if (book.category == 'Novel') {
-        _selectedCategory = 'Novel & Sastra';
-      } else {
-        _selectedCategory = 'Pengembangan Diri';
+    if (book != null && book.category.isNotEmpty) {
+      _selectedCategory = book.category;
+    }
+
+    _loadCategories();
+  }
+
+  Future<void> _loadCategories() async {
+    setState(() => _isCategoriesLoading = true);
+    try {
+      final list = await BookService.fetchCategoryNames();
+      if (!mounted) return;
+
+      final updatedOptions = List<String>.from(list);
+      if (_selectedCategory != null &&
+          _selectedCategory!.isNotEmpty &&
+          !updatedOptions.contains(_selectedCategory)) {
+        updatedOptions.insert(0, _selectedCategory!);
       }
+
+      setState(() {
+        _categoryOptions = updatedOptions;
+        _isCategoriesLoading = false;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      final fallback = [
+        'Pengembangan Diri',
+        'Novel & Sastra',
+        'Non-Fiksi',
+        'Komik & Manga',
+        'Bisnis & Finansial',
+        'Filsafat & Pemikiran',
+        'Sejarah & Budaya',
+        'Buku Anak',
+        'Pendidikan',
+      ];
+      if (_selectedCategory != null &&
+          _selectedCategory!.isNotEmpty &&
+          !fallback.contains(_selectedCategory)) {
+        fallback.insert(0, _selectedCategory!);
+      }
+      setState(() {
+        _categoryOptions = fallback;
+        _isCategoriesLoading = false;
+      });
     }
   }
 
@@ -97,7 +155,9 @@ class _AddBookScreenState extends State<AddBookScreen> {
     _isbnController.dispose();
     _priceController.dispose();
     _stockController.dispose();
-    _rackController.dispose();
+    _rackCodeController.dispose();
+    _rackLocationController.dispose();
+    _pageCountController.dispose();
     _descriptionController.dispose();
     super.dispose();
   }
@@ -182,7 +242,7 @@ class _AddBookScreenState extends State<AddBookScreen> {
     );
   }
 
-  void _saveBook() {
+  Future<void> _saveBook() async {
     final title = _titleController.text.trim();
     final author = _authorController.text.trim();
     final priceText = _priceController.text.trim().replaceAll('.', '');
@@ -214,38 +274,57 @@ class _AddBookScreenState extends State<AddBookScreen> {
     final isbn = _isbnController.text.trim().isEmpty
         ? '978-602-00-0000-0'
         : _isbnController.text.trim();
-    final rack = _rackController.text.trim().isEmpty
-        ? 'A-01'
-        : _rackController.text.trim();
+    final rackCode = _rackCodeController.text.trim().isEmpty
+        ? 'Rak A1'
+        : _rackCodeController.text.trim();
+    final rackLocation = _rackLocationController.text.trim().isEmpty
+        ? rackCode
+        : _rackLocationController.text.trim();
+    final pageCount = int.tryParse(_pageCountController.text.trim()) ?? 0;
+    final format = _selectedFormat ?? 'Softcover';
 
-    AdminBookStatus status;
-    if (stock == 0) {
-      status = AdminBookStatus.outOfStock;
-    } else if (stock <= 3) {
-      status = AdminBookStatus.menipis;
-    } else {
-      status = AdminBookStatus.tersedia;
+    setState(() => _isSaving = true);
+
+    try {
+      final bookToSave = AdminBookItem(
+        id: widget.initialBook?.id ?? '',
+        title: title,
+        author: author,
+        isbn: isbn,
+        price: price,
+        stock: stock,
+        minStock: widget.initialBook?.minStock ?? 5,
+        rackCode: rackCode,
+        rackLocation: rackLocation,
+        format: format,
+        pageCount: pageCount,
+        status: stock == 0
+            ? AdminBookStatus.outOfStock
+            : (stock <= 5 ? AdminBookStatus.menipis : AdminBookStatus.tersedia),
+        isActive: widget.initialBook?.isActive ?? true,
+        category: _selectedCategory!,
+        publisher: _publisherController.text.trim().isNotEmpty
+            ? _publisherController.text.trim()
+            : 'Gramedia Pustaka',
+        publishYear: int.tryParse(_yearController.text.trim()) ?? 2024,
+        description: _descriptionController.text.trim(),
+        coverUrl: _coverUrl ?? _presetCovers[0],
+      );
+
+      AdminBookItem resultBook;
+      if (widget.initialBook == null) {
+        resultBook = await BookService.createBook(bookToSave);
+      } else {
+        resultBook = await BookService.updateBook(bookToSave);
+      }
+
+      if (!mounted) return;
+      Navigator.pop(context, resultBook);
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _isSaving = false);
+      _showNotice('Gagal menyimpan ke database: $e');
     }
-
-    final savedBook = AdminBookItem(
-      id: widget.initialBook?.id ??
-          'B${DateTime.now().millisecondsSinceEpoch.toString().substring(8)}',
-      title: title,
-      author: author,
-      isbn: isbn,
-      price: price,
-      stock: stock,
-      rackLocation: rack,
-      status: status,
-      isActive: widget.initialBook?.isActive ?? true,
-      category: _selectedCategory!,
-      publisher: _publisherController.text.trim(),
-      publishYear: int.tryParse(_yearController.text.trim()) ?? 2024,
-      description: _descriptionController.text.trim(),
-      coverUrl: _coverUrl ?? _presetCovers[0],
-    );
-
-    Navigator.pop(context, savedBook);
   }
 
   @override
@@ -541,6 +620,49 @@ class _AddBookScreenState extends State<AddBookScreen> {
               size: 20,
             ),
           ),
+          const SizedBox(height: 14),
+
+          // 2 Columns: Format Buku & Jumlah Halaman
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _buildFieldLabel('Format Buku'),
+                    const SizedBox(height: 6),
+                    _buildFormatDropdown(),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _buildFieldLabel('Jumlah Halaman'),
+                    const SizedBox(height: 6),
+                    _buildTextField(
+                      controller: _pageCountController,
+                      hintText: 'cth: 320',
+                      keyboardType: TextInputType.number,
+                      suffixWidget: Padding(
+                        padding: const EdgeInsets.only(right: 14),
+                        child: Text(
+                          'Hal',
+                          style: AppTypography.caption.copyWith(
+                            color: AppColors.outline,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ],
       ),
     );
@@ -644,21 +766,54 @@ class _AddBookScreenState extends State<AddBookScreen> {
           ),
           const SizedBox(height: 14),
 
-          // Lokasi Rak Toko
-          _buildFieldLabel('Lokasi Rak Toko'),
-          const SizedBox(height: 6),
-          _buildTextField(
-            controller: _rackController,
-            hintText: 'cth: Rak A3 - Utama Cikini',
-            prefixIcon: const Icon(
-              Icons.table_restaurant_outlined,
-              color: AppColors.outline,
-              size: 20,
-            ),
+          // 2 Columns: Kode Rak & Lokasi Fisik Rak
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                flex: 5,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _buildFieldLabel('Kode Rak'),
+                    const SizedBox(height: 6),
+                    _buildTextField(
+                      controller: _rackCodeController,
+                      hintText: 'cth: Rak A3',
+                      prefixIcon: const Icon(
+                        Icons.qr_code_rounded,
+                        color: AppColors.outline,
+                        size: 20,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                flex: 7,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _buildFieldLabel('Lokasi Fisik Rak'),
+                    const SizedBox(height: 6),
+                    _buildTextField(
+                      controller: _rackLocationController,
+                      hintText: 'cth: Rak A3 • Cikini (Lt 1)',
+                      prefixIcon: const Icon(
+                        Icons.table_restaurant_outlined,
+                        color: AppColors.outline,
+                        size: 20,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
           const SizedBox(height: 4),
           Text(
-            'Memudahkan staf fisik menemukan buku saat order online masuk.',
+            'Kode rak singkat untuk label, dan lokasi fisik lengkap memudahkan staf gerai.',
             style: AppTypography.caption.copyWith(
               color: AppColors.onSurfaceVariant,
               fontSize: 11,
@@ -806,25 +961,41 @@ class _AddBookScreenState extends State<AddBookScreen> {
 
           // Simpan Buku Button
           Expanded(
-            child: ElevatedButton.icon(
-              onPressed: _saveBook,
+            child: ElevatedButton(
+              onPressed: _isSaving ? null : _saveBook,
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primaryContainer,
                 foregroundColor: AppColors.onPrimary,
+                disabledBackgroundColor: AppColors.primaryContainer.withValues(alpha: 0.6),
                 elevation: 2,
                 fixedSize: const Size.fromHeight(50),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
               ),
-              icon: const Icon(Icons.check_circle_rounded, size: 20),
-              label: Text(
-                isEditing ? 'Perbarui Buku' : 'Simpan Buku',
-                style: AppTypography.labelLg.copyWith(
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.onPrimary,
-                ),
-              ),
+              child: _isSaving
+                  ? const SizedBox(
+                      width: 22,
+                      height: 22,
+                      child: CircularProgressIndicator(
+                        color: Colors.white,
+                        strokeWidth: 2.2,
+                      ),
+                    )
+                  : Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(Icons.check_circle_rounded, size: 20),
+                        const SizedBox(width: 8),
+                        Text(
+                          isEditing ? 'Perbarui Buku' : 'Simpan Buku',
+                          style: AppTypography.labelLg.copyWith(
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.onPrimary,
+                          ),
+                        ),
+                      ],
+                    ),
             ),
           ),
         ],
@@ -904,6 +1075,83 @@ class _AddBookScreenState extends State<AddBookScreen> {
   }
 
   Widget _buildCategoryDropdown() {
+    final effectiveCategory = (_selectedCategory != null &&
+            _categoryOptions.contains(_selectedCategory))
+        ? _selectedCategory
+        : null;
+
+    return Container(
+      height: 50,
+      padding: const EdgeInsets.symmetric(horizontal: 12),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceContainerLow,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: _isCategoriesLoading
+          ? Row(
+              children: [
+                const SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                ),
+                const SizedBox(width: 10),
+                Text(
+                  'Memuat kategori...',
+                  style: AppTypography.bodyMd.copyWith(
+                    color: AppColors.outline,
+                    fontSize: 13,
+                  ),
+                ),
+              ],
+            )
+          : DropdownButtonHideUnderline(
+              child: DropdownButton<String>(
+                value: effectiveCategory,
+                isExpanded: true,
+                hint: Text(
+                  'Pilih Kategori',
+                  style: AppTypography.bodyMd.copyWith(
+                    color: AppColors.outline,
+                    fontSize: 13,
+                  ),
+                ),
+                icon: const Icon(
+                  Icons.expand_more_rounded,
+                  color: AppColors.outline,
+                ),
+                style: AppTypography.bodyMd.copyWith(
+                  color: AppColors.onSurface,
+                ),
+                dropdownColor: AppColors.surfaceContainerLowest,
+                borderRadius: BorderRadius.circular(12),
+                items: _categoryOptions.map((cat) {
+                  return DropdownMenuItem<String>(
+                    value: cat,
+                    child: Text(
+                      cat,
+                      style: AppTypography.bodyMd.copyWith(
+                        color: AppColors.onSurface,
+                      ),
+                    ),
+                  );
+                }).toList(),
+                onChanged: (val) {
+                  setState(() {
+                    _selectedCategory = val;
+                  });
+                },
+              ),
+            ),
+    );
+  }
+
+  Widget _buildFormatDropdown() {
+    final effectiveFormat =
+        (_selectedFormat != null && _formats.contains(_selectedFormat))
+            ? _selectedFormat
+            : _formats.first;
+
     return Container(
       height: 50,
       padding: const EdgeInsets.symmetric(horizontal: 12),
@@ -913,10 +1161,10 @@ class _AddBookScreenState extends State<AddBookScreen> {
       ),
       child: DropdownButtonHideUnderline(
         child: DropdownButton<String>(
-          value: _selectedCategory,
+          value: effectiveFormat,
           isExpanded: true,
           hint: Text(
-            'Pilih Kategori',
+            'Pilih Format',
             style: AppTypography.bodyMd.copyWith(
               color: AppColors.outline,
               fontSize: 13,
@@ -931,11 +1179,11 @@ class _AddBookScreenState extends State<AddBookScreen> {
           ),
           dropdownColor: AppColors.surfaceContainerLowest,
           borderRadius: BorderRadius.circular(12),
-          items: _categories.map((cat) {
+          items: _formats.map((fmt) {
             return DropdownMenuItem<String>(
-              value: cat,
+              value: fmt,
               child: Text(
-                cat,
+                fmt,
                 style: AppTypography.bodyMd.copyWith(
                   color: AppColors.onSurface,
                 ),
@@ -944,7 +1192,7 @@ class _AddBookScreenState extends State<AddBookScreen> {
           }).toList(),
           onChanged: (val) {
             setState(() {
-              _selectedCategory = val;
+              _selectedFormat = val;
             });
           },
         ),

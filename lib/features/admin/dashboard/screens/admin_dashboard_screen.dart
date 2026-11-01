@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
+import '../../../../core/services/book_service.dart';
 import '../models/admin_stat_item.dart';
 import '../models/admin_order_item.dart';
 import '../widgets/admin_stat_card.dart';
@@ -25,9 +26,50 @@ class AdminDashboardScreen extends StatefulWidget {
 }
 
 class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
-  final List<AdminStatItem> _stats = AdminStatItem.mockStats;
+  List<AdminStatItem> _stats = AdminStatItem.mockStats;
   final List<AdminRecentOrder> _orders = AdminRecentOrder.mockOrders;
-  final List<AdminLowStockItem> _lowStock = AdminLowStockItem.mockLowStock;
+  List<AdminLowStockItem> _lowStock = AdminLowStockItem.mockLowStock;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadDashboardData();
+  }
+
+  Future<void> _loadDashboardData() async {
+    try {
+      final summary = await BookService.fetchStockSummary();
+      final lowBooks = await BookService.fetchLowStockBooks(limit: 5);
+
+      if (mounted) {
+        setState(() {
+          final updatedStats = List<AdminStatItem>.from(_stats);
+          if (updatedStats.isNotEmpty) {
+            updatedStats[0] = AdminStatItem(
+              title: 'Total Buku',
+              value: '${summary['totalTitles'] ?? 0}',
+              unit: 'judul',
+              subtitle: '${summary['totalCopies'] ?? 0} total eksemplar',
+              icon: Icons.menu_book_outlined,
+            );
+          }
+          _stats = updatedStats;
+
+          if (lowBooks.isNotEmpty) {
+            _lowStock = lowBooks
+                .map((b) => AdminLowStockItem(
+                      title: b.title,
+                      author: b.author,
+                      stockLeft: b.stock,
+                      rackLocation: b.rackLocation,
+                      coverUrl: b.coverUrl,
+                    ))
+                .toList();
+          }
+        });
+      }
+    } catch (_) {}
+  }
 
   void _showNotice(String message) {
     ScaffoldMessenger.of(context).showSnackBar(

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../book_management/models/admin_book_item.dart';
 
 enum AdminStockStatus {
   tersedia,
@@ -36,6 +37,43 @@ class AdminStockItem {
     required this.status,
   });
 
+  factory AdminStockItem.fromBookItem(AdminBookItem book, {String lastSyncTime = 'Baru saja'}) {
+    AdminStockStatus status;
+    if (book.stock <= 0) {
+      status = AdminStockStatus.habis;
+    } else if (book.stock <= book.minStock) {
+      status = AdminStockStatus.menipis;
+    } else {
+      status = AdminStockStatus.tersedia;
+    }
+
+    final rackCode = book.rackCode.isNotEmpty
+        ? book.rackCode
+        : (book.rackLocation.contains('•')
+            ? book.rackLocation.split('•').first.trim()
+            : book.rackLocation);
+
+    return AdminStockItem(
+      bookId: book.id,
+      title: book.title,
+      author: book.author,
+      isbn: book.isbn,
+      rackCode: rackCode,
+      rackLocation: book.rackLocation,
+      coverUrl: book.coverUrl,
+      currentStock: book.stock,
+      minStock: book.minStock,
+      price: book.price,
+      lastSyncTime: lastSyncTime,
+      status: status,
+    );
+  }
+
+  factory AdminStockItem.fromMap(Map<String, dynamic> map, {String lastSyncTime = 'Baru saja'}) {
+    final book = AdminBookItem.fromMap(map);
+    return AdminStockItem.fromBookItem(book, lastSyncTime: lastSyncTime);
+  }
+
   AdminStockItem copyWith({
     String? bookId,
     String? title,
@@ -52,7 +90,7 @@ class AdminStockItem {
   }) {
     final updatedStock = currentStock ?? this.currentStock;
     final updatedMinStock = minStock ?? this.minStock;
-    
+
     // Auto calculate status if not explicitly passed
     AdminStockStatus calculatedStatus = status ?? this.status;
     if (status == null && currentStock != null) {
@@ -116,7 +154,7 @@ class AdminStockItem {
 
   static List<AdminStockItem> get mockItems => [
         const AdminStockItem(
-          bookId: 'stk-001',
+          bookId: 'B001',
           title: 'Atomic Habits',
           author: 'James Clear',
           isbn: '978-602-06-3317-6',
@@ -125,93 +163,9 @@ class AdminStockItem {
           coverUrl: 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=400&auto=format&fit=crop&q=80',
           currentStock: 14,
           minStock: 5,
-          price: 108000,
+          price: 85000,
           lastSyncTime: 'Baru saja',
           status: AdminStockStatus.tersedia,
-        ),
-        const AdminStockItem(
-          bookId: 'stk-002',
-          title: 'Filosofi Teras',
-          author: 'Henry Manampiring',
-          isbn: '978-602-412-518-9',
-          rackCode: 'Rak B1',
-          rackLocation: 'Rak B1 • Filsafat & Psikologi (Lantai 1)',
-          coverUrl: 'https://images.unsplash.com/photo-1512820790803-83ca734da794?w=400&auto=format&fit=crop&q=80',
-          currentStock: 3,
-          minStock: 5,
-          price: 98000,
-          lastSyncTime: '10 mnt lalu',
-          status: AdminStockStatus.menipis,
-        ),
-        const AdminStockItem(
-          bookId: 'stk-003',
-          title: 'Bumi Manusia',
-          author: 'Pramoedya Ananta Toer',
-          isbn: '978-979-97312-3-4',
-          rackCode: 'Rak A3',
-          rackLocation: 'Rak A3 • Sastra & Fiksi Sejarah (Lantai 1)',
-          coverUrl: 'https://images.unsplash.com/photo-1543002588-bfa74002ed7e?w=400&auto=format&fit=crop&q=80',
-          currentStock: 0,
-          minStock: 4,
-          price: 125000,
-          lastSyncTime: '30 mnt lalu',
-          status: AdminStockStatus.habis,
-        ),
-        const AdminStockItem(
-          bookId: 'stk-004',
-          title: 'Laut Bercerita',
-          author: 'Leila S. Chudori',
-          isbn: '978-602-424-694-5',
-          rackCode: 'Rak A1',
-          rackLocation: 'Rak A1 • Novel Best Seller (Lantai 1)',
-          coverUrl: 'https://images.unsplash.com/photo-1497633762265-9d179a990aa6?w=400&auto=format&fit=crop&q=80',
-          currentStock: 22,
-          minStock: 6,
-          price: 110000,
-          lastSyncTime: '1 jam lalu',
-          status: AdminStockStatus.tersedia,
-        ),
-        const AdminStockItem(
-          bookId: 'stk-005',
-          title: 'Psychology of Money',
-          author: 'Morgan Housel',
-          isbn: '978-602-06-4882-8',
-          rackCode: 'Rak B3',
-          rackLocation: 'Rak B3 • Keuangan & Investasi (Lantai 1)',
-          coverUrl: 'https://images.unsplash.com/photo-1592496431122-2349e0fbc666?w=400&auto=format&fit=crop&q=80',
-          currentStock: 2,
-          minStock: 5,
-          price: 95000,
-          lastSyncTime: '2 jam lalu',
-          status: AdminStockStatus.menipis,
-        ),
-        const AdminStockItem(
-          bookId: 'stk-006',
-          title: 'Sapiens: Riwayat Singkat Umat Manusia',
-          author: 'Yuval Noah Harari',
-          isbn: '978-602-424-416-3',
-          rackCode: 'Rak C2',
-          rackLocation: 'Rak C2 • Sejarah Dunia (Lantai 1)',
-          coverUrl: 'https://images.unsplash.com/photo-1495446815901-a7297e633e8d?w=400&auto=format&fit=crop&q=80',
-          currentStock: 8,
-          minStock: 4,
-          price: 135000,
-          lastSyncTime: '3 jam lalu',
-          status: AdminStockStatus.tersedia,
-        ),
-        const AdminStockItem(
-          bookId: 'stk-007',
-          title: 'Clean Code: Panduan Refactoring',
-          author: 'Robert C. Martin',
-          isbn: '978-0-13-235088-4',
-          rackCode: 'Rak D1',
-          rackLocation: 'Rak D1 • Teknologi & Coding (Lantai 2)',
-          coverUrl: 'https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=400&auto=format&fit=crop&q=80',
-          currentStock: 0,
-          minStock: 3,
-          price: 180000,
-          lastSyncTime: '4 jam lalu',
-          status: AdminStockStatus.habis,
         ),
       ];
 }

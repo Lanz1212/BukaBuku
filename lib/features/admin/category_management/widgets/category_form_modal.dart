@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
+import '../../../../core/services/book_service.dart';
 import '../models/admin_category_item.dart';
 
 class CategoryFormModal extends StatefulWidget {
@@ -40,6 +41,7 @@ class _CategoryFormModalState extends State<CategoryFormModal> {
   late TextEditingController _rackController;
   int _selectedFloor = 1;
   IconData _selectedIcon = Icons.auto_stories_rounded;
+  bool _isSaving = false;
 
   final List<IconData> _availableIcons = [
     Icons.auto_stories_rounded,
@@ -75,13 +77,11 @@ class _CategoryFormModalState extends State<CategoryFormModal> {
     super.dispose();
   }
 
-  void _handleSave() {
+  Future<void> _handleSave() async {
     if (!_formKey.currentState!.validate()) return;
 
     final isEdit = widget.initialCategory != null;
-    final id = isEdit
-        ? widget.initialCategory!.id
-        : 'cat-${DateTime.now().millisecondsSinceEpoch % 1000}';
+    final id = isEdit ? widget.initialCategory!.id : '';
     final bookCount = isEdit ? widget.initialCategory!.bookCount : 0;
 
     final item = AdminCategoryItem(
@@ -94,8 +94,26 @@ class _CategoryFormModalState extends State<CategoryFormModal> {
       icon: _selectedIcon,
     );
 
-    widget.onSaved(item);
-    Navigator.of(context).pop();
+    setState(() => _isSaving = true);
+    try {
+      final savedCat = isEdit
+          ? await BookService.updateCategory(item)
+          : await BookService.createCategory(item);
+
+      if (!mounted) return;
+      widget.onSaved(savedCat);
+      Navigator.of(context).pop();
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _isSaving = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Gagal menyimpan kategori: $e'),
+          backgroundColor: AppColors.error,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
   }
 
   @override
@@ -280,14 +298,23 @@ class _CategoryFormModalState extends State<CategoryFormModal> {
                         borderRadius: BorderRadius.circular(12),
                       ),
                     ),
-                    onPressed: _handleSave,
-                    child: Text(
-                      isEdit ? 'Simpan Perubahan' : 'Tambahkan Kategori',
-                      style: AppTypography.labelLg.copyWith(
-                        fontWeight: FontWeight.w700,
-                        color: AppColors.onPrimary,
-                      ),
-                    ),
+                    onPressed: _isSaving ? null : _handleSave,
+                    child: _isSaving
+                        ? const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                              color: Colors.white,
+                              strokeWidth: 2,
+                            ),
+                          )
+                        : Text(
+                            isEdit ? 'Simpan Perubahan' : 'Tambahkan Kategori',
+                            style: AppTypography.labelLg.copyWith(
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.onPrimary,
+                            ),
+                          ),
                   ),
                   const SizedBox(height: 8),
                   TextButton(

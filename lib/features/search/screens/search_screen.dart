@@ -8,6 +8,8 @@ import '../widgets/filter_bottom_sheet.dart';
 import '../widgets/search_empty_state.dart';
 import '../widgets/search_filter_chips.dart';
 import '../../book_detail/screens/book_detail_screen.dart';
+import '../../../core/services/book_service.dart';
+import '../../admin/book_management/models/admin_book_item.dart';
 
 /// Screen for searching and browsing books in Toko Buku Budi
 class SearchScreen extends StatefulWidget {
@@ -31,6 +33,7 @@ class _SearchScreenState extends State<SearchScreen> {
   RangeValues _priceRange = const RangeValues(50000, 150000);
   String _selectedStockOption = 'instock';
   bool _forceEmptyPreview = false;
+  List<AdminBookItem> _dbBooks = [];
 
   @override
   void initState() {
@@ -39,6 +42,18 @@ class _SearchScreenState extends State<SearchScreen> {
     _selectedCategories = widget.initialCategory != null
         ? {widget.initialCategory!}
         : (widget.initialQuery.isNotEmpty ? {'Self-Help'} : {'Psikologi', 'Pengembangan Diri'});
+    _loadDbBooks();
+  }
+
+  Future<void> _loadDbBooks() async {
+    try {
+      final books = await BookService.fetchBooks(onlyActive: true);
+      if (mounted) {
+        setState(() {
+          _dbBooks = books;
+        });
+      }
+    } catch (_) {}
   }
 
   @override
@@ -126,7 +141,10 @@ class _SearchScreenState extends State<SearchScreen> {
 
   List<BookSearchItem> get _displayBooks {
     final query = _searchController.text.trim().toLowerCase();
-    var list = BookSearchItem.defaultSearchItems.where((book) {
+    final sourceList = _dbBooks.isNotEmpty
+        ? _dbBooks.map((b) => BookSearchItem.fromAdminBookItem(b)).toList()
+        : BookSearchItem.defaultSearchItems;
+    var list = sourceList.where((book) {
       final matchesQuery = query.isEmpty ||
           book.title.toLowerCase().contains(query) ||
           book.author.toLowerCase().contains(query);

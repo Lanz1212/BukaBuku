@@ -180,11 +180,15 @@ class AdminLowStockSection extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(width: 8),
-                    Text(
-                      item.rackLocation,
-                      style: AppTypography.caption.copyWith(
-                        color: AppColors.onSurfaceVariant,
-                        fontSize: 11,
+                    Flexible(
+                      child: Text(
+                        item.rackLocation,
+                        style: AppTypography.caption.copyWith(
+                          color: AppColors.onSurfaceVariant,
+                          fontSize: 11,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ),
                   ],

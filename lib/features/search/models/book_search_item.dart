@@ -34,6 +34,41 @@ class BookSearchItem {
     required this.category,
   });
 
+  /// Factory helper from AdminBookItem / Database Model
+  factory BookSearchItem.fromAdminBookItem(dynamic book) {
+    StockStatus stockStatus;
+    String stockLabel;
+    final int stock = book.stock as int;
+    final int minStock = book.minStock as int;
+    if (stock <= 0) {
+      stockStatus = StockStatus.outOfStock;
+      stockLabel = 'Stok Habis';
+    } else if (stock <= minStock) {
+      stockStatus = StockStatus.limited;
+      stockLabel = 'Sisa $stock Buku';
+    } else {
+      stockStatus = StockStatus.inStock;
+      stockLabel = 'Stok Tersedia';
+    }
+
+    final priceStr = 'Rp${book.price.toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (m) => '${m[1]}.')}';
+
+    return BookSearchItem(
+      id: book.id as String,
+      title: book.title as String,
+      author: book.author as String,
+      price: priceStr,
+      priceValue: book.price as int,
+      rating: (book.rating as num).toDouble(),
+      reviewCount: '${book.reviewCount}',
+      coverUrl: book.coverUrl as String,
+      shelfLocation: book.rackLocation as String,
+      stockStatus: stockStatus,
+      stockLabel: stockLabel,
+      category: book.category as String,
+    );
+  }
+
   /// Sample dataset from Stitch Toko Buku Budi
   static const List<BookSearchItem> defaultSearchItems = [
     BookSearchItem(

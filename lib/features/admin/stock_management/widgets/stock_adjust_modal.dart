@@ -9,20 +9,29 @@ enum StockAdjustMode {
   setTotal,
 }
 
+typedef StockAdjustCallback = void Function(
+  AdminStockItem updatedItem,
+  String adjustmentType,
+  String notes,
+);
+
 class StockAdjustModal extends StatefulWidget {
   final AdminStockItem item;
   final ValueChanged<AdminStockItem> onSaved;
+  final StockAdjustCallback? onAdjustDetails;
 
   const StockAdjustModal({
     super.key,
     required this.item,
     required this.onSaved,
+    this.onAdjustDetails,
   });
 
   static Future<void> show({
     required BuildContext context,
     required AdminStockItem item,
     required ValueChanged<AdminStockItem> onSaved,
+    StockAdjustCallback? onAdjustDetails,
   }) {
     return showModalBottomSheet(
       context: context,
@@ -31,6 +40,7 @@ class StockAdjustModal extends StatefulWidget {
       builder: (ctx) => StockAdjustModal(
         item: item,
         onSaved: onSaved,
+        onAdjustDetails: onAdjustDetails,
       ),
     );
   }
@@ -87,6 +97,12 @@ class _StockAdjustModalState extends State<StockAdjustModal> {
       currentStock: _calculatedNewStock,
       lastSyncTime: 'Baru saja',
     );
+    final typeStr = _mode == StockAdjustMode.tambah
+        ? 'tambah'
+        : (_mode == StockAdjustMode.kurang ? 'kurang' : 'setTotal');
+    final notes = _notesController.text.trim();
+
+    widget.onAdjustDetails?.call(updated, typeStr, notes);
     widget.onSaved(updated);
     Navigator.of(context).pop();
   }

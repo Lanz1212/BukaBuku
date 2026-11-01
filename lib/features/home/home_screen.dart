@@ -4,6 +4,9 @@ import '../../core/theme/app_typography.dart';
 import '../category/screens/category_screen.dart';
 import '../search/screens/search_screen.dart';
 import '../book_detail/screens/book_detail_screen.dart';
+import '../book_detail/models/book_detail.dart';
+import '../../core/services/book_service.dart';
+import '../admin/book_management/models/admin_book_item.dart';
 import '../cart/screens/cart_screen.dart';
 import '../favorite/screens/favorite_screen.dart';
 import '../order/screens/order_list_screen.dart';
@@ -22,6 +25,30 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   int _selectedCategory = 0;
+  List<AdminBookItem> _books = [];
+  bool _isLoadingBooks = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadBooks();
+  }
+
+  Future<void> _loadBooks() async {
+    try {
+      final books = await BookService.fetchBooks(onlyActive: true);
+      if (mounted) {
+        setState(() {
+          _books = books;
+          _isLoadingBooks = false;
+        });
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() => _isLoadingBooks = false);
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -414,19 +441,31 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildFeaturedBooks() {
+    if (_isLoadingBooks) {
+      return const SizedBox(
+        height: 200,
+        child: Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    final featuredList = _books.take(6).toList();
+    if (featuredList.isEmpty) {
+      return const SizedBox(
+        height: 100,
+        child: Center(child: Text('Belum ada buku rekomendasi')),
+      );
+    }
+
     return SizedBox(
       height: 200,
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
-        itemCount: 5,
+        itemCount: featuredList.length,
         itemBuilder: (context, index) {
+          final book = featuredList[index];
           return Padding(
             padding: const EdgeInsets.only(right: 12),
-            child: _buildBookCard(
-              title: 'Laskar Pelangi',
-              author: 'Andrea Hirata',
-              price: 'Rp 89.000',
-            ),
+            child: _buildBookCard(book),
           );
         },
       ),
@@ -434,35 +473,47 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildNewArrivals() {
+    if (_isLoadingBooks) {
+      return const SizedBox(
+        height: 200,
+        child: Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    final newList = _books.reversed.take(6).toList();
+    if (newList.isEmpty) {
+      return const SizedBox(
+        height: 100,
+        child: Center(child: Text('Belum ada buku terbaru')),
+      );
+    }
+
     return SizedBox(
       height: 200,
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
-        itemCount: 5,
+        itemCount: newList.length,
         itemBuilder: (context, index) {
+          final book = newList[index];
           return Padding(
             padding: const EdgeInsets.only(right: 12),
-            child: _buildBookCard(
-              title: 'Bumi Manusia',
-              author: 'Pramoedya A. Toer',
-              price: 'Rp 125.000',
-            ),
+            child: _buildBookCard(book),
           );
         },
       ),
     );
   }
 
-  Widget _buildBookCard({
-    required String title,
-    required String author,
-    required String price,
-  }) {
+  Widget _buildBookCard(AdminBookItem book) {
+    final formattedPrice = 'Rp ${book.price.toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (m) => '${m[1]}.')}';
+
     return GestureDetector(
       onTap: () {
         Navigator.of(context).push(
           MaterialPageRoute(
-            builder: (context) => const BookDetailScreen(),
+            builder: (context) => BookDetailScreen(
+              bookDetail: BookDetail.fromAdminBookItem(book),
+            ),
           ),
         );
       },
@@ -483,22 +534,35 @@ class _HomeScreenState extends State<HomeScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Book Cover Placeholder
+            // Book Cover
             Expanded(
               flex: 3,
-              child: Container(
-                decoration: BoxDecoration(
+              child: ClipRRect(
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+                child: Container(
+                  width: double.infinity,
                   color: AppColors.surfaceContainerLow,
-                  borderRadius: const BorderRadius.vertical(
-                    top: Radius.circular(16),
-                  ),
-                ),
-                child: const Center(
-                  child: Icon(
-                    Icons.menu_book,
-                    size: 40,
-                    color: AppColors.outline,
-                  ),
+                  child: book.coverUrl.isNotEmpty
+                      ? Image.network(
+                          book.coverUrl,
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) {
+                            return const Center(
+                              child: Icon(
+                                Icons.menu_book,
+                                size: 40,
+                                color: AppColors.outline,
+                              ),
+                            );
+                          },
+                        )
+                      : const Center(
+                          child: Icon(
+                            Icons.menu_book,
+                            size: 40,
+                            color: AppColors.outline,
+                          ),
+                        ),
                 ),
               ),
             ),
@@ -511,7 +575,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      title,
+                      book.title,
                       style: AppTypography.labelMd.copyWith(
                         color: AppColors.onSurface,
                         fontWeight: FontWeight.w600,
@@ -521,7 +585,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      author,
+                      book.author,
                       style: AppTypography.caption.copyWith(
                         color: AppColors.onSurfaceVariant,
                       ),
@@ -530,7 +594,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                     const Spacer(),
                     Text(
-                      price,
+                      formattedPrice,
                       style: AppTypography.labelMd.copyWith(
                         color: AppColors.primaryContainer,
                         fontWeight: FontWeight.w600,

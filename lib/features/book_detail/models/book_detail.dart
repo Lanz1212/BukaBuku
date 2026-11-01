@@ -1,4 +1,5 @@
 import '../../search/models/book_search_item.dart';
+import '../../admin/book_management/models/admin_book_item.dart';
 
 /// Single reader review model
 class BookReview {
@@ -78,6 +79,54 @@ class BookDetail {
     required this.description,
     required this.reviews,
   });
+
+  /// Factory helper to build from AdminBookItem (Database Model)
+  factory BookDetail.fromAdminBookItem(AdminBookItem book) {
+    StockStatus stockStatus;
+    String stockLabel;
+    if (book.stock <= 0) {
+      stockStatus = StockStatus.outOfStock;
+      stockLabel = 'Stok Habis';
+    } else if (book.stock <= book.minStock) {
+      stockStatus = StockStatus.limited;
+      stockLabel = 'Sisa ${book.stock} Buku';
+    } else {
+      stockStatus = StockStatus.inStock;
+      stockLabel = 'Stok Tersedia (${book.stock})';
+    }
+
+    final priceFormatted = 'Rp ${book.price.toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (m) => '${m[1]}.')}';
+    final originalPriceVal = (book.price * 1.1).round();
+    final originalPriceFormatted = 'Rp ${originalPriceVal.toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (m) => '${m[1]}.')}';
+
+    return BookDetail(
+      id: book.id,
+      title: book.title,
+      author: book.author,
+      authorPrefix: 'Karya',
+      publisher: book.publisher ?? 'Gramedia Pustaka',
+      publishYear: book.publishYear?.toString() ?? '2024',
+      category: book.category,
+      isbn: book.isbn,
+      format: book.format.isNotEmpty ? book.format : 'Softcover • ${book.pageCount} Hal.',
+      pageCount: book.pageCount,
+      price: priceFormatted,
+      priceValue: book.price,
+      originalPrice: originalPriceFormatted,
+      originalPriceValue: originalPriceVal,
+      discountPercentage: '10%',
+      rating: book.rating,
+      reviewCount: book.reviewCount,
+      reviewCountFormatted: '${book.reviewCount} ulasan',
+      coverUrl: book.coverUrl,
+      stockStatus: stockStatus,
+      stockLabel: stockLabel,
+      storeLocation: book.rackLocation.isNotEmpty ? book.rackLocation : 'Rak Buku Utama',
+      remainingStock: book.stock,
+      description: book.description ?? 'Deskripsi buku belum tersedia.',
+      reviews: const [],
+    );
+  }
 
   /// Factory helper to build or fallback from a BookSearchItem
   factory BookDetail.fromSearchItem(BookSearchItem item) {

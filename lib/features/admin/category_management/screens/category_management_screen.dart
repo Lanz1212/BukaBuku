@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
+import '../../../../core/services/book_service.dart';
 import '../models/admin_category_item.dart';
 import '../widgets/category_floor_filter.dart';
 import '../widgets/category_form_modal.dart';
@@ -15,14 +16,30 @@ class CategoryManagementScreen extends StatefulWidget {
 }
 
 class _CategoryManagementScreenState extends State<CategoryManagementScreen> {
-  late List<AdminCategoryItem> _categories;
+  List<AdminCategoryItem> _categories = [];
+  bool _isLoading = true;
   final TextEditingController _searchController = TextEditingController();
   int _selectedFloor = 0; // 0: All, 1: Floor 1, 2: Floor 2
 
   @override
   void initState() {
     super.initState();
-    _categories = List.from(AdminCategoryItem.mockCategories);
+    _loadCategories();
+  }
+
+  Future<void> _loadCategories() async {
+    setState(() => _isLoading = true);
+    try {
+      final list = await BookService.fetchCategories();
+      if (!mounted) return;
+      setState(() {
+        _categories = list;
+        _isLoading = false;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _isLoading = false);
+    }
   }
 
   @override
@@ -55,9 +72,7 @@ class _CategoryManagementScreenState extends State<CategoryManagementScreen> {
     CategoryFormModal.show(
       context: context,
       onSaved: (newCat) {
-        setState(() {
-          _categories.add(newCat);
-        });
+        _loadCategories();
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Kategori "${newCat.name}" berhasil ditambahkan'),
@@ -74,12 +89,7 @@ class _CategoryManagementScreenState extends State<CategoryManagementScreen> {
       context: context,
       initialCategory: cat,
       onSaved: (updatedCat) {
-        setState(() {
-          final index = _categories.indexWhere((c) => c.id == updatedCat.id);
-          if (index != -1) {
-            _categories[index] = updatedCat;
-          }
-        });
+        _loadCategories();
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Kategori "${updatedCat.name}" berhasil diperbarui'),
@@ -129,17 +139,28 @@ class _CategoryManagementScreenState extends State<CategoryManagementScreen> {
                 borderRadius: BorderRadius.circular(8),
               ),
             ),
-            onPressed: () {
+            onPressed: () async {
               Navigator.pop(ctx);
-              setState(() {
-                _categories.removeWhere((c) => c.id == cat.id);
-              });
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text('Kategori "${cat.name}" dihapus'),
-                  behavior: SnackBarBehavior.floating,
-                ),
-              );
+              try {
+                await BookService.deleteCategory(cat.id);
+                _loadCategories();
+                if (!mounted) return;
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('Kategori "${cat.name}" dihapus'),
+                    behavior: SnackBarBehavior.floating,
+                  ),
+                );
+              } catch (e) {
+                if (!mounted) return;
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('Gagal menghapus kategori: $e'),
+                    backgroundColor: AppColors.error,
+                    behavior: SnackBarBehavior.floating,
+                  ),
+                );
+              }
             },
             child: const Text('Hapus'),
           ),
@@ -190,23 +211,27 @@ class _CategoryManagementScreenState extends State<CategoryManagementScreen> {
       ),
       body: Stack(
         children: [
-          SingleChildScrollView(
-            padding: const EdgeInsets.fromLTRB(16.0, 8.0, 16.0, 88.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                // Header info
-                Text(
-                  'Klasifikasi & Penempatan Rak Toko',
-                  style: AppTypography.bodyMd.copyWith(
-                    color: AppColors.onSurfaceVariant,
-                    fontSize: 13,
+          RefreshIndicator(
+            onRefresh: _loadCategories,
+            color: AppColors.primary,
+            child: SingleChildScrollView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              padding: const EdgeInsets.fromLTRB(16.0, 8.0, 16.0, 88.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  // Header info
+                  Text(
+                    'Klasifikasi & Penempatan Rak Toko',
+                    style: AppTypography.bodyMd.copyWith(
+                      color: AppColors.onSurfaceVariant,
+                      fontSize: 13,
+                    ),
                   ),
-                ),
-                const SizedBox(height: 14),
+                  const SizedBox(height: 14),
 
-                // Search Input
-                TextField(
+                  // Search Input
+                  TextField(
                   controller: _searchController,
                   onChanged: (val) => setState(() {}),
                   decoration: InputDecoration(
@@ -297,7 +322,14 @@ class _CategoryManagementScreenState extends State<CategoryManagementScreen> {
                 const SizedBox(height: 10),
 
                 // Category List
-                if (displayedList.isEmpty)
+                if (_isLoading)
+                  const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 40),
+                    child: Center(
+                      child: CircularProgressIndicator(),
+                    ),
+                  )
+                else if (displayedList.isEmpty)
                   _buildEmptyState()
                 else
                   ListView.separated(
@@ -318,8 +350,9 @@ class _CategoryManagementScreenState extends State<CategoryManagementScreen> {
               ],
             ),
           ),
+        ),
 
-          // Bottom Action Button
+        // Bottom Action Button
           Positioned(
             left: 16,
             right: 16,
