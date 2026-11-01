@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../core/services/order_service.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../models/qr_scan_result.dart';
@@ -30,6 +31,7 @@ class ManualOrderInputSheet extends StatefulWidget {
 class _ManualOrderInputSheetState extends State<ManualOrderInputSheet> {
   final TextEditingController _controller = TextEditingController();
   String? _errorMessage;
+  bool _isLoading = false;
 
   @override
   void dispose() {
@@ -37,36 +39,55 @@ class _ManualOrderInputSheetState extends State<ManualOrderInputSheet> {
     super.dispose();
   }
 
-  void _submit() {
+  void _submit() async {
     final rawText = _controller.text.trim();
     if (rawText.isEmpty) {
       setState(() {
-        _errorMessage = 'Masukkan nomor pesanan terlebih dahulu';
+        _errorMessage = 'Masukkan kode pesanan terlebih dahulu';
       });
       return;
     }
 
-    final formattedId = rawText.toUpperCase().startsWith('#')
-        ? rawText.toUpperCase()
-        : '#${rawText.toUpperCase()}';
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
 
-    // Mock look up
-    if (formattedId == '#ORD00125') {
+    try {
+      final order = await OrderService.fetchOrderByCodeOrId(rawText);
+      if (!mounted) return;
+
+      if (order == null) {
+        setState(() {
+          _errorMessage =
+              'Pesanan "$rawText" tidak ditemukan di sistem. Periksa kembali kode pesanan.';
+        });
+        return;
+      }
+
+      final isPickup = order.deliveryType.toLowerCase().contains('ambil');
+      if (!isPickup) {
+        setState(() {
+          _errorMessage =
+              'Pesanan ${order.orderId} adalah Kurir Antar (Bukan Ambil di Toko).';
+        });
+        return;
+      }
+
       Navigator.pop(context);
-      widget.onOrderFound(QrScanResult.mockDefault());
-    } else {
-      // Demo fallback mock for any other valid order input
-      Navigator.pop(context);
-      widget.onOrderFound(
-        QrScanResult(
-          orderId: formattedId,
-          customerName: 'Pelanggan Kasir',
-          bookCount: 1,
-          totalPrice: 85000,
-          status: 'Siap Diambil',
-          verificationTime: '0.2s',
-        ),
-      );
+      widget.onOrderFound(QrScanResult.fromOrder(order));
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _errorMessage = 'Terjadi kesalahan saat memeriksa pesanan: $e';
+        });
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
     }
   }
 
@@ -241,14 +262,23 @@ class _ManualOrderInputSheetState extends State<ManualOrderInputSheet> {
               ),
               elevation: 0,
             ),
-            onPressed: _submit,
-            child: Text(
-              'Cari & Verifikasi Pesanan',
-              style: AppTypography.labelLg.copyWith(
-                color: Colors.white,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
+            onPressed: _isLoading ? null : _submit,
+            child: _isLoading
+                ? const SizedBox(
+                    width: 22,
+                    height: 22,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2.4,
+                      color: Colors.white,
+                    ),
+                  )
+                : Text(
+                    'Cari & Verifikasi Pesanan',
+                    style: AppTypography.labelLg.copyWith(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
           ),
         ],
       ),

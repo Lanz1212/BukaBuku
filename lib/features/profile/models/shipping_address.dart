@@ -41,6 +41,32 @@ class ShippingAddress {
     );
   }
 
+  Map<String, dynamic> toMap() {
+    return {
+      'id': id,
+      'recipientName': recipientName,
+      'phoneNumber': phoneNumber,
+      'label': label,
+      'fullAddress': fullAddress,
+      'courierNote': courierNote,
+      'isPrimary': isPrimary,
+      'isGeotagVerified': isGeotagVerified,
+    };
+  }
+
+  factory ShippingAddress.fromMap(Map<String, dynamic> map) {
+    return ShippingAddress(
+      id: map['id']?.toString() ?? 'addr_${DateTime.now().millisecondsSinceEpoch}',
+      recipientName: map['recipientName']?.toString() ?? '',
+      phoneNumber: map['phoneNumber']?.toString() ?? '',
+      label: map['label']?.toString() ?? 'Alamat',
+      fullAddress: map['fullAddress']?.toString() ?? '',
+      courierNote: map['courierNote']?.toString(),
+      isPrimary: map['isPrimary'] == true,
+      isGeotagVerified: map['isGeotagVerified'] == true,
+    );
+  }
+
   static const List<ShippingAddress> defaultAddresses = [
     ShippingAddress(
       id: 'addr_001',

@@ -53,6 +53,61 @@ class UserProfile {
     );
   }
 
+  factory UserProfile.fromSupabase(
+    Map<String, dynamic> data, {
+    int orderCount = 0,
+    int favoriteCount = 4,
+    int activeVouchers = 1,
+  }) {
+    final fullName = (data['full_name'] as String?)?.trim();
+    final email = (data['email'] as String?)?.trim();
+    final phone = (data['phone'] as String?)?.trim();
+    final birthDate = (data['birth_date'] as String?)?.trim();
+    final gender = (data['gender'] as String?)?.trim();
+    final membershipLevel = (data['membership_level'] as String?)?.trim();
+    final avatarUrl = (data['avatar_url'] as String?)?.trim();
+
+    return UserProfile(
+      id: data['id']?.toString() ?? 'user_001',
+      name: (fullName != null && fullName.isNotEmpty)
+          ? fullName
+          : defaultProfile.name,
+      email: (email != null && email.isNotEmpty)
+          ? email
+          : defaultProfile.email,
+      phone: (phone != null && phone.isNotEmpty)
+          ? phone
+          : defaultProfile.phone,
+      birthDate: (birthDate != null && birthDate.isNotEmpty)
+          ? birthDate
+          : defaultProfile.birthDate,
+      gender: (gender != null && gender.isNotEmpty)
+          ? gender
+          : defaultProfile.gender,
+      membershipLevel: (membershipLevel != null && membershipLevel.isNotEmpty)
+          ? membershipLevel
+          : 'Pembaca Terdaftar',
+      orderCount: orderCount,
+      favoriteCount: favoriteCount,
+      activeVouchers: activeVouchers,
+      avatarUrl: (avatarUrl != null && avatarUrl.isNotEmpty)
+          ? avatarUrl
+          : defaultProfile.avatarUrl,
+    );
+  }
+
+  Map<String, dynamic> toSupabaseMap() {
+    return {
+      'full_name': name,
+      'phone': phone,
+      'birth_date': birthDate,
+      'gender': gender,
+      'avatar_url': avatarUrl,
+      'membership_level': membershipLevel,
+      'updated_at': DateTime.now().toIso8601String(),
+    };
+  }
+
   static const defaultProfile = UserProfile(
     id: 'user_001',
     name: 'Budi Santoso',

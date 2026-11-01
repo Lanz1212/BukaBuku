@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
+import '../../../core/services/order_service.dart';
 import '../../../shared/widgets/bookstore_app_bar.dart';
 import '../../../shared/widgets/bookstore_bottom_nav.dart';
 import '../../cart/screens/cart_screen.dart';
@@ -29,23 +30,45 @@ class OrderListScreen extends StatefulWidget {
 
 class _OrderListScreenState extends State<OrderListScreen> {
   late OrderStatus _selectedStatus;
+  List<OrderModel> _customerOrders = [];
 
   @override
   void initState() {
     super.initState();
     _selectedStatus = widget.initialFilter;
+    _loadCustomerOrders();
   }
+
+  Future<void> _loadCustomerOrders() async {
+    try {
+      final orders = await OrderService.fetchCustomerOrders();
+      if (mounted) {
+        setState(() {
+          _customerOrders = orders.isNotEmpty ? orders : mockOrders;
+        });
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() {
+          _customerOrders = mockOrders;
+        });
+      }
+    }
+  }
+
+  List<OrderModel> get _allOrders =>
+      _customerOrders.isNotEmpty ? _customerOrders : mockOrders;
 
   Map<OrderStatus, int> get _statusCounts {
     final counts = <OrderStatus, int>{
-      OrderStatus.all: mockOrders.length,
+      OrderStatus.all: _allOrders.length,
       OrderStatus.processing: 0,
       OrderStatus.shipping: 0,
       OrderStatus.readyPickup: 0,
       OrderStatus.completed: 0,
     };
 
-    for (final order in mockOrders) {
+    for (final order in _allOrders) {
       counts[order.status] = (counts[order.status] ?? 0) + 1;
     }
 
@@ -54,9 +77,9 @@ class _OrderListScreenState extends State<OrderListScreen> {
 
   List<OrderModel> get _filteredOrders {
     if (_selectedStatus == OrderStatus.all) {
-      return mockOrders;
+      return _allOrders;
     }
-    return mockOrders
+    return _allOrders
         .where((order) => order.status == _selectedStatus)
         .toList();
   }

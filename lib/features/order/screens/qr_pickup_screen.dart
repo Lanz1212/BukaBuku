@@ -272,7 +272,9 @@ class _QrPickupScreenState extends State<QrPickupScreen> {
                 orderId: _order.id,
                 customerName: _order.customerName,
               ),
-              const QrPickupCodeDisplay(),
+              QrPickupCodeDisplay(
+                qrData: _order.qrCode.isNotEmpty ? _order.qrCode : _order.id,
+              ),
               QrPickupOrderMeta(
                 itemCountText: '${_order.items.length} Buku Fisik',
                 bookTitlesText: _order.items.map((i) => i.title).join(' • '),

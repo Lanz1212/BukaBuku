@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
+import '../../../../core/services/order_service.dart';
 import '../../scan_qr_pickup/screens/scan_qr_pickup_screen.dart';
 import '../models/admin_order_detail.dart';
 import '../widgets/detail/book_list_section.dart';
@@ -32,10 +33,16 @@ class _AdminOrderDetailScreenState extends State<AdminOrderDetailScreen> {
     _currentOrder = widget.order;
   }
 
-  void _updateStatus(AdminOrderStatus newStatus) {
+  void _updateStatus(AdminOrderStatus newStatus) async {
     setState(() {
       _currentOrder = _currentOrder.copyWith(status: newStatus);
     });
+
+    try {
+      await OrderService.updateOrderStatus(_currentOrder.orderId, newStatus);
+    } catch (e) {
+      debugPrint('Error updating order status in Supabase: $e');
+    }
   }
 
   void _navigateToScanQrPickup() async {

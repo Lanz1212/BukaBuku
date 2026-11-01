@@ -40,7 +40,7 @@ class StoreSettingsModel {
       '$address, $district, $city, $postalCode';
 
   static StoreSettingsModel get initialData => const StoreSettingsModel(
-        storeName: 'Toko Buku Budi (Gerai Utama Cikini)',
+        storeName: 'Toko Buku Budi (Pusat Cikini)',
         branchName: 'Gerai Cikini',
         address: 'Jl. Cikini Raya No. 45, RT.01/RW.02, Cikini, Kec. Menteng',
         district: 'Menteng',
@@ -95,5 +95,48 @@ class StoreSettingsModel {
       maxPickupHours: maxPickupHours ?? this.maxPickupHours,
       photoPath: photoPath ?? this.photoPath,
     );
+  }
+
+  factory StoreSettingsModel.fromSupabase(Map<String, dynamic> data) {
+    return StoreSettingsModel(
+      storeName: data['store_name']?.toString() ?? initialData.storeName,
+      branchName: data['branch_name']?.toString() ?? initialData.branchName,
+      address: data['address']?.toString() ?? initialData.address,
+      district: data['district']?.toString() ?? initialData.district,
+      city: data['city']?.toString() ?? initialData.city,
+      postalCode: data['postal_code']?.toString() ?? initialData.postalCode,
+      latitude: (data['latitude'] as num?)?.toDouble() ?? initialData.latitude,
+      longitude: (data['longitude'] as num?)?.toDouble() ?? initialData.longitude,
+      phoneNumber: data['phone_number']?.toString() ?? initialData.phoneNumber,
+      whatsappNumber: data['whatsapp_number']?.toString() ?? initialData.whatsappNumber,
+      openTime: data['open_time']?.toString() ?? initialData.openTime,
+      closeTime: data['close_time']?.toString() ?? initialData.closeTime,
+      operatingDays: data['operating_days']?.toString() ?? initialData.operatingDays,
+      description: data['description']?.toString() ?? initialData.description,
+      maxPickupHours: (data['max_pickup_hours'] as num?)?.toInt() ?? initialData.maxPickupHours,
+      photoPath: data['photo_path']?.toString() ?? initialData.photoPath,
+    );
+  }
+
+  Map<String, dynamic> toSupabaseMap() {
+    return {
+      'store_name': storeName,
+      'branch_name': branchName,
+      'address': address,
+      'district': district,
+      'city': city,
+      'postal_code': postalCode,
+      'latitude': latitude,
+      'longitude': longitude,
+      'phone_number': phoneNumber,
+      'whatsapp_number': whatsappNumber,
+      'open_time': openTime,
+      'close_time': closeTime,
+      'operating_days': operatingDays,
+      'description': description,
+      'max_pickup_hours': maxPickupHours,
+      'photo_path': photoPath,
+      'updated_at': DateTime.now().toIso8601String(),
+    };
   }
 }

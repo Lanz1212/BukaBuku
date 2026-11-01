@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
+import '../../../core/services/order_service.dart';
+import '../../admin/order_management/models/admin_order_detail.dart';
 import '../models/payment_simulation_state.dart';
 import '../widgets/payment_app_bar.dart';
 import '../widgets/payment_trust_badges.dart';
@@ -11,6 +13,7 @@ import '../widgets/qris_order_header_card.dart';
 import '../widgets/qris_simulation_bar.dart';
 import '../widgets/qris_status_views.dart';
 import 'payment_success_screen.dart';
+import '../widgets/payment_success_bento_card.dart';
 
 /// Screen 2: Halaman Pembayaran Online QRIS
 /// Conforms to DESIGN.md, AppColors, AppTypography, and Stitch screen 9fd9b16950e747439b6f91a11ffffb87.
@@ -19,6 +22,10 @@ class QrisPaymentScreen extends StatefulWidget {
   final int totalAmount;
   final String merchantName;
   final String nmid;
+  final String? customerName;
+  final String? customerPhone;
+  final String? deliveryAddress;
+  final List<AdminOrderBookItem>? orderedBooks;
 
   const QrisPaymentScreen({
     super.key,
@@ -26,6 +33,10 @@ class QrisPaymentScreen extends StatefulWidget {
     this.totalAmount = 181000,
     this.merchantName = 'Toko Buku Budi Cikini',
     this.nmid = 'NMID: ID1020038891002',
+    this.customerName,
+    this.customerPhone,
+    this.deliveryAddress,
+    this.orderedBooks,
   });
 
   @override
@@ -49,10 +60,18 @@ class _QrisPaymentScreenState extends State<QrisPaymentScreen> {
     return 'Rp${buffer.toString().split('').reversed.join('')}';
   }
 
-  void _onConfirmPaid() {
-    setState(() {
-      _currentStatus = PaymentSimulationStatus.success;
-    });
+  void _onConfirmPaid() async {
+    final cleanId = widget.orderId.replaceAll('#', '').trim();
+    try {
+      await OrderService.updateOrderPaymentStatus(cleanId, true);
+    } catch (e) {
+      debugPrint('Error updating order payment status in Supabase: $e');
+    }
+    if (mounted) {
+      setState(() {
+        _currentStatus = PaymentSimulationStatus.success;
+      });
+    }
   }
 
   void _showCancelConfirmation() {
@@ -239,11 +258,36 @@ class _QrisPaymentScreenState extends State<QrisPaymentScreen> {
                     Navigator.of(context).popUntil((route) => route.isFirst);
                   },
                   onViewReceipt: () {
+                    final receiptBooks = widget.orderedBooks != null &&
+                            widget.orderedBooks!.isNotEmpty
+                        ? widget.orderedBooks!.map((b) {
+                            return PaymentSuccessItem(
+                              title: b.title,
+                              subtitle: '${b.author} • ${b.qty}x',
+                              price: 'Rp${b.price}',
+                              imageUrl: b.imageUrl ?? '',
+                            );
+                          }).toList()
+                        : const [
+                            PaymentSuccessItem(
+                              title: 'Atomic Habits',
+                              subtitle: 'James Clear • 1x Hardcover',
+                              price: 'Rp108.000',
+                              imageUrl:
+                                  'https://lh3.googleusercontent.com/aida-public/AB6AXuDuro3027OrnxnzHhMWNNhxlL6yQ7uRMP4gN56vlkj8gMZdzZ7-U7J-AiMpN9z6agF63Q5IceDcr-ELrDh46dR-dg4sNIRfuvNTfmG0GDGb1H-GjJyb3nBFfSVJREh0B_fT9xfanJsispJlPm4rdAP3oZObX-VkWht5KFxVjOdeqFAeGSlto5ORp0V83N93AtcA-drkc4EIiM7dyJbCUw7h8pSJesulR-EIhER1dmhq5uEeNEB6zrFljQ',
+                            ),
+                          ];
+
                     Navigator.of(context).push(
                       MaterialPageRoute(
                         builder: (context) => PaymentSuccessScreen(
                           orderId: widget.orderId,
                           totalAmount: widget.totalAmount,
+                          customerPhone:
+                              widget.customerPhone ?? '0812-3456-7890',
+                          deliveryAddress: widget.deliveryAddress ??
+                              'Jl. Cikini Raya No. 42, Menteng, Jakarta Pusat',
+                          books: receiptBooks,
                         ),
                       ),
                     );

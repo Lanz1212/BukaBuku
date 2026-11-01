@@ -3,6 +3,7 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../shared/widgets/bookstore_app_bar.dart';
 import '../models/shipping_address.dart';
+import '../services/profile_service.dart';
 import '../widgets/address_card.dart';
 import '../widgets/address_delivery_banner.dart';
 
@@ -15,11 +16,28 @@ class ShippingAddressScreen extends StatefulWidget {
 
 class _ShippingAddressScreenState extends State<ShippingAddressScreen> {
   late List<ShippingAddress> _addresses;
+  bool _isLoading = false;
 
   @override
   void initState() {
     super.initState();
     _addresses = List.from(ShippingAddress.defaultAddresses);
+    _loadAddresses();
+  }
+
+  Future<void> _loadAddresses() async {
+    setState(() => _isLoading = true);
+    final addrs = await ProfileService.fetchUserAddresses();
+    if (mounted) {
+      setState(() {
+        _addresses = addrs;
+        _isLoading = false;
+      });
+    }
+  }
+
+  void _persistAddresses() {
+    ProfileService.saveUserAddresses(_addresses);
   }
 
   void _setAsPrimary(String id) {
@@ -28,6 +46,7 @@ class _ShippingAddressScreenState extends State<ShippingAddressScreen> {
         return addr.copyWith(isPrimary: addr.id == id);
       }).toList();
     });
+    _persistAddresses();
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -104,6 +123,7 @@ class _ShippingAddressScreenState extends State<ShippingAddressScreen> {
                   _addresses[0] = _addresses[0].copyWith(isPrimary: true);
                 }
               });
+              _persistAddresses();
 
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
@@ -367,6 +387,7 @@ class _ShippingAddressScreenState extends State<ShippingAddressScreen> {
                               }).toList();
                             }
                           });
+                          _persistAddresses();
 
                           Navigator.pop(ctx);
 
@@ -483,6 +504,11 @@ class _ShippingAddressScreenState extends State<ShippingAddressScreen> {
       body: SafeArea(
         child: Column(
           children: [
+            if (_isLoading)
+              const LinearProgressIndicator(
+                minHeight: 2,
+                color: AppColors.primaryContainer,
+              ),
             Expanded(
               child: SingleChildScrollView(
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),

@@ -26,6 +26,30 @@ class AdminOrderBookItem {
     this.rackLocation,
     this.imageUrl,
   });
+
+  factory AdminOrderBookItem.fromMap(Map<String, dynamic> map) {
+    return AdminOrderBookItem(
+      title: map['title'] as String? ?? 'Buku',
+      author: map['author'] as String? ?? 'Penulis',
+      qty: (map['quantity'] as num?)?.toInt() ??
+          (map['qty'] as num?)?.toInt() ??
+          1,
+      price: (map['price'] as num?)?.toInt() ?? 0,
+      rackLocation: map['rack_location'] as String?,
+      imageUrl: map['image_url'] as String?,
+    );
+  }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'title': title,
+      'author': author,
+      'quantity': qty,
+      'price': price,
+      'rack_location': rackLocation,
+      'image_url': imageUrl,
+    };
+  }
 }
 
 class AdminOrderDetail {
@@ -43,6 +67,7 @@ class AdminOrderDetail {
   final String? specialNote;
   final String? address;
   final String? pickupCode;
+  final String? qrCode;
   final String? pickupPoint;
   final String? accountAddress;
   final String? paymentChannel;
@@ -64,6 +89,7 @@ class AdminOrderDetail {
     this.specialNote,
     this.address,
     this.pickupCode,
+    this.qrCode,
     this.pickupPoint,
     this.accountAddress,
     this.paymentChannel,
@@ -86,6 +112,7 @@ class AdminOrderDetail {
     String? specialNote,
     String? address,
     String? pickupCode,
+    String? qrCode,
     String? pickupPoint,
     String? accountAddress,
     String? paymentChannel,
@@ -107,6 +134,7 @@ class AdminOrderDetail {
       specialNote: specialNote ?? this.specialNote,
       address: address ?? this.address,
       pickupCode: pickupCode ?? this.pickupCode,
+      qrCode: qrCode ?? this.qrCode,
       pickupPoint: pickupPoint ?? this.pickupPoint,
       accountAddress: accountAddress ?? this.accountAddress,
       paymentChannel: paymentChannel ?? this.paymentChannel,
@@ -174,6 +202,115 @@ class AdminOrderDetail {
       return parts[0].substring(0, parts[0].length >= 2 ? 2 : 1).toUpperCase();
     }
     return 'BB';
+  }
+
+  static AdminOrderStatus statusFromString(String? statusStr) {
+    switch (statusStr?.toLowerCase()) {
+      case 'baru':
+        return AdminOrderStatus.baru;
+      case 'diproses':
+        return AdminOrderStatus.diproses;
+      case 'siapdiambil':
+        return AdminOrderStatus.siapDiambil;
+      case 'dalampengiriman':
+        return AdminOrderStatus.dalamPengiriman;
+      case 'selesai':
+        return AdminOrderStatus.selesai;
+      case 'dibatalkan':
+        return AdminOrderStatus.dibatalkan;
+      default:
+        return AdminOrderStatus.baru;
+    }
+  }
+
+  static String statusToString(AdminOrderStatus status) {
+    switch (status) {
+      case AdminOrderStatus.baru:
+        return 'baru';
+      case AdminOrderStatus.diproses:
+        return 'diproses';
+      case AdminOrderStatus.siapDiambil:
+        return 'siapDiambil';
+      case AdminOrderStatus.dalamPengiriman:
+        return 'dalamPengiriman';
+      case AdminOrderStatus.selesai:
+        return 'selesai';
+      case AdminOrderStatus.dibatalkan:
+        return 'dibatalkan';
+    }
+  }
+
+  factory AdminOrderDetail.fromMap(
+    Map<String, dynamic> map, [
+    List<dynamic>? itemsList,
+  ]) {
+    String orderTime = 'Hari ini';
+    String? orderDate;
+    if (map['created_at'] != null) {
+      try {
+        final dt = DateTime.parse(map['created_at'] as String).toLocal();
+        final hour = dt.hour.toString().padLeft(2, '0');
+        final minute = dt.minute.toString().padLeft(2, '0');
+        orderTime = '$hour:$minute WIB';
+
+        const months = [
+          'Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun',
+          'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'
+        ];
+        orderDate =
+            '${dt.day} ${months[dt.month - 1]} ${dt.year}, $hour:$minute WIB';
+      } catch (_) {}
+    }
+
+    final rawBooks = itemsList ?? (map['order_items'] as List<dynamic>? ?? []);
+    final books = rawBooks
+        .map((b) => AdminOrderBookItem.fromMap(b as Map<String, dynamic>))
+        .toList();
+
+    return AdminOrderDetail(
+      orderId: map['id'] as String? ?? '',
+      orderTime: orderTime,
+      orderDate: orderDate,
+      customerName: map['customer_name'] as String? ?? 'Pembeli Toko',
+      customerPhone: map['customer_phone'] as String? ?? '-',
+      deliveryType: map['delivery_type'] as String? ?? 'Kurir Toko (Delivery)',
+      paymentMethod: map['payment_method'] as String? ?? 'Online QRIS',
+      paymentChannel: map['payment_channel'] as String?,
+      isPaid: map['is_paid'] as bool? ?? false,
+      status: statusFromString(map['status'] as String?),
+      books: books,
+      totalPrice: (map['total_price'] as num?)?.toInt() ?? 0,
+      specialNote: map['special_note'] as String?,
+      address: map['customer_address'] as String?,
+      pickupCode: map['pickup_code'] as String?,
+      qrCode: map['qr_code'] as String?,
+      pickupPoint: map['pickup_point'] as String?,
+      accountAddress: map['account_address'] as String?,
+      isVerifiedUser: map['is_verified_user'] as bool? ?? true,
+      cashierFee: (map['cashier_fee'] as num?)?.toInt() ?? 0,
+    );
+  }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'id': orderId,
+      'customer_name': customerName,
+      'customer_phone': customerPhone,
+      'customer_address': address ?? '',
+      'delivery_type': deliveryType,
+      'payment_method': paymentMethod,
+      'payment_channel': paymentChannel,
+      'is_paid': isPaid,
+      'status': statusToString(status),
+      'total_price': totalPrice,
+      'special_note': specialNote,
+      'pickup_code': pickupCode,
+      'qr_code': qrCode,
+      'pickup_point': pickupPoint,
+      'account_address': accountAddress,
+      'is_verified_user': isVerifiedUser,
+      'cashier_fee': cashierFee,
+    };
   }
 
   static List<AdminOrderDetail> get mockOrders => [

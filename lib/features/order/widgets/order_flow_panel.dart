@@ -161,14 +161,14 @@ class OrderFlowPanel extends StatelessWidget {
                       height: 1.35,
                     ),
                     children: [
-                      const TextSpan(text: 'Tunjukkan ID '),
+                      const TextSpan(text: 'Tunjukkan QR Code atau ID '),
                       TextSpan(
                         text: orderId,
                         style: const TextStyle(fontWeight: FontWeight.w700),
                       ),
                       const TextSpan(
                         text:
-                            ' ke staf kasir ketika status pesanan berubah menjadi "Siap Diambil".',
+                            ' ke meja kasir untuk pengambilan buku Anda.',
                       ),
                     ],
                   ),
@@ -176,6 +176,12 @@ class OrderFlowPanel extends StatelessWidget {
               ),
             ],
           ),
+        ),
+        const SizedBox(height: 14),
+        OrderCashierQrCard(
+          qrCodeText: orderId,
+          cashierInstructions:
+              'Tunjukkan QR Code ini kepada kasir saat mengambil buku di toko',
         ),
       ],
     );
@@ -219,7 +225,7 @@ class OrderFlowPanel extends StatelessWidget {
         ),
         const SizedBox(height: 12),
 
-        // Exact Notice Box: "Siapkan Uang Pas Rp169.000"
+        // Notice Box
         Container(
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
@@ -248,7 +254,7 @@ class OrderFlowPanel extends StatelessWidget {
                     ),
                     const SizedBox(height: 3),
                     Text(
-                      'Buku sedang disiapkan kurator kami dalam 30 menit. Silakan serahkan tiket barcode di bawah ini ke meja kasir.',
+                      'Buku dapat diambil di toko. Silakan tunjukkan QR Code di bawah ini kepada kasir.',
                       style: AppTypography.caption.copyWith(
                         color: AppColors.onSecondaryFixed,
                         height: 1.35,
@@ -263,11 +269,13 @@ class OrderFlowPanel extends StatelessWidget {
 
         const SizedBox(height: 14),
 
-        // Cashier QR Code Box
-        const OrderCashierQrCard(
-          qrCodeText: 'ORD-00125-CKN',
+        // Cashier QR Code Box with actual orderId
+        OrderCashierQrCard(
+          qrCodeText: (orderId == '#ORD00125' || orderId == 'ORD00125')
+              ? 'ORD-00125-CKN'
+              : orderId,
           cashierInstructions:
-              'Tunjukkan QR Code ini kepada kasir saat mengambil pesanan',
+              'Tunjukkan QR Code ini kepada kasir saat mengambil pesanan & membayar',
         ),
       ],
     );

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../core/services/order_service.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../order_management/models/admin_order_detail.dart';
@@ -25,6 +26,18 @@ class QrScanResultScreen extends StatefulWidget {
 class _QrScanResultScreenState extends State<QrScanResultScreen> {
   ScanScenario _scenario = ScanScenario.validOnline;
   bool _checklistPassed = true;
+  bool _isSubmitting = false;
+
+  @override
+  void initState() {
+    super.initState();
+    final order = _order;
+    if (!order.isPaid || order.paymentMethod.toLowerCase().contains('kasir')) {
+      _scenario = ScanScenario.validCash;
+    } else {
+      _scenario = ScanScenario.validOnline;
+    }
+  }
 
   AdminOrderDetail get _order {
     if (widget.result.fullOrder != null) {
@@ -347,8 +360,7 @@ class _QrScanResultScreenState extends State<QrScanResultScreen> {
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
-        children: [
-          ElevatedButton(
+        children: [          ElevatedButton(
             style: ElevatedButton.styleFrom(
               backgroundColor: isInvalid
                   ? AppColors.outlineVariant
@@ -360,9 +372,9 @@ class _QrScanResultScreenState extends State<QrScanResultScreen> {
               ),
               elevation: 0,
             ),
-            onPressed: isInvalid
+            onPressed: (isInvalid || _isSubmitting)
                 ? null
-                : () {
+                : () async {
                     if (!_checklistPassed) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
@@ -374,33 +386,92 @@ class _QrScanResultScreenState extends State<QrScanResultScreen> {
                       );
                       return;
                     }
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => PickupSuccessScreen(
-                          result: widget.result,
-                          kasirName: 'Kasir 1',
+
+                    setState(() => _isSubmitting = true);
+                    final messenger = ScaffoldMessenger.of(context);
+                    final navigator = Navigator.of(context);
+                    final cleanId = _order.orderId.replaceAll('#', '').trim();
+
+                    try {
+                      // 1. Update status pesanan di database Supabase menjadi selesai
+                      await OrderService.updateOrderStatus(
+                        cleanId,
+                        AdminOrderStatus.selesai,
+                      );
+
+                      // 2. Jika bayar tunai di kasir, tandai is_paid = true
+                      if (!_order.isPaid || _scenario == ScanScenario.validCash) {
+                        await OrderService.updateOrderPaymentStatus(
+                          cleanId,
+                          true,
+                          paymentMethod: 'Bayar di Kasir (Tunai)',
+                          newStatus: AdminOrderStatus.selesai,
+                        );
+                      }
+
+                      if (!mounted) return;
+
+                      messenger.showSnackBar(
+                        SnackBar(
+                          content: Text(
+                            'Pesanan $cleanId berhasil diserahkan!',
+                          ),
+                          backgroundColor: AppColors.success,
+                          behavior: SnackBarBehavior.floating,
+                        ),
+                      );
+
+                      navigator.pushReplacement(
+                        MaterialPageRoute(
+                          builder: (context) => PickupSuccessScreen(
+                            result: widget.result,
+                            kasirName: 'Kasir 1',
+                          ),
+                        ),
+                      );
+                    } catch (e) {
+                      debugPrint('Error updating pickup status in Supabase: $e');
+                      if (mounted) {
+                        messenger.showSnackBar(
+                          SnackBar(
+                            content: Text('Gagal memperbarui status di server: $e'),
+                            backgroundColor: AppColors.error,
+                            behavior: SnackBarBehavior.floating,
+                          ),
+                        );
+                      }
+                    } finally {
+                      if (mounted) {
+                        setState(() => _isSubmitting = false);
+                      }
+                    }
+                  },
+            child: _isSubmitting
+                ? const SizedBox(
+                    width: 22,
+                    height: 22,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2.4,
+                      color: Colors.white,
+                    ),
+                  )
+                : Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(Icons.check_circle_rounded, size: 20),
+                      const SizedBox(width: 8),
+                      Text(
+                        _scenario == ScanScenario.validCash
+                            ? 'Konfirmasi Bayar Cash & Serahkan'
+                            : 'Konfirmasi Pengambilan',
+                        style: AppTypography.labelLg.copyWith(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w700,
+                          fontSize: 14.5,
                         ),
                       ),
-                    );
-                  },
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Icon(Icons.check_circle_rounded, size: 20),
-                const SizedBox(width: 8),
-                Text(
-                  _scenario == ScanScenario.validCash
-                      ? 'Konfirmasi Bayar Cash & Serahkan'
-                      : 'Konfirmasi Pengambilan',
-                  style: AppTypography.labelLg.copyWith(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w700,
-                    fontSize: 14.5,
+                    ],
                   ),
-                ),
-              ],
-            ),
           ),
           const SizedBox(height: 6),
           TextButton(

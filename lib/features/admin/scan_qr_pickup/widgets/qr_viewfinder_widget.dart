@@ -1,13 +1,18 @@
 import 'package:flutter/material.dart';
+import 'package:mobile_scanner/mobile_scanner.dart';
 import '../../../../core/theme/app_typography.dart';
 
 class QrViewfinderWidget extends StatefulWidget {
+  final MobileScannerController? scannerController;
+  final ValueChanged<String>? onBarcodeScanned;
   final bool isTorchOn;
   final VoidCallback? onScanTriggered;
   final ValueChanged<double>? onZoomChanged;
 
   const QrViewfinderWidget({
     super.key,
+    this.scannerController,
+    this.onBarcodeScanned,
     this.isTorchOn = false,
     this.onScanTriggered,
     this.onZoomChanged,
@@ -96,7 +101,7 @@ class _QrViewfinderWidgetState extends State<QrViewfinderWidget>
             child: Stack(
               fit: StackFit.expand,
               children: [
-                // 1. Simulated bookstore camera background with smooth zoom
+                // 1. Live Camera Feed with MobileScanner or bookstore fallback
                 AnimatedScale(
                   scale: _currentZoom == 2.0 ? 1.35 : 1.0,
                   duration: const Duration(milliseconds: 350),
@@ -104,28 +109,32 @@ class _QrViewfinderWidgetState extends State<QrViewfinderWidget>
                   child: Stack(
                     fit: StackFit.expand,
                     children: [
-                      Image.asset(
-                        'assets/images/bookstore_camera_sim.jpg',
-                        fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) {
-                          // Fallback graceful dark aesthetic gradient if asset is loading
-                          return Container(
-                            decoration: const BoxDecoration(
-                              gradient: LinearGradient(
-                                colors: [Color(0xFF251E19), Color(0xFF14110E)],
-                                begin: Alignment.topCenter,
-                                end: Alignment.bottomCenter,
-                              ),
-                            ),
-                          );
-                        },
-                      ),
+                      if (widget.scannerController != null)
+                        MobileScanner(
+                          controller: widget.scannerController!,
+                          fit: BoxFit.cover,
+                          onDetect: (BarcodeCapture capture) {
+                            for (final barcode in capture.barcodes) {
+                              final raw = barcode.rawValue;
+                              if (raw != null && raw.trim().isNotEmpty) {
+                                widget.onBarcodeScanned?.call(raw.trim());
+                                break;
+                              }
+                            }
+                          },
+                          errorBuilder: (context, error) {
+                            return _buildFallbackContent();
+                          },
+                        )
+                      else
+                        _buildFallbackContent(),
+
                       // Darkening + torch tint overlay
                       AnimatedContainer(
                         duration: const Duration(milliseconds: 300),
                         color: widget.isTorchOn
-                            ? Colors.black.withValues(alpha: 0.25)
-                            : Colors.black.withValues(alpha: 0.52),
+                            ? Colors.black.withValues(alpha: 0.15)
+                            : Colors.black.withValues(alpha: 0.35),
                       ),
                       // Torch glow light effect if on
                       if (widget.isTorchOn)
@@ -365,6 +374,54 @@ class _QrViewfinderWidgetState extends State<QrViewfinderWidget>
             fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
             fontSize: 12.5,
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFallbackContent() {
+    return Container(
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          colors: [Color(0xFF2B221B), Color(0xFF14110E)],
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+        ),
+      ),
+      child: Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 52,
+              height: 52,
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.08),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.videocam_outlined,
+                color: Color(0xFFF2C299),
+                size: 26,
+              ),
+            ),
+            const SizedBox(height: 10),
+            Text(
+              'Mode Kamera Kasir Aktif',
+              style: AppTypography.caption.copyWith(
+                color: Colors.white.withValues(alpha: 0.9),
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              'Arahkan kamera ke QR atau gunakan Input Manual',
+              style: AppTypography.caption.copyWith(
+                color: Colors.white.withValues(alpha: 0.6),
+                fontSize: 11,
+              ),
+            ),
+          ],
         ),
       ),
     );

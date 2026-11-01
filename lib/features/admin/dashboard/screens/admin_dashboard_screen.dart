@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/services/book_service.dart';
+import '../../../../core/services/order_service.dart';
+import '../../order_management/models/admin_order_detail.dart';
 import '../models/admin_stat_item.dart';
 import '../models/admin_order_item.dart';
 import '../widgets/admin_stat_card.dart';
@@ -27,7 +29,7 @@ class AdminDashboardScreen extends StatefulWidget {
 
 class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   List<AdminStatItem> _stats = AdminStatItem.mockStats;
-  final List<AdminRecentOrder> _orders = AdminRecentOrder.mockOrders;
+  List<AdminRecentOrder> _orders = AdminRecentOrder.mockOrders;
   List<AdminLowStockItem> _lowStock = AdminLowStockItem.mockLowStock;
 
   @override
@@ -40,6 +42,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     try {
       final summary = await BookService.fetchStockSummary();
       final lowBooks = await BookService.fetchLowStockBooks(limit: 5);
+      final realOrders = await OrderService.fetchAdminOrders(limit: 10);
 
       if (mounted) {
         setState(() {
@@ -52,6 +55,65 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
               subtitle: '${summary['totalCopies'] ?? 0} total eksemplar',
               icon: Icons.menu_book_outlined,
             );
+          }
+
+          if (realOrders.isNotEmpty) {
+            final newOrdersCount = realOrders
+                .where((o) => o.status == AdminOrderStatus.baru)
+                .length;
+            final totalSales = realOrders
+                .where((o) => o.isPaid)
+                .fold(0, (sum, o) => sum + o.totalPrice);
+
+            if (updatedStats.length > 2) {
+              updatedStats[1] = AdminStatItem(
+                title: 'Total Pesanan',
+                value: '${realOrders.length}',
+                unit: 'pesanan',
+                subtitle: 'Tersinkron Supabase',
+                icon: Icons.shopping_bag_outlined,
+              );
+              updatedStats[2] = AdminStatItem(
+                title: 'Pesanan Baru',
+                value: '$newOrdersCount',
+                unit: 'pesanan',
+                subtitle: 'Prioritas pemrosesan',
+                icon: Icons.pending_actions_rounded,
+                isHighlight: true,
+                badgeText: 'Perlu Proses',
+              );
+            }
+
+            if (updatedStats.length > 3) {
+              final formattedSales = 'Rp${totalSales.toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]}.')}';
+              updatedStats[3] = AdminStatItem(
+                title: 'Total Transaksi',
+                value: formattedSales,
+                unit: '',
+                subtitle: 'Lunas terverifikasi',
+                icon: Icons.trending_up_rounded,
+              );
+            }
+
+            _orders = realOrders.map((o) {
+              final isDelivery = o.deliveryType
+                      .toLowerCase()
+                      .contains('kurir') ||
+                  o.deliveryType.toLowerCase().contains('delivery');
+              return AdminRecentOrder(
+                orderId: '#${o.orderId}',
+                customerName: o.customerName,
+                itemCount: o.books.fold(0, (sum, b) => sum + b.qty),
+                totalPrice: o.totalPrice,
+                deliveryType:
+                    isDelivery ? 'Antar ke Rumah' : 'Ambil di Toko',
+                deliveryIcon: isDelivery
+                    ? Icons.local_shipping_outlined
+                    : Icons.store_rounded,
+                status: o.statusLabel,
+                isNew: o.status == AdminOrderStatus.baru,
+              );
+            }).toList();
           }
           _stats = updatedStats;
 

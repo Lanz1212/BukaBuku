@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:mobile_scanner/mobile_scanner.dart';
+import '../../../../core/services/order_service.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../order_management/models/admin_order_detail.dart';
@@ -23,14 +25,20 @@ class ScanQrPickupScreen extends StatefulWidget {
 }
 
 class _ScanQrPickupScreenState extends State<ScanQrPickupScreen> {
+  late final MobileScannerController _scannerController;
   bool _isTorchOn = false;
   bool _isFrontCamera = false;
+  bool _isProcessingScan = false;
   QrScanResult? _detectedResult;
 
   @override
   void initState() {
     super.initState();
-    // Pre-populate with order from detail or default mock to match the design screenshot
+    _scannerController = MobileScannerController(
+      detectionSpeed: DetectionSpeed.noDuplicates,
+      formats: const [BarcodeFormat.qrCode, BarcodeFormat.all],
+    );
+
     if (widget.preloadedOrder != null) {
       _detectedResult = QrScanResult.fromOrder(widget.preloadedOrder!);
     } else {
@@ -38,10 +46,20 @@ class _ScanQrPickupScreenState extends State<ScanQrPickupScreen> {
     }
   }
 
-  void _toggleTorch() {
+  @override
+  void dispose() {
+    _scannerController.dispose();
+    super.dispose();
+  }
+
+  void _toggleTorch() async {
+    try {
+      await _scannerController.toggleTorch();
+    } catch (_) {}
     setState(() {
       _isTorchOn = !_isTorchOn;
     });
+    if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(
@@ -53,10 +71,14 @@ class _ScanQrPickupScreenState extends State<ScanQrPickupScreen> {
     );
   }
 
-  void _flipCamera() {
+  void _flipCamera() async {
+    try {
+      await _scannerController.switchCamera();
+    } catch (_) {}
     setState(() {
       _isFrontCamera = !_isFrontCamera;
     });
+    if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(
@@ -70,21 +92,85 @@ class _ScanQrPickupScreenState extends State<ScanQrPickupScreen> {
     );
   }
 
-  void _onViewfinderTapped() {
-    // Interactive re-scan trigger
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Memindai ulang QR Code...'),
-        duration: Duration(milliseconds: 900),
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
+  Future<void> _handleBarcodeDetected(String rawCode) async {
+    if (_isProcessingScan) return;
+    _isProcessingScan = true;
 
-    setState(() {
-      _detectedResult = widget.preloadedOrder != null
-          ? QrScanResult.fromOrder(widget.preloadedOrder!)
-          : QrScanResult.mockDefault();
-    });
+    final cleanCode = rawCode.replaceAll('#', '').trim();
+    if (cleanCode.isEmpty) {
+      _isProcessingScan = false;
+      return;
+    }
+
+    final messenger = ScaffoldMessenger.of(context);
+    final navigator = Navigator.of(context);
+
+    try {
+      final order = await OrderService.fetchOrderByCodeOrId(cleanCode);
+      if (!mounted) return;
+
+      if (order == null) {
+        messenger.showSnackBar(
+          SnackBar(
+            content: Text('Pesanan "$cleanCode" tidak ditemukan di sistem!'),
+            backgroundColor: AppColors.error,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+        return;
+      }
+
+      // Validasi khusus pesanan Ambil di Toko
+      final isPickup = order.deliveryType.toLowerCase().contains('ambil');
+      if (!isPickup) {
+        messenger.showSnackBar(
+          SnackBar(
+            content: Text(
+              'Pesanan ${order.orderId} adalah Kurir Antar (Bukan Ambil di Toko)!',
+            ),
+            backgroundColor: AppColors.warning,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+        return;
+      }
+
+      final scanResult = QrScanResult.fromOrder(order);
+      setState(() {
+        _detectedResult = scanResult;
+      });
+
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text('QR Pesanan ${order.orderId} berhasil dipindai!'),
+          backgroundColor: AppColors.success,
+          behavior: SnackBarBehavior.floating,
+          duration: const Duration(seconds: 1),
+        ),
+      );
+
+      final result = await navigator.push<dynamic>(
+        MaterialPageRoute(
+          builder: (context) => QrScanResultScreen(result: scanResult),
+        ),
+      );
+
+      if (result != null && mounted) {
+        navigator.pop(result);
+      }
+    } catch (e) {
+      debugPrint('Error handling scanned barcode: $e');
+    } finally {
+      Future.delayed(const Duration(seconds: 2), () {
+        if (mounted) {
+          _isProcessingScan = false;
+        }
+      });
+    }
+  }
+
+  void _onViewfinderTapped() {
+    _openManualInput();
   }
 
   void _openManualInput() {
@@ -217,8 +303,15 @@ class _ScanQrPickupScreenState extends State<ScanQrPickupScreen> {
 
               // 2. Camera Viewfinder Area
               QrViewfinderWidget(
+                scannerController: _scannerController,
+                onBarcodeScanned: _handleBarcodeDetected,
                 isTorchOn: _isTorchOn,
                 onScanTriggered: _onViewfinderTapped,
+                onZoomChanged: (zoom) {
+                  try {
+                    _scannerController.setZoomScale(zoom);
+                  } catch (_) {}
+                },
               ),
               const SizedBox(height: 18),
 

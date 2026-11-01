@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
+import '../../../../core/services/order_service.dart';
 import '../models/admin_order_detail.dart';
 import '../widgets/order_card.dart';
 import '../widgets/order_status_chip.dart';
@@ -16,20 +18,51 @@ class OrderManagementScreen extends StatefulWidget {
 }
 
 class _OrderManagementScreenState extends State<OrderManagementScreen> {
-  late List<AdminOrderDetail> _orders;
+  List<AdminOrderDetail> _orders = [];
+  bool _isLoading = true;
+  RealtimeChannel? _realtimeChannel;
   final TextEditingController _searchController = TextEditingController();
   int _selectedFilterIndex = 0; // 0: Semua, 1: Baru, 2: Diproses, 3: Siap Diambil, 4: Dikirim
 
   @override
   void initState() {
     super.initState();
-    _orders = List.from(AdminOrderDetail.mockOrders);
+    _orders = [];
+    _loadOrders();
+    _setupRealtimeSubscription();
   }
 
   @override
   void dispose() {
+    _realtimeChannel?.unsubscribe();
     _searchController.dispose();
     super.dispose();
+  }
+
+  Future<void> _loadOrders() async {
+    try {
+      final orders = await OrderService.fetchAdminOrders();
+      if (mounted) {
+        setState(() {
+          _orders = orders;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      debugPrint('Error loading admin orders from Supabase: $e');
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
+  }
+
+  void _setupRealtimeSubscription() {
+    _realtimeChannel = OrderService.subscribeToOrders(
+      onData: () {
+        debugPrint('Supabase Realtime event: reload admin orders');
+        _loadOrders();
+      },
+    );
   }
 
   int get _countBaru =>
@@ -119,13 +152,21 @@ class _OrderManagementScreenState extends State<OrderManagementScreen> {
     }
   }
 
-  void _updateOrderStatus(String orderId, AdminOrderStatus newStatus) {
+  Future<void> _updateOrderStatus(
+      String orderId, AdminOrderStatus newStatus) async {
     setState(() {
       final index = _orders.indexWhere((o) => o.orderId == orderId);
       if (index != -1) {
         _orders[index] = _orders[index].copyWith(status: newStatus);
       }
     });
+
+    try {
+      await OrderService.updateOrderStatus(orderId, newStatus);
+    } catch (e) {
+      debugPrint('Error updating order status in Supabase: $e');
+      _loadOrders();
+    }
   }
 
   Future<void> _navigateToDetail(AdminOrderDetail order) async {
@@ -143,6 +184,7 @@ class _OrderManagementScreenState extends State<OrderManagementScreen> {
         }
       });
     }
+    _loadOrders();
   }
 
   void _showQrScanPickupDialog(AdminOrderDetail order) async {
@@ -388,15 +430,27 @@ class _OrderManagementScreenState extends State<OrderManagementScreen> {
 
   @override
   Widget build(BuildContext context) {
+    if (_isLoading) {
+      return const Center(
+        child: CircularProgressIndicator(
+          color: AppColors.primary,
+        ),
+      );
+    }
+
     final displayedList = _filteredOrders;
 
     return Column(
       children: [
         Expanded(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.fromLTRB(16.0, 16.0, 16.0, 16.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
+          child: RefreshIndicator(
+            onRefresh: _loadOrders,
+            color: AppColors.primary,
+            child: SingleChildScrollView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              padding: const EdgeInsets.fromLTRB(16.0, 16.0, 16.0, 16.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 // Header
                 Row(
@@ -573,6 +627,7 @@ class _OrderManagementScreenState extends State<OrderManagementScreen> {
             ),
           ),
         ),
+      ),
 
         // Bottom Sticky Summary Bar
         OrderSummaryBar(

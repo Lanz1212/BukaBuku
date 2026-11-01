@@ -3,6 +3,7 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../shared/widgets/bookstore_app_bar.dart';
 import '../models/user_profile.dart';
+import '../services/profile_service.dart';
 import '../widgets/edit_profile_avatar.dart';
 import '../widgets/edit_profile_field.dart';
 
@@ -26,6 +27,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   late TextEditingController _phoneController;
   late TextEditingController _birthDateController;
   late String _selectedGender;
+  bool _isSaving = false;
 
   @override
   void initState() {
@@ -90,8 +92,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     }
   }
 
-  void _handleSave() {
+  Future<void> _handleSave() async {
     if (_formKey.currentState?.validate() ?? false) {
+      setState(() => _isSaving = true);
+
       final updatedUser = widget.user.copyWith(
         name: _nameController.text.trim(),
         email: _emailController.text.trim(),
@@ -100,7 +104,15 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         gender: _selectedGender,
       );
 
-      ScaffoldMessenger.of(context).showSnackBar(
+      await ProfileService.updateProfile(updatedUser);
+
+      if (!mounted) return;
+      setState(() => _isSaving = false);
+
+      final messenger = ScaffoldMessenger.of(context);
+      final nav = Navigator.of(context);
+
+      messenger.showSnackBar(
         SnackBar(
           content: Row(
             children: [
@@ -119,7 +131,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         ),
       );
 
-      Navigator.pop(context, updatedUser);
+      nav.pop(updatedUser);
     }
   }
 
@@ -369,7 +381,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 height: 50,
                 width: double.infinity,
                 child: ElevatedButton(
-                  onPressed: _handleSave,
+                  onPressed: _isSaving ? null : _handleSave,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primaryContainer,
                     foregroundColor: Colors.white,
@@ -378,14 +390,23 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                       borderRadius: BorderRadius.circular(14),
                     ),
                   ),
-                  child: Text(
-                    'Simpan Perubahan',
-                    style: AppTypography.titleMd.copyWith(
-                      color: Colors.white,
-                      fontSize: 15,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
+                  child: _isSaving
+                      ? const SizedBox(
+                          height: 20,
+                          width: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
+                      : Text(
+                          'Simpan Perubahan',
+                          style: AppTypography.titleMd.copyWith(
+                            color: Colors.white,
+                            fontSize: 15,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
                 ),
               ),
             ),

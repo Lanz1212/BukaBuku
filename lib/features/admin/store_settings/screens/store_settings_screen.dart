@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../models/store_settings_model.dart';
+import '../services/store_settings_service.dart';
 import '../widgets/store_logo_card.dart';
 import '../widgets/store_name_card.dart';
 import '../widgets/store_location_card.dart';
@@ -27,16 +28,32 @@ class _StoreSettingsScreenState extends State<StoreSettingsScreen> {
   late TextEditingController _phoneController;
   late TextEditingController _whatsappController;
   late TextEditingController _descriptionController;
+  bool _isSaving = false;
 
   @override
   void initState() {
     super.initState();
-    _settings = StoreSettingsModel.initialData;
+    _settings = StoreSettingsService.currentSettings;
     _nameController = TextEditingController(text: _settings.storeName);
     _addressController = TextEditingController(text: _settings.fullAddress);
     _phoneController = TextEditingController(text: _settings.phoneNumber);
     _whatsappController = TextEditingController(text: _settings.whatsappNumber);
     _descriptionController = TextEditingController(text: _settings.description);
+    _loadSettings();
+  }
+
+  Future<void> _loadSettings() async {
+    final settings = await StoreSettingsService.fetchStoreSettings();
+    if (mounted) {
+      setState(() {
+        _settings = settings;
+        _nameController.text = settings.storeName;
+        _addressController.text = settings.fullAddress;
+        _phoneController.text = settings.phoneNumber;
+        _whatsappController.text = settings.whatsappNumber;
+        _descriptionController.text = settings.description;
+      });
+    }
   }
 
   @override
@@ -89,28 +106,39 @@ class _StoreSettingsScreenState extends State<StoreSettingsScreen> {
     );
   }
 
-  void _resetToDefault() {
-    setState(() {
-      _settings = StoreSettingsModel.initialData;
-      _nameController.text = _settings.storeName;
-      _addressController.text = _settings.fullAddress;
-      _phoneController.text = _settings.phoneNumber;
-      _whatsappController.text = _settings.whatsappNumber;
-      _descriptionController.text = _settings.description;
-    });
-    _showNotice('Pengaturan toko dikembalikan ke setelan awal', isSuccess: false);
+  Future<void> _resetToDefault() async {
+    await StoreSettingsService.resetToDefault();
+    if (mounted) {
+      setState(() {
+        _settings = StoreSettingsModel.initialData;
+        _nameController.text = _settings.storeName;
+        _addressController.text = _settings.fullAddress;
+        _phoneController.text = _settings.phoneNumber;
+        _whatsappController.text = _settings.whatsappNumber;
+        _descriptionController.text = _settings.description;
+      });
+      _showNotice('Pengaturan toko dikembalikan ke setelan awal', isSuccess: false);
+    }
   }
 
-  void _saveChanges() {
-    setState(() {
-      _settings = _settings.copyWith(
-        storeName: _nameController.text.trim(),
-        phoneNumber: _phoneController.text.trim(),
-        whatsappNumber: _whatsappController.text.trim(),
-        description: _descriptionController.text.trim(),
-      );
-    });
-    _showNotice('Perubahan profil gerai berhasil disimpan!');
+  Future<void> _saveChanges() async {
+    setState(() => _isSaving = true);
+    final updated = _settings.copyWith(
+      storeName: _nameController.text.trim(),
+      phoneNumber: _phoneController.text.trim(),
+      whatsappNumber: _whatsappController.text.trim(),
+      description: _descriptionController.text.trim(),
+    );
+
+    await StoreSettingsService.updateStoreSettings(updated);
+
+    if (mounted) {
+      setState(() {
+        _settings = updated;
+        _isSaving = false;
+      });
+      _showNotice('Perubahan profil gerai berhasil disimpan ke database!');
+    }
   }
 
   @override
@@ -406,7 +434,7 @@ class _StoreSettingsScreenState extends State<StoreSettingsScreen> {
               child: SizedBox(
                 height: 50,
                 child: ElevatedButton.icon(
-                  onPressed: _saveChanges,
+                  onPressed: _isSaving ? null : _saveChanges,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primaryContainer,
                     foregroundColor: AppColors.onPrimary,
@@ -415,13 +443,22 @@ class _StoreSettingsScreenState extends State<StoreSettingsScreen> {
                     ),
                     elevation: 0,
                   ),
-                  icon: const Icon(
-                    Icons.save_rounded,
-                    size: 18,
-                    color: AppColors.onPrimary,
-                  ),
+                  icon: _isSaving
+                      ? const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: AppColors.onPrimary,
+                          ),
+                        )
+                      : const Icon(
+                          Icons.save_rounded,
+                          size: 18,
+                          color: AppColors.onPrimary,
+                        ),
                   label: Text(
-                    'Simpan Perubahan',
+                    _isSaving ? 'Menyimpan...' : 'Simpan Perubahan',
                     style: AppTypography.labelLg.copyWith(
                       color: AppColors.onPrimary,
                       fontWeight: FontWeight.w700,

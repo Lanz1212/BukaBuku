@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:qr_flutter/qr_flutter.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
 
@@ -132,10 +133,17 @@ class BarcodeQrPainter extends CustomPainter {
 }
 
 class QrPickupCodeDisplay extends StatelessWidget {
-  const QrPickupCodeDisplay({super.key});
+  final String? qrData;
+
+  const QrPickupCodeDisplay({
+    super.key,
+    this.qrData,
+  });
 
   @override
   Widget build(BuildContext context) {
+    final cleanPayload = (qrData ?? 'ORD00125').replaceAll('#', '').trim();
+
     return Container(
       width: double.infinity,
       color: AppColors.surfaceContainerLow.withValues(alpha: 0.5),
@@ -145,38 +153,79 @@ class QrPickupCodeDisplay extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: AppColors.surfaceContainerLowest,
+              color: Colors.white,
               borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: AppColors.outlineVariant.withValues(alpha: 0.3),
+              ),
               boxShadow: [
                 BoxShadow(
-                  color: AppColors.primaryContainer.withValues(alpha: 0.05),
-                  blurRadius: 10,
-                  offset: const Offset(0, 3),
+                  color: AppColors.primaryContainer.withValues(alpha: 0.08),
+                  blurRadius: 12,
+                  offset: const Offset(0, 4),
                 ),
               ],
             ),
-            child: const SizedBox(
+            child: SizedBox(
               width: 180,
               height: 180,
-              child: CustomPaint(
-                painter: BarcodeQrPainter(),
+              child: QrImageView(
+                data: cleanPayload.isEmpty ? 'ORD00125' : cleanPayload,
+                version: QrVersions.auto,
+                size: 180,
+                backgroundColor: Colors.white,
+                eyeStyle: const QrEyeStyle(
+                  eyeShape: QrEyeShape.square,
+                  color: AppColors.primary,
+                ),
+                dataModuleStyle: const QrDataModuleStyle(
+                  dataModuleShape: QrDataModuleShape.square,
+                  color: AppColors.primary,
+                ),
+                errorStateBuilder: (ctx, err) {
+                  return const Center(
+                    child: Text(
+                      'Gagal membuat QR',
+                      style: TextStyle(fontSize: 12, color: AppColors.error),
+                    ),
+                  );
+                },
               ),
             ),
           ),
           const SizedBox(height: 12),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
+            decoration: BoxDecoration(
+              color: AppColors.surfaceContainerHigh,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Text(
+              cleanPayload,
+              style: const TextStyle(
+                fontFamily: 'monospace',
+                fontSize: 14,
+                fontWeight: FontWeight.w700,
+                letterSpacing: 2.0,
+                color: AppColors.primary,
+              ),
+            ),
+          ),
+          const SizedBox(height: 8),
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               const Icon(
-                Icons.sync,
+                Icons.check_circle_outline,
                 size: 15,
-                color: AppColors.secondary,
+                color: AppColors.success,
               ),
               const SizedBox(width: 6),
               Text(
-                'Perbarui otomatis tiap 60 dtk',
+                'QR Valid untuk Ambil di Toko',
                 style: AppTypography.caption.copyWith(
                   color: AppColors.onSurfaceVariant,
+                  fontWeight: FontWeight.w600,
                 ),
               ),
             ],

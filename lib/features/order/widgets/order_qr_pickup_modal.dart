@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:qr_flutter/qr_flutter.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
 import '../models/order_model.dart';
@@ -123,6 +124,9 @@ class OrderQrPickupModal extends StatelessWidget {
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: AppColors.outlineVariant.withValues(alpha: 0.4),
+                    ),
                     boxShadow: [
                       BoxShadow(
                         color: AppColors.primaryContainer.withValues(alpha: 0.08),
@@ -131,11 +135,29 @@ class OrderQrPickupModal extends StatelessWidget {
                       ),
                     ],
                   ),
-                  child: CustomPaint(
-                    size: const Size(156, 156),
-                    painter: _BarcodeQrPainter(
-                      color: AppColors.primaryContainer,
+                  child: QrImageView(
+                    data: (order.qrCode.isNotEmpty ? order.qrCode : order.id)
+                        .replaceAll('#', '')
+                        .trim(),
+                    version: QrVersions.auto,
+                    size: 156,
+                    backgroundColor: Colors.white,
+                    eyeStyle: const QrEyeStyle(
+                      eyeShape: QrEyeShape.square,
+                      color: AppColors.primary,
                     ),
+                    dataModuleStyle: const QrDataModuleStyle(
+                      dataModuleShape: QrDataModuleShape.square,
+                      color: AppColors.primary,
+                    ),
+                    errorStateBuilder: (ctx, err) {
+                      return const Center(
+                        child: Text(
+                          'Gagal membuat QR',
+                          style: TextStyle(fontSize: 11, color: AppColors.error),
+                        ),
+                      );
+                    },
                   ),
                 ),
                 const SizedBox(height: 16),
@@ -278,93 +300,3 @@ class OrderQrPickupModal extends StatelessWidget {
   }
 }
 
-class _BarcodeQrPainter extends CustomPainter {
-  final Color color;
-
-  const _BarcodeQrPainter({required this.color});
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = color
-      ..style = PaintingStyle.fill;
-
-    final strokePaint = Paint()
-      ..color = color
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 3;
-
-    // Outer corner finder patterns
-    void drawFinderPattern(double x, double y) {
-      canvas.drawRRect(
-        RRect.fromRectAndRadius(
-          Rect.fromLTWH(x, y, 38, 38),
-          const Radius.circular(6),
-        ),
-        strokePaint,
-      );
-      canvas.drawRRect(
-        RRect.fromRectAndRadius(
-          Rect.fromLTWH(x + 10, y + 10, 18, 18),
-          const Radius.circular(3),
-        ),
-        paint,
-      );
-    }
-
-    // Top-left, top-right, bottom-left
-    drawFinderPattern(4, 4);
-    drawFinderPattern(size.width - 42, 4);
-    drawFinderPattern(4, size.height - 42);
-
-    // Center decorative book & digital pattern
-    final centerRect = Rect.fromCenter(
-      center: Offset(size.width / 2, size.height / 2),
-      width: 32,
-      height: 32,
-    );
-    canvas.drawRRect(
-      RRect.fromRectAndRadius(centerRect, const Radius.circular(6)),
-      paint,
-    );
-    final innerCenterRect = Rect.fromCenter(
-      center: Offset(size.width / 2, size.height / 2),
-      width: 14,
-      height: 14,
-    );
-    canvas.drawRRect(
-      RRect.fromRectAndRadius(innerCenterRect, const Radius.circular(3)),
-      Paint()..color = Colors.white,
-    );
-
-    // Decorative data bits
-    final randomBits = [
-      const Rect.fromLTWH(50, 8, 12, 12),
-      const Rect.fromLTWH(68, 8, 8, 18),
-      const Rect.fromLTWH(82, 14, 18, 8),
-      const Rect.fromLTWH(50, 26, 24, 10),
-      const Rect.fromLTWH(14, 50, 12, 18),
-      const Rect.fromLTWH(32, 52, 10, 10),
-      const Rect.fromLTWH(110, 50, 18, 12),
-      const Rect.fromLTWH(134, 52, 12, 18),
-      const Rect.fromLTWH(50, 74, 16, 12),
-      const Rect.fromLTWH(72, 70, 12, 22),
-      const Rect.fromLTWH(92, 76, 22, 10),
-      const Rect.fromLTWH(50, 114, 18, 12),
-      const Rect.fromLTWH(76, 104, 12, 22),
-      const Rect.fromLTWH(96, 114, 28, 12),
-      const Rect.fromLTWH(128, 100, 16, 26),
-      const Rect.fromLTWH(114, 134, 26, 12),
-    ];
-
-    for (final rect in randomBits) {
-      canvas.drawRRect(
-        RRect.fromRectAndRadius(rect, const Radius.circular(2)),
-        paint,
-      );
-    }
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
-}

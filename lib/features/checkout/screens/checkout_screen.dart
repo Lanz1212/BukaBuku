@@ -1,8 +1,14 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
+import '../../../core/services/order_service.dart';
 import '../../../shared/widgets/bookstore_app_bar.dart';
+import '../../admin/store_settings/services/store_settings_service.dart';
+import '../../auth/services/auth_service.dart';
 import '../../cart/models/cart_item.dart';
+import '../../admin/order_management/models/admin_order_detail.dart';
 import '../models/checkout_order.dart';
 import '../widgets/checkout_bottom_bar.dart';
 import '../widgets/checkout_delivery_address_card.dart';
@@ -34,8 +40,118 @@ class CheckoutScreen extends StatefulWidget {
 class _CheckoutScreenState extends State<CheckoutScreen> {
   FulfillmentMode _fulfillmentMode = FulfillmentMode.delivery;
   DeliveryAddress _deliveryAddress = const DeliveryAddress();
-  final StoreInfo _storeInfo = const StoreInfo();
+  StoreInfo _storeInfo = const StoreInfo();
   PaymentMethodOption _selectedPayment = PaymentMethodOption.allOptions.first;
+  String? _userId;
+  bool _isSubmitting = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUserProfile();
+    _loadStoreSettings();
+  }
+
+  Future<void> _loadStoreSettings() async {
+    try {
+      final settings = await StoreSettingsService.fetchStoreSettings();
+      if (mounted) {
+        setState(() {
+          _storeInfo = StoreInfo(
+            name: settings.storeName,
+            badge: settings.branchName,
+            address: settings.fullAddress,
+            operatingHours: '${settings.openTime} – ${settings.closeTime}',
+            phone: settings.phoneNumber.isNotEmpty
+                ? settings.phoneNumber
+                : settings.whatsappNumber,
+            mapImageUrl: _storeInfo.mapImageUrl,
+          );
+        });
+      }
+    } catch (_) {}
+  }
+
+  Future<void> _loadUserProfile() async {
+    try {
+      final profile = await AuthService.getCurrentUserProfile();
+      if (profile != null && mounted) {
+        final fullName = (profile['full_name'] as String?)?.trim();
+        final phone = (profile['phone'] as String?)?.trim();
+        final rawAddresses = (profile['addresses'] as String?)?.trim();
+
+        String resolvedAddress = _deliveryAddress.address;
+        if (rawAddresses != null && rawAddresses.isNotEmpty) {
+          if (rawAddresses.startsWith('[')) {
+            try {
+              final decoded = jsonDecode(rawAddresses);
+              if (decoded is List && decoded.isNotEmpty) {
+                final primary = decoded.firstWhere(
+                  (item) => item['isPrimary'] == true,
+                  orElse: () => decoded.first,
+                );
+                resolvedAddress = primary['fullAddress']?.toString() ?? resolvedAddress;
+              }
+            } catch (_) {
+              resolvedAddress = rawAddresses;
+            }
+          } else {
+            resolvedAddress = rawAddresses;
+          }
+        }
+
+        setState(() {
+          _userId = profile['id'] as String?;
+          _deliveryAddress = DeliveryAddress(
+            recipientName: (fullName != null && fullName.isNotEmpty)
+                ? fullName
+                : _deliveryAddress.recipientName,
+            phone: (phone != null && phone.isNotEmpty)
+                ? phone
+                : _deliveryAddress.phone,
+            address: resolvedAddress,
+            notes: _deliveryAddress.notes,
+          );
+        });
+        return;
+      }
+
+      // Fallback: Ambil data user dari tabel profiles di Supabase
+      SupabaseClient? client;
+      try {
+        client = Supabase.instance.client;
+      } catch (_) {
+        client = null;
+      }
+
+      if (client == null) return;
+
+      final defaultProfile = await client
+          .from('profiles')
+          .select()
+          .eq('role', 'user')
+          .limit(1)
+          .maybeSingle();
+
+      if (defaultProfile != null && mounted) {
+        final fullName = (defaultProfile['full_name'] as String?)?.trim();
+        final phone = (defaultProfile['phone'] as String?)?.trim();
+        final addresses = (defaultProfile['addresses'] as String?)?.trim();
+
+        setState(() {
+          _userId = defaultProfile['id'] as String?;
+          _deliveryAddress = DeliveryAddress(
+            recipientName: fullName ?? 'Budi Santoso',
+            phone: phone ?? '081234567890',
+            address: addresses ?? 'Jl. Cikini Raya No. 10, Jakarta Pusat',
+            notes: 'Titipkan di meja resepsionis jika tidak di tempat.',
+          );
+        });
+      }
+    } catch (e) {
+      debugPrint('Error loading user profile in checkout: $e');
+    }
+  }
 
   int get _subtotal => widget.checkoutItems.fold(
         0,
@@ -174,35 +290,103 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     }
   }
 
-  void _submitOrder() {
-    const orderId = '#ORD00125';
+  Future<void> _submitOrder() async {
+    if (_isSubmitting) return;
+    setState(() => _isSubmitting = true);
 
-    if (_selectedPayment.id == 'qris') {
+    try {
+      final itemsData = widget.checkoutItems.map((item) {
+        return {
+          'book_id': item.bookId,
+          'title': item.title,
+          'author': item.author,
+          'quantity': item.quantity,
+          'price': item.priceValue,
+          'rack_location': item.storeLocation,
+          'image_url': item.coverUrl,
+        };
+      }).toList();
+
+      final isDelivery = _fulfillmentMode == FulfillmentMode.delivery;
+      final deliveryType =
+          isDelivery ? 'Kurir Toko (Delivery)' : 'Ambil di Toko (Pickup)';
+      final paymentMethod = _selectedPayment.title;
+      final isQris = _selectedPayment.id == 'qris';
+      final isCash = _selectedPayment.id == 'cash';
+
+      final pickupCode = isDelivery
+          ? null
+          : 'PU-${(DateTime.now().millisecondsSinceEpoch % 1000).toString().padLeft(3, '0')}-${(DateTime.now().second * 17 % 1000).toString().padLeft(3, '0')}';
+
+      // Simpan pesanan ke database Supabase
+      final createdOrder = await OrderService.createOrder(
+        userId: _userId,
+        customerName: _deliveryAddress.recipientName,
+        customerPhone: _deliveryAddress.phone,
+        customerAddress:
+            isDelivery ? _deliveryAddress.address : _storeInfo.address,
+        deliveryType: deliveryType,
+        paymentMethod: paymentMethod,
+        paymentChannel: _selectedPayment.subtitle,
+        isPaid: false,
+        status: AdminOrderStatus.baru,
+        totalPrice: _totalPayment,
+        shippingFee: _shippingFee,
+        serviceFee: _serviceFee,
+        specialNote: _deliveryAddress.notes,
+        pickupCode: pickupCode,
+        pickupPoint: isDelivery ? null : 'Gerai Utama Cikini, Meja Kasir 1',
+        accountAddress: _deliveryAddress.address,
+        items: itemsData,
+      );
+
+      if (!mounted) return;
+
+      if (isQris) {
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (context) => QrisPaymentScreen(
+              orderId: '#${createdOrder.orderId}',
+              totalAmount: _totalPayment,
+              customerName: _deliveryAddress.recipientName,
+              customerPhone: _deliveryAddress.phone,
+              deliveryAddress: _deliveryAddress.address,
+              orderedBooks: createdOrder.books,
+            ),
+          ),
+        );
+        return;
+      }
+
+      final initialFlow = isDelivery
+          ? OrderSimulationFlow.delivery
+          : (isCash
+              ? OrderSimulationFlow.pickupCash
+              : OrderSimulationFlow.pickupOnline);
+
       Navigator.of(context).push(
         MaterialPageRoute(
-          builder: (context) => const QrisPaymentScreen(
-            orderId: orderId,
-            totalAmount: 181000,
+          builder: (context) => OrderSuccessScreen(
+            orderId: '#${createdOrder.orderId}',
+            initialFlow: initialFlow,
           ),
         ),
       );
-      return;
+    } catch (e) {
+      debugPrint('Error creating order in Supabase: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Gagal membuat pesanan: $e'),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isSubmitting = false);
+      }
     }
-
-    final initialFlow = _fulfillmentMode == FulfillmentMode.delivery
-        ? OrderSimulationFlow.delivery
-        : (_selectedPayment.id == 'cash'
-            ? OrderSimulationFlow.pickupCash
-            : OrderSimulationFlow.pickupOnline);
-
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (context) => OrderSuccessScreen(
-          orderId: orderId,
-          initialFlow: initialFlow,
-        ),
-      ),
-    );
   }
 
   @override

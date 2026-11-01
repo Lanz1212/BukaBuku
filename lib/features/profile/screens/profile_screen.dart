@@ -10,6 +10,7 @@ import '../../home/home_screen.dart';
 import '../../notification/screens/notification_screen.dart';
 import '../../order/screens/order_list_screen.dart';
 import '../models/user_profile.dart';
+import '../services/profile_service.dart';
 import '../widgets/profile_header_card.dart';
 import '../widgets/profile_menu_section.dart';
 import '../widgets/profile_menu_tile.dart';
@@ -33,6 +34,23 @@ class ProfileScreen extends StatefulWidget {
 class _ProfileScreenState extends State<ProfileScreen> {
   UserProfile _user = UserProfile.defaultProfile;
 
+  @override
+  void initState() {
+    super.initState();
+    _loadProfile();
+  }
+
+  Future<void> _loadProfile() async {
+    try {
+      final profile = await ProfileService.fetchCurrentUserProfile();
+      if (mounted) {
+        setState(() {
+          _user = profile;
+        });
+      }
+    } catch (_) {}
+  }
+
   Future<void> _navigateToEditProfile() async {
     final updated = await Navigator.push<UserProfile>(
       context,
@@ -41,10 +59,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
       ),
     );
 
-    if (updated != null) {
+    if (updated != null && mounted) {
       setState(() {
         _user = updated;
       });
+      _loadProfile();
     }
   }
 
