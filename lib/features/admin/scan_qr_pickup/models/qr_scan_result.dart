@@ -44,15 +44,4 @@ class QrScanResult {
       fullOrder: order,
     );
   }
-
-  static QrScanResult mockDefault() {
-    return const QrScanResult(
-      orderId: '#ORD00125',
-      customerName: 'Budi Santoso',
-      bookCount: 2,
-      totalPrice: 150000,
-      status: 'Siap Diambil',
-      verificationTime: '0.3s',
-    );
-  }
 }

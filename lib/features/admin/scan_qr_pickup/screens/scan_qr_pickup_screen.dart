@@ -41,8 +41,6 @@ class _ScanQrPickupScreenState extends State<ScanQrPickupScreen> {
 
     if (widget.preloadedOrder != null) {
       _detectedResult = QrScanResult.fromOrder(widget.preloadedOrder!);
-    } else {
-      _detectedResult = QrScanResult.mockDefault();
     }
   }
 

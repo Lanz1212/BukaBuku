@@ -88,19 +88,7 @@ class OrderService {
       );
     } catch (e) {
       debugPrint('Error fetching order by code or id: $e');
-      // Fallback for mock/test environment when Supabase is uninitialized
-      try {
-        final code = rawCode.replaceAll('#', '').toUpperCase().trim();
-        return AdminOrderDetail.mockOrders.firstWhere(
-          (o) =>
-              o.orderId.toUpperCase() == code ||
-              (o.pickupCode ?? '').toUpperCase() == code ||
-              (o.qrCode ?? '').toUpperCase() == code,
-          orElse: () => AdminOrderDetail.mockOrders.first,
-        );
-      } catch (_) {
-        return null;
-      }
+      return null;
     }
   }
 
