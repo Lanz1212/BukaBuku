@@ -148,17 +148,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  void _showFeatureNotice(String featureName) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Fitur $featureName segera hadir di Buka Buku!'),
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-        duration: const Duration(seconds: 1),
-      ),
-    );
-  }
-
   void _handleBottomNavTap(int index) {
     if (index == 4) return;
 
@@ -317,12 +306,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               ),
                             );
                           },
-                        ),
-                        ProfileMenuTile(
-                          icon: Icons.lock_outline_rounded,
-                          title: 'Keamanan Akun',
-                          subtitle: 'Kata sandi & verifikasi login',
-                          onTap: () => _showFeatureNotice('Keamanan Akun'),
                         ),
                       ],
                     ),
