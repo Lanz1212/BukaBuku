@@ -1,28 +1,8 @@
 import '../../search/models/book_search_item.dart';
 import '../../admin/book_management/models/admin_book_item.dart';
+import '../../review/models/book_review.dart';
 
-/// Single reader review model
-class BookReview {
-  final String id;
-  final String reviewerName;
-  final String reviewerInitials;
-  final bool isVerified;
-  final double rating;
-  final String timeAgo;
-  final String purchaseLocation;
-  final String comment;
-
-  const BookReview({
-    required this.id,
-    required this.reviewerName,
-    required this.reviewerInitials,
-    this.isVerified = true,
-    required this.rating,
-    required this.timeAgo,
-    this.purchaseLocation = 'Pembeli Toko Buku Budi',
-    required this.comment,
-  });
-}
+export '../../review/models/book_review.dart';
 
 /// Comprehensive book detail model matching Stitch Toko Buku Budi design
 class BookDetail {

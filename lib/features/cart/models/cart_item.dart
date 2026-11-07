@@ -62,6 +62,42 @@ class CartItem {
     );
   }
 
+  /// Create CartItem from Supabase `cart_items` row (with joined `books` record)
+  factory CartItem.fromSupabase(Map<String, dynamic> map) {
+    final booksData = map['books'];
+    final book = booksData is Map<String, dynamic> ? booksData : <String, dynamic>{};
+
+    final rawPrice = book['price'];
+    final priceValue = rawPrice is num ? rawPrice.toInt() : int.tryParse(rawPrice?.toString() ?? '0') ?? 0;
+
+    final formattedPrice = 'Rp${priceValue.toString().replaceAllMapped(
+          RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
+          (m) => '${m[1]}.',
+        )}';
+
+    final format = (book['format'] as String?)?.trim();
+    final formatEdition = (format != null && format.isNotEmpty) ? format : 'Buku Fisik';
+
+    final rack = (book['rack_location'] as String?)?.trim();
+    final storeLocation = (rack != null && rack.isNotEmpty) ? rack : 'Tersedia di Toko Cikini';
+
+    return CartItem(
+      id: map['id']?.toString() ?? '',
+      bookId: map['book_id']?.toString() ?? book['id']?.toString() ?? '',
+      title: (book['title'] as String?)?.trim() ?? 'Buku Tanpa Judul',
+      author: (book['author'] as String?)?.trim() ?? 'Penulis',
+      formatEdition: formatEdition,
+      price: formattedPrice,
+      priceValue: priceValue,
+      originalPrice: null,
+      originalPriceValue: null,
+      coverUrl: (book['cover_url'] as String?)?.trim() ?? '',
+      storeLocation: storeLocation,
+      quantity: (map['quantity'] as num?)?.toInt() ?? 1,
+      isSelected: map['is_selected'] as bool? ?? true,
+    );
+  }
+
   /// Default dataset matching the Stitch reference design
   static const List<CartItem> defaultCartItems = [
     CartItem(

@@ -2,7 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
+import '../../../core/services/order_service.dart';
 import '../../../shared/widgets/bookstore_app_bar.dart';
+import '../../cart/screens/cart_screen.dart';
+import '../../review/screens/write_review_screen.dart';
 import '../models/order_model.dart';
 import '../widgets/order_detail_book_item.dart';
 import '../widgets/order_detail_stepper.dart';
@@ -91,7 +94,7 @@ class OrderDetailScreen extends StatelessWidget {
               ],
 
               // 5. Ordered Books Card (Rincian Buku)
-              _buildOrderedBooksCard(),
+              _buildOrderedBooksCard(context),
 
               const SizedBox(height: 16),
 
@@ -399,7 +402,7 @@ class OrderDetailScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildOrderedBooksCard() {
+  Widget _buildOrderedBooksCard(BuildContext context) {
     final bookCount = order.items.length;
 
     return Container(
@@ -455,9 +458,79 @@ class OrderDetailScreen extends StatelessWidget {
               ),
             ),
             itemBuilder: (context, index) {
-              return OrderDetailBookItem(item: order.items[index]);
+              final item = order.items[index];
+              return OrderDetailBookItem(
+                item: item,
+                onWriteReview: order.status == OrderStatus.completed
+                    ? () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => WriteReviewScreen(
+                              bookId: item.bookId ?? '',
+                              bookTitle: item.title,
+                              bookAuthor: item.author,
+                              bookCoverUrl: item.coverUrl,
+                              orderId: order.id,
+                            ),
+                          ),
+                        );
+                      }
+                    : null,
+              );
             },
           ),
+          if (order.status == OrderStatus.completed && order.items.isNotEmpty) ...[
+            const SizedBox(height: 16),
+            SizedBox(
+              width: double.infinity,
+              height: 48,
+              child: ElevatedButton.icon(
+                onPressed: () async {
+                  final count = await OrderService.reAddItemsToCart(order.items);
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(
+                          '$count buku telah ditambahkan ke keranjang belanja!',
+                        ),
+                        backgroundColor: AppColors.primaryContainer,
+                        behavior: SnackBarBehavior.floating,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        action: SnackBarAction(
+                          label: 'Lihat Keranjang',
+                          textColor: AppColors.secondary,
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => const CartScreen(),
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                    );
+                  }
+                },
+                icon: const Icon(Icons.repeat_rounded, size: 20),
+                label: const Text('Beli Lagi Semua Buku'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primaryContainer,
+                  foregroundColor: AppColors.onPrimary,
+                  elevation: 0,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  textStyle: AppTypography.labelLg.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+            ),
+          ],
         ],
       ),
     );

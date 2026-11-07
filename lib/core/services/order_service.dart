@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'cart_service.dart';
 import '../../features/admin/order_management/models/admin_order_detail.dart';
 import '../../features/order/models/order_model.dart';
 import '../../features/order/models/order_item_model.dart';
@@ -103,11 +104,28 @@ class OrderService {
     }
   }
 
+  static String _formatRupiah(int amount) =>
+      'Rp${amount.toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (m) => '${m[1]}.')}';
+
   // ─── READ: Ambil Pesanan Customer (untuk Pesanan Saya) ───────────────────────
   static Future<List<OrderModel>> fetchCustomerOrders({String? userId}) async {
     try {
+      String? effectiveUid = userId ?? _client.auth.currentUser?.id;
+      if (effectiveUid == null) {
+        try {
+          final defaultProfile = await _client
+              .from('profiles')
+              .select('id')
+              .eq('role', 'user')
+              .limit(1)
+              .maybeSingle();
+          if (defaultProfile != null) {
+            effectiveUid = defaultProfile['id'] as String?;
+          }
+        } catch (_) {}
+      }
+
       var query = _client.from('orders').select('*, order_items(*)');
-      final effectiveUid = userId ?? _client.auth.currentUser?.id;
       if (effectiveUid != null) {
         query = query.eq('user_id', effectiveUid);
       }
@@ -125,13 +143,14 @@ class OrderService {
           final sub = price * qty;
           return OrderItemModel(
             id: 'item-${iMap['id'] ?? ''}',
+            bookId: iMap['book_id'] as String?,
             title: iMap['title'] as String? ?? 'Buku',
             author: iMap['author'] as String? ?? '',
             coverUrl: iMap['image_url'] as String? ?? '',
             quantity: qty,
-            pricePerUnit: 'Rp$price',
+            pricePerUnit: _formatRupiah(price),
             pricePerUnitValue: price,
-            subtotal: 'Rp$sub',
+            subtotal: _formatRupiah(sub),
             subtotalValue: sub,
           );
         }).toList();
@@ -142,7 +161,7 @@ class OrderService {
           status = OrderStatus.readyPickup;
         } else if (statusStr == 'dalamPengiriman') {
           status = OrderStatus.shipping;
-        } else if (statusStr == 'selesai' || statusStr == 'dibatalkan') {
+        } else if (statusStr == 'selesai') {
           status = OrderStatus.completed;
         }
 
@@ -150,28 +169,79 @@ class OrderService {
             .toLowerCase()
             .contains('kurir');
         final totalPrice = (orderMap['total_price'] as num?)?.toInt() ?? 0;
-        final totalStr = 'Rp$totalPrice';
+        final totalStr = _formatRupiah(totalPrice);
+
+        final itemsSubtotalValue =
+            items.fold(0, (sum, i) => sum + i.subtotalValue);
+        final itemsSubtotalStr = _formatRupiah(itemsSubtotalValue);
 
         final firstItem = items.isNotEmpty ? items.first : null;
+        final String summaryTitle;
+        final String summarySubtitle;
+        if (items.length > 1) {
+          summaryTitle =
+              '${firstItem?.title ?? "Buku"} & ${items.length - 1} Buku Lainnya';
+          final totalBooks = items.fold(0, (sum, i) => sum + i.quantity);
+          summarySubtitle =
+              '${firstItem?.author ?? "Penulis"}, dkk • $totalBooks Buku';
+        } else if (firstItem != null) {
+          summaryTitle = firstItem.title;
+          summarySubtitle = '${firstItem.author} • ${firstItem.quantity}x';
+        } else {
+          summaryTitle = 'Pesanan Buku';
+          summarySubtitle = '';
+        }
+
+        final totalBooksCount = items.fold(0, (sum, i) => sum + i.quantity);
+        final summaryItemCountLabel = items.length > 1
+            ? '${items.length} Judul ($totalBooksCount Buku)'
+            : '$totalBooksCount Buku';
+
+        String dateTimeDisplay = 'Hari ini';
+        String orderDateExact = '';
+        if (orderMap['created_at'] != null) {
+          final parsedDate =
+              DateTime.tryParse(orderMap['created_at'].toString())?.toLocal();
+          if (parsedDate != null) {
+            final day = parsedDate.day.toString().padLeft(2, '0');
+            const monthNames = [
+              'Jan',
+              'Feb',
+              'Mar',
+              'Apr',
+              'Mei',
+              'Jun',
+              'Jul',
+              'Agu',
+              'Sep',
+              'Okt',
+              'Nov',
+              'Des'
+            ];
+            final month = monthNames[parsedDate.month - 1];
+            final year = parsedDate.year;
+            final hour = parsedDate.hour.toString().padLeft(2, '0');
+            final minute = parsedDate.minute.toString().padLeft(2, '0');
+            dateTimeDisplay = '$day $month $year • $hour:$minute WIB';
+            orderDateExact = '$day $month $year, $hour:$minute WIB';
+          }
+        }
 
         return OrderModel(
           id: '#${orderMap['id']}',
-          dateTimeStr: orderMap['created_at'] != null
-              ? '${orderMap['created_at'].toString().substring(0, 10)} • WIB'
-              : 'Hari ini',
-          orderDateExact: orderMap['created_at'] ?? '',
+          dateTimeStr: dateTimeDisplay,
+          orderDateExact: orderDateExact,
           status: status,
           isPaid: orderMap['is_paid'] as bool? ?? false,
           deliveryType: isDelivery ? DeliveryType.delivery : DeliveryType.pickup,
           deliveryBadgeLabel: isDelivery ? 'Kurir Antar' : 'Ambil di Toko',
-          summaryTitle: firstItem?.title ?? 'Pesanan Buku',
-          summarySubtitle:
-              firstItem != null ? '${firstItem.author} • ${firstItem.quantity}x' : '',
-          summaryItemCountLabel: '${items.length} Buku',
+          summaryTitle: summaryTitle,
+          summarySubtitle: summarySubtitle,
+          summaryItemCountLabel: summaryItemCountLabel,
           summaryCoverUrl: firstItem?.coverUrl ?? '',
           items: items,
-          subtotal: totalStr,
-          subtotalValue: totalPrice,
+          subtotal: itemsSubtotalStr,
+          subtotalValue: itemsSubtotalValue,
           shippingCost: isDelivery ? 'Rp12.000' : 'Gratis',
           serviceFee: 'Rp1.000',
           serviceFeeValue: 1000,
@@ -192,6 +262,22 @@ class OrderService {
       debugPrint('Error fetching customer orders: $e');
       return [];
     }
+  }
+
+  // ─── RE-ADD: Masukkan Ulang Buku-Buku Pesanan ke Keranjang ─────────────────
+  static Future<int> reAddItemsToCart(List<OrderItemModel> items) async {
+    int count = 0;
+    for (final item in items) {
+      if (item.bookId != null && item.bookId!.isNotEmpty) {
+        try {
+          await CartService.addToCart(item.bookId!, quantity: item.quantity);
+          count++;
+        } catch (e) {
+          debugPrint('Error adding book ${item.bookId} to cart: $e');
+        }
+      }
+    }
+    return count;
   }
 
   // ─── CREATE: Buat Pesanan Baru dari Checkout ────────────────────────────────

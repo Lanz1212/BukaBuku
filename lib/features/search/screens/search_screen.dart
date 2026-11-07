@@ -9,6 +9,10 @@ import '../widgets/search_empty_state.dart';
 import '../widgets/search_filter_chips.dart';
 import '../../book_detail/screens/book_detail_screen.dart';
 import '../../../core/services/book_service.dart';
+import '../../../core/services/cart_service.dart';
+import '../../../core/utils/auth_dialog_helper.dart';
+import '../../auth/services/auth_service.dart';
+import '../../cart/screens/cart_screen.dart';
 import '../../admin/book_management/models/admin_book_item.dart';
 
 /// Screen for searching and browsing books in Buka Buku
@@ -432,16 +436,47 @@ class _SearchScreenState extends State<SearchScreen> {
                       final book = books[index];
                       return BookSearchCard(
                         book: book,
-                        onAddToCart: () {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text('${book.title} ditambahkan ke keranjang belanja'),
-                              backgroundColor: AppColors.primaryContainer,
-                              behavior: SnackBarBehavior.floating,
-                              duration: const Duration(seconds: 2),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                            ),
-                          );
+                        onAddToCart: () async {
+                          if (!AuthService.isLoggedIn) {
+                            AuthDialogHelper.showLoginRequiredDialog(
+                              context,
+                              title: 'Masuk ke Akun',
+                              message: 'Silakan masuk agar buku dapat dimasukkan ke keranjang belanja pribadi Anda.',
+                            );
+                            return;
+                          }
+                          try {
+                            await CartService.addToCart(book.id, quantity: 1);
+                            if (!context.mounted) return;
+                            ScaffoldMessenger.of(context).removeCurrentSnackBar();
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text('${book.title} ditambahkan ke keranjang belanja'),
+                                backgroundColor: AppColors.primaryContainer,
+                                behavior: SnackBarBehavior.floating,
+                                duration: const Duration(seconds: 3),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                action: SnackBarAction(
+                                  label: 'KERANJANG',
+                                  textColor: AppColors.secondaryFixed,
+                                  onPressed: () {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(builder: (_) => const CartScreen()),
+                                    );
+                                  },
+                                ),
+                              ),
+                            );
+                          } catch (e) {
+                            if (!context.mounted) return;
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text('Gagal menambahkan ke keranjang: $e'),
+                                backgroundColor: AppColors.error,
+                              ),
+                            );
+                          }
                         },
                         onNotifyMe: () {
                           ScaffoldMessenger.of(context).showSnackBar(

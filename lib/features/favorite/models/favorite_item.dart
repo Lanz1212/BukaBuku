@@ -11,7 +11,8 @@ enum FavoriteBadgeType {
 /// Model representing a favorite/wishlist book item
 /// Matches the Stitch "Buku Favorit" screen specification.
 class FavoriteItem {
-  final String id;
+  final String id; // ID of favorite record in database
+  final String bookId; // ID of book in books table
   final String title;
   final String author;
   final String price;
@@ -24,6 +25,7 @@ class FavoriteItem {
 
   const FavoriteItem({
     required this.id,
+    this.bookId = '',
     required this.title,
     required this.author,
     required this.price,
@@ -37,6 +39,7 @@ class FavoriteItem {
 
   FavoriteItem copyWith({
     String? id,
+    String? bookId,
     String? title,
     String? author,
     String? price,
@@ -49,6 +52,7 @@ class FavoriteItem {
   }) {
     return FavoriteItem(
       id: id ?? this.id,
+      bookId: bookId ?? this.bookId,
       title: title ?? this.title,
       author: author ?? this.author,
       price: price ?? this.price,
@@ -61,9 +65,54 @@ class FavoriteItem {
     );
   }
 
+  /// Factory from Supabase `favorite_items` with joined `books` record
+  factory FavoriteItem.fromSupabase(Map<String, dynamic> map) {
+    final booksData = map['books'];
+    final book = booksData is Map<String, dynamic> ? booksData : <String, dynamic>{};
+
+    final rawPrice = book['price'];
+    final priceVal = rawPrice is num ? rawPrice.toInt() : int.tryParse(rawPrice?.toString() ?? '0') ?? 0;
+    final formattedPrice = 'Rp${priceVal.toString().replaceAllMapped(
+          RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
+          (m) => '${m[1]}.',
+        )}';
+
+    final stock = (book['stock'] as num?)?.toInt() ?? 0;
+    final minStock = (book['min_stock'] as num?)?.toInt() ?? 5;
+
+    StockStatus stockStatus;
+    String stockLabel;
+    if (stock <= 0) {
+      stockStatus = StockStatus.outOfStock;
+      stockLabel = 'Stok Habis';
+    } else if (stock <= minStock) {
+      stockStatus = StockStatus.limited;
+      stockLabel = 'Sisa $stock Buku';
+    } else {
+      stockStatus = StockStatus.inStock;
+      stockLabel = 'Stok Tersedia';
+    }
+
+    final bId = map['book_id']?.toString() ?? book['id']?.toString() ?? '';
+
+    return FavoriteItem(
+      id: map['id']?.toString() ?? bId,
+      bookId: bId,
+      title: (book['title'] as String?)?.trim() ?? 'Buku Tanpa Judul',
+      author: (book['author'] as String?)?.trim() ?? 'Penulis',
+      price: formattedPrice,
+      priceValue: priceVal,
+      coverUrl: (book['cover_url'] as String?)?.trim() ?? '',
+      stockStatus: stockStatus,
+      stockLabel: stockLabel,
+      badgeType: FavoriteBadgeType.none,
+      isFavorite: true,
+    );
+  }
+
   BookSearchItem toSearchItem() {
     return BookSearchItem(
-      id: id,
+      id: bookId.isNotEmpty ? bookId : id,
       title: title,
       author: author,
       category: 'Buku Pilihan',
@@ -82,6 +131,7 @@ class FavoriteItem {
   static const List<FavoriteItem> defaultFavoriteItems = [
     FavoriteItem(
       id: 'fav-atomic-habits',
+      bookId: 'B001',
       title: 'Atomic Habits',
       author: 'James Clear',
       price: 'Rp85.000',
@@ -94,6 +144,7 @@ class FavoriteItem {
     ),
     FavoriteItem(
       id: 'fav-filosofi-teras',
+      bookId: 'B002',
       title: 'Filosofi Teras',
       author: 'Henry Manampiring',
       price: 'Rp98.000',
@@ -103,30 +154,6 @@ class FavoriteItem {
       stockStatus: StockStatus.inStock,
       stockLabel: 'Stok Tersedia',
       badgeType: FavoriteBadgeType.edisiBaru,
-    ),
-    FavoriteItem(
-      id: 'fav-laut-bercerita',
-      title: 'Laut Bercerita',
-      author: 'Leila S. Chudori',
-      price: 'Rp105.000',
-      priceValue: 105000,
-      coverUrl:
-          'https://lh3.googleusercontent.com/aida-public/AB6AXuArl_SZbFCvl4yFphcoCDIh40OO_pSl4rOrvxYTTXPUGdFtG-1WszL0z0f_76VSNqTzhbo8X3ViLk7WnCPNg4iFOnjrx0c6BAFjhNQCTH9jMQltkpyu-ASpXZcjMzFWO44lYOkVdum_alUb4I3J2qlT_GvJXpKH8E6T9VMYx5yd0PmUwLjhC21oXk5YdTBnog0B7zBCnTm-FMwscI-zzvLFCe9pS6MesRTbsyLvVVxcdjY-nBSmP7_Icg',
-      stockStatus: StockStatus.limited,
-      stockLabel: 'Sisa 2 Buku',
-      badgeType: FavoriteBadgeType.terbatas,
-    ),
-    FavoriteItem(
-      id: 'fav-sapiens',
-      title: 'Sapiens',
-      author: 'Yuval Noah Harari',
-      price: 'Rp125.000',
-      priceValue: 125000,
-      coverUrl:
-          'https://lh3.googleusercontent.com/aida-public/AB6AXuCtEHvCPC6idI5neqWVWe4cU0RU0iEXDMgr6r_VTz3XMbMZ124pRCEXtsPPkx1RDq-jhuib293cdBt-TrJUjvps51oPjKJ3OON-rqCInXYiECj8jW6rU3XkyJj1aHLzsae2sN3fMRLbT8xUW-U9WPpPK2sAZI5IFC31z7u3xUW5S_-y6Vhqy60ZAtru7GmdeiPNqxPgPM9Ir1xRv0U3G9Q6y72yCUgoVw1M63VdlVtW3ctfjV0WOQying',
-      stockStatus: StockStatus.outOfStock,
-      stockLabel: 'Stok Habis',
-      badgeType: FavoriteBadgeType.none,
     ),
   ];
 }

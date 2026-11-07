@@ -698,12 +698,37 @@ class _HomeScreenState extends State<HomeScreen> {
                     overflow: TextOverflow.ellipsis,
                   ),
                   const SizedBox(height: 4),
-                  Text(
-                    formattedPrice,
-                    style: AppTypography.labelMd.copyWith(
-                      color: AppColors.primaryContainer,
-                      fontWeight: FontWeight.w600,
-                    ),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        formattedPrice,
+                        style: AppTypography.labelMd.copyWith(
+                          color: AppColors.primaryContainer,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      if (book.rating > 0)
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(
+                              Icons.star_rounded,
+                              size: 14,
+                              color: Color(0xFFE59819),
+                            ),
+                            const SizedBox(width: 2),
+                            Text(
+                              book.rating.toStringAsFixed(1),
+                              style: AppTypography.caption.copyWith(
+                                fontWeight: FontWeight.w700,
+                                fontSize: 11,
+                                color: AppColors.onSurface,
+                              ),
+                            ),
+                          ],
+                        ),
+                    ],
                   ),
                 ],
               ),

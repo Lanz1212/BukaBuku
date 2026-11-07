@@ -1,12 +1,24 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class AuthService {
-  static final _client = Supabase.instance.client;
+  static SupabaseClient get _client => Supabase.instance.client;
 
   // ─── User & Session Getters ────────────────────────────────────────────────
-  static bool get isLoggedIn => _client.auth.currentUser != null;
+  static bool get isLoggedIn {
+    try {
+      return Supabase.instance.client.auth.currentUser != null;
+    } catch (_) {
+      return false;
+    }
+  }
 
-  static User? get currentUser => _client.auth.currentUser;
+  static User? get currentUser {
+    try {
+      return Supabase.instance.client.auth.currentUser;
+    } catch (_) {
+      return null;
+    }
+  }
 
   // ─── Daftar Akun Baru ──────────────────────────────────────────────────────
   static Future<AuthResponse> signUp({

@@ -1,5 +1,6 @@
 class OrderItemModel {
   final String id;
+  final String? bookId;
   final String title;
   final String author;
   final String coverUrl;
@@ -12,6 +13,7 @@ class OrderItemModel {
 
   const OrderItemModel({
     required this.id,
+    this.bookId,
     required this.title,
     required this.author,
     required this.coverUrl,

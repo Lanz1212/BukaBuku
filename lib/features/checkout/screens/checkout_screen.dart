@@ -4,6 +4,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/services/order_service.dart';
+import '../../../core/services/cart_service.dart';
 import '../../../shared/widgets/bookstore_app_bar.dart';
 import '../../admin/store_settings/services/store_settings_service.dart';
 import '../../auth/services/auth_service.dart';
@@ -339,6 +340,17 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
         accountAddress: _deliveryAddress.address,
         items: itemsData,
       );
+
+      // Clean up checked out items from user's Supabase cart
+      try {
+        final cartIds = widget.checkoutItems
+            .map((i) => i.id)
+            .where((id) => !id.startsWith('item-') && !id.startsWith('temp-'))
+            .toList();
+        if (cartIds.isNotEmpty) {
+          await CartService.removeCartItems(cartIds);
+        }
+      } catch (_) {}
 
       if (!mounted) return;
 

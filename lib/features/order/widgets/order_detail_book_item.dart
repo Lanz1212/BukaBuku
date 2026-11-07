@@ -5,10 +5,12 @@ import '../models/order_item_model.dart';
 
 class OrderDetailBookItem extends StatelessWidget {
   final OrderItemModel item;
+  final VoidCallback? onWriteReview;
 
   const OrderDetailBookItem({
     super.key,
     required this.item,
+    this.onWriteReview,
   });
 
   @override
@@ -26,18 +28,24 @@ class OrderDetailBookItem extends StatelessWidget {
             width: 64,
             height: 90,
             color: AppColors.surfaceContainerHigh,
-            child: Image.network(
-              item.coverUrl,
-              fit: BoxFit.cover,
-              errorBuilder: (context, error, stackTrace) => Container(
-                color: AppColors.surfaceContainerHighest,
-                child: const Icon(
-                  Icons.menu_book_rounded,
-                  size: 28,
-                  color: AppColors.secondary,
-                ),
-              ),
-            ),
+            child: item.coverUrl.isNotEmpty
+                ? Image.network(
+                    item.coverUrl,
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) => Container(
+                      color: AppColors.surfaceContainerHighest,
+                      child: const Icon(
+                        Icons.menu_book_rounded,
+                        size: 28,
+                        color: AppColors.secondary,
+                      ),
+                    ),
+                  )
+                : const Icon(
+                    Icons.menu_book_rounded,
+                    size: 28,
+                    color: AppColors.secondary,
+                  ),
           ),
         ),
 
@@ -55,7 +63,7 @@ class OrderDetailBookItem extends StatelessWidget {
                   fontWeight: FontWeight.w700,
                   height: 1.2,
                 ),
-                maxLines: 1,
+                maxLines: 2,
                 overflow: TextOverflow.ellipsis,
               ),
               const SizedBox(height: 2),
@@ -65,7 +73,7 @@ class OrderDetailBookItem extends StatelessWidget {
                   color: AppColors.onSurfaceVariant,
                 ),
               ),
-              if (item.tag != null) ...[
+              if (item.tag != null && item.tag!.isNotEmpty) ...[
                 const SizedBox(height: 6),
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
@@ -107,6 +115,33 @@ class OrderDetailBookItem extends StatelessWidget {
                   ),
                 ],
               ),
+              if (onWriteReview != null) ...[
+                const SizedBox(height: 8),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: OutlinedButton.icon(
+                    onPressed: onWriteReview,
+                    icon: const Icon(Icons.rate_review_outlined, size: 13),
+                    label: const Text('Beri Ulasan'),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: AppColors.secondary,
+                      side: BorderSide(
+                        color: AppColors.secondary.withValues(alpha: 0.8),
+                      ),
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      minimumSize: Size.zero,
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      textStyle: AppTypography.caption.copyWith(
+                        fontWeight: FontWeight.w700,
+                        fontSize: 11,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ],
           ),
         ),

@@ -46,23 +46,26 @@ class BookPriceHeader extends StatelessWidget {
 
         const SizedBox(height: 10),
 
-        // Rating Stars + Count
+        // Rating Stars + Count (Real data from database)
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             ...List.generate(5, (index) {
-              return const Padding(
-                padding: EdgeInsets.symmetric(horizontal: 1.5),
+              final isFilled = index < book.rating.round();
+              return Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 1.5),
                 child: Icon(
-                  Icons.star_rounded,
+                  isFilled ? Icons.star_rounded : Icons.star_outline_rounded,
                   size: 19,
-                  color: Color(0xFFE59819),
+                  color: isFilled
+                      ? const Color(0xFFE59819)
+                      : AppColors.outlineVariant,
                 ),
               );
             }),
-            const SizedBox(width: 5),
+            const SizedBox(width: 6),
             Text(
-              book.rating.toString(),
+              book.rating > 0 ? book.rating.toStringAsFixed(1) : '0.0',
               style: AppTypography.labelMd.copyWith(
                 fontWeight: FontWeight.w700,
                 color: AppColors.onSurface,
@@ -71,7 +74,7 @@ class BookPriceHeader extends StatelessWidget {
             ),
             const SizedBox(width: 4),
             Text(
-              '(${book.reviewCountFormatted} ulasan pembaca)',
+              '(${book.reviewCount} ulasan pembaca)',
               style: AppTypography.caption.copyWith(
                 color: AppColors.outline,
                 fontSize: 12,
