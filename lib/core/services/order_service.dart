@@ -227,6 +227,112 @@ class OrderService {
           }
         }
 
+        final List<OrderTimelineStepModel> timeline;
+        if (status == OrderStatus.completed) {
+          timeline = [
+            OrderTimelineStepModel(
+              title: 'Pesanan Dibuat',
+              time: dateTimeDisplay,
+              description: 'Pesanan berhasil tercatat di sistem Buka Buku.',
+              isDone: true,
+            ),
+            const OrderTimelineStepModel(
+              title: 'Pembayaran Lunas',
+              time: 'Terverifikasi',
+              description: 'Terverifikasi otomatis via QRIS.',
+              isDone: true,
+            ),
+            OrderTimelineStepModel(
+              title: isDelivery ? 'Buku Dikirimkan' : 'Siap Diambil di Toko',
+              time: 'Selesai',
+              description: isDelivery
+                  ? 'Buku telah dikirimkan oleh kurir.'
+                  : 'Buku disiapkan di kasir Toko Buka Buku.',
+              isDone: true,
+            ),
+            const OrderTimelineStepModel(
+              title: 'Pesanan Selesai',
+              time: 'Selesai',
+              description: 'Buku telah diterima oleh pembaca.',
+              isDone: true,
+            ),
+          ];
+        } else if (status == OrderStatus.readyPickup) {
+          timeline = [
+            OrderTimelineStepModel(
+              title: 'Pesanan Dibuat',
+              time: dateTimeDisplay,
+              description: 'Pesanan berhasil tercatat di sistem Buka Buku.',
+              isDone: true,
+            ),
+            const OrderTimelineStepModel(
+              title: 'Pembayaran Lunas',
+              time: 'Terverifikasi',
+              description: 'Terverifikasi otomatis via QRIS.',
+              isDone: true,
+            ),
+            const OrderTimelineStepModel(
+              title: 'Siap Diambil di Toko',
+              time: 'Sekarang',
+              description: 'Buku telah disiapkan dan dapat diambil di kasir.',
+              isActive: true,
+            ),
+            const OrderTimelineStepModel(
+              title: 'Selesai',
+              time: '',
+              description: 'Menunggu pengambilan buku oleh pembaca.',
+            ),
+          ];
+        } else if (status == OrderStatus.shipping) {
+          timeline = [
+            OrderTimelineStepModel(
+              title: 'Pesanan Dibuat',
+              time: dateTimeDisplay,
+              description: 'Pesanan berhasil tercatat di sistem Buka Buku.',
+              isDone: true,
+            ),
+            const OrderTimelineStepModel(
+              title: 'Pembayaran Lunas',
+              time: 'Terverifikasi',
+              description: 'Terverifikasi otomatis.',
+              isDone: true,
+            ),
+            const OrderTimelineStepModel(
+              title: 'Sedang Dikirim',
+              time: 'Dalam Perjalanan',
+              description: 'Buku sedang dibawa oleh kurir menuju alamat Anda.',
+              isActive: true,
+            ),
+            const OrderTimelineStepModel(
+              title: 'Pesanan Diterima',
+              time: '',
+              description: 'Menunggu konfirmasi penerimaan paket.',
+            ),
+          ];
+        } else {
+          timeline = [
+            OrderTimelineStepModel(
+              title: 'Pesanan Dibuat',
+              time: dateTimeDisplay,
+              description: 'Pesanan berhasil tercatat di sistem Buka Buku.',
+              isDone: true,
+            ),
+            const OrderTimelineStepModel(
+              title: 'Sedang Diproses',
+              time: 'Proses',
+              description: 'Kurator buku sedang menyiapkan pesanan Anda.',
+              isActive: true,
+            ),
+            OrderTimelineStepModel(
+              title: isDelivery ? 'Pengiriman' : 'Siap Diambil di Toko',
+              time: '',
+              description: isDelivery
+                  ? 'Menunggu kurir mengambil paket.'
+                  : 'Menunggu buku siap di kasir toko.',
+            ),
+          ];
+        }
+
         return OrderModel(
           id: '#${orderMap['id']}',
           dateTimeStr: dateTimeDisplay,
@@ -235,6 +341,17 @@ class OrderService {
           isPaid: orderMap['is_paid'] as bool? ?? false,
           deliveryType: isDelivery ? DeliveryType.delivery : DeliveryType.pickup,
           deliveryBadgeLabel: isDelivery ? 'Kurir Antar' : 'Ambil di Toko',
+          branchName: orderMap['pickup_location'] as String? ?? 'Gerai Utama Buka Buku',
+          branchAddress: 'Jl. Cikini Raya No. 42, Menteng, Jakarta Pusat 10330',
+          branchSchedule: 'Buka Hari Ini: 08.00 – 21.00 WIB',
+          completionNote: status == OrderStatus.completed
+              ? (orderMap['completion_note'] as String? ??
+                  'Buku telah diterima di Gerai Utama Buka Buku')
+              : null,
+          completionDate: status == OrderStatus.completed
+              ? (orderMap['completion_date'] as String? ??
+                  dateTimeDisplay.split(' • ').first)
+              : null,
           summaryTitle: summaryTitle,
           summarySubtitle: summarySubtitle,
           summaryItemCountLabel: summaryItemCountLabel,
@@ -255,7 +372,7 @@ class OrderService {
               'PKP-ONLINE',
           qrCodeDetail: orderMap['id'] ?? '',
           validUntil: 'Selesai',
-          timeline: const [],
+          timeline: timeline,
         );
       }).toList();
     } catch (e) {

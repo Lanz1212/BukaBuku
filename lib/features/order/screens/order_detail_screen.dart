@@ -75,6 +75,10 @@ class OrderDetailScreen extends StatelessWidget {
                 _buildStatusBanner(),
                 const SizedBox(height: 14),
               ],
+              if (order.status == OrderStatus.completed) ...[
+                _buildCompletedStatusBanner(),
+                const SizedBox(height: 14),
+              ],
 
               // 2. Order Meta Identifier Card
               _buildOrderMetaCard(context),
@@ -161,6 +165,60 @@ class OrderDetailScreen extends StatelessWidget {
                   'Paket buku telah dirapikan & siap di kasir toko.',
                   style: AppTypography.caption.copyWith(
                     color: AppColors.onSecondaryContainer.withValues(alpha: 0.9),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCompletedStatusBanner() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceContainerHigh.withValues(alpha: 0.6),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(
+          color: AppColors.outlineVariant.withValues(alpha: 0.4),
+        ),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 38,
+            height: 38,
+            decoration: BoxDecoration(
+              color: AppColors.primaryContainer.withValues(alpha: 0.15),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(
+              Icons.verified_rounded,
+              size: 20,
+              color: AppColors.secondary,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Pesanan Telah Selesai',
+                  style: AppTypography.labelLg.copyWith(
+                    color: AppColors.onSurface,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  order.completionNote ??
+                      'Buku telah diterima oleh pembaca. Terima kasih telah berbelanja di Buka Buku!',
+                  style: AppTypography.caption.copyWith(
+                    color: AppColors.onSurfaceVariant,
                   ),
                 ),
               ],
@@ -355,15 +413,19 @@ class OrderDetailScreen extends StatelessWidget {
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Icon(
-                  Icons.info_outline_rounded,
+                Icon(
+                  order.status == OrderStatus.completed
+                      ? Icons.verified_rounded
+                      : Icons.info_outline_rounded,
                   size: 16,
                   color: AppColors.secondary,
                 ),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    'Tunjukkan QR Code berikut kepada staf kasir saat mengambil pesanan fisik Anda.',
+                    order.status == OrderStatus.completed
+                        ? 'Pesanan telah selesai diserahkan kepada pembaca di gerai ini.'
+                        : 'Tunjukkan QR Code berikut kepada staf kasir saat mengambil pesanan fisik Anda.',
                     style: AppTypography.caption.copyWith(
                       color: AppColors.onSurfaceVariant,
                       height: 1.35,
@@ -383,10 +445,18 @@ class OrderDetailScreen extends StatelessWidget {
             child: ElevatedButton.icon(
               onPressed: () => OrderQrPickupModal.show(context, order),
               icon: const Icon(Icons.qr_code_2_rounded, size: 20),
-              label: const Text('Lihat QR Pickup'),
+              label: Text(
+                order.status == OrderStatus.completed
+                    ? 'Lihat Bukti QR Pickup'
+                    : 'Lihat QR Pickup',
+              ),
               style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primaryContainer,
-                foregroundColor: AppColors.onPrimary,
+                backgroundColor: order.status == OrderStatus.completed
+                    ? AppColors.surfaceContainerHigh
+                    : AppColors.primaryContainer,
+                foregroundColor: order.status == OrderStatus.completed
+                    ? AppColors.onSurface
+                    : AppColors.onPrimary,
                 elevation: 0,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(14),

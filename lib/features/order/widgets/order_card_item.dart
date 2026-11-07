@@ -28,6 +28,70 @@ class OrderCardItem extends StatelessWidget {
     final isShipping = order.status == OrderStatus.shipping;
     final isCompleted = order.status == OrderStatus.completed;
 
+    final cardContent = ClipRRect(
+      borderRadius: BorderRadius.circular(16),
+      child: Stack(
+        children: [
+          // Decorative subtle peach gradient glow for ready pickup
+          if (isReadyPickup)
+            Positioned(
+              top: 0,
+              right: 0,
+              child: Container(
+                width: 110,
+                height: 110,
+                decoration: BoxDecoration(
+                  gradient: RadialGradient(
+                    center: Alignment.topRight,
+                    radius: 0.9,
+                    colors: [
+                      AppColors.secondaryContainer.withValues(alpha: 0.45),
+                      AppColors.secondaryContainer.withValues(alpha: 0.1),
+                      Colors.transparent,
+                    ],
+                  ),
+                ),
+              ),
+            ),
+
+          // Main Card Content
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // 1. Header (Order ID + Status badge + Time + Payment badge)
+                _buildHeader(),
+
+                const SizedBox(height: 12),
+
+                // 2. Extra tags (Ambil di Toko Cabang / Buku Telah Dibungkus)
+                if (isReadyPickup) ...[
+                  _buildReadyPickupTags(),
+                  const SizedBox(height: 12),
+                ],
+
+                // 3. Book summary tile
+                _buildBookSummaryTile(),
+
+                const SizedBox(height: 12),
+
+                // 4. Status specific context panel
+                if (isReadyPickup) _buildPickupLocationBox(),
+                if (isShipping) _buildShippingCourierBox(context),
+                if (isCompleted) _buildCompletionReceiptBox(),
+
+                const SizedBox(height: 14),
+
+                // 5. Action buttons
+                _buildActionButtons(context),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+
     return Container(
       decoration: BoxDecoration(
         color: AppColors.surfaceContainerLowest,
@@ -44,67 +108,15 @@ class OrderCardItem extends StatelessWidget {
           ),
         ],
       ),
-      child: ClipRRect(
+      child: Material(
+        color: Colors.transparent,
         borderRadius: BorderRadius.circular(16),
-        child: Stack(
-          children: [
-            // Decorative subtle peach gradient glow for ready pickup
-            if (isReadyPickup)
-              Positioned(
-                top: 0,
-                right: 0,
-                child: Container(
-                  width: 110,
-                  height: 110,
-                  decoration: BoxDecoration(
-                    gradient: RadialGradient(
-                      center: Alignment.topRight,
-                      radius: 0.9,
-                      colors: [
-                        AppColors.secondaryContainer.withValues(alpha: 0.45),
-                        AppColors.secondaryContainer.withValues(alpha: 0.1),
-                        Colors.transparent,
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-
-            // Main Card Content
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // 1. Header (Order ID + Status badge + Time + Payment badge)
-                  _buildHeader(),
-
-                  const SizedBox(height: 12),
-
-                  // 2. Extra tags (Ambil di Toko Cabang / Buku Telah Dibungkus)
-                  if (isReadyPickup) ...[
-                    _buildReadyPickupTags(),
-                    const SizedBox(height: 12),
-                  ],
-
-                  // 3. Book summary tile
-                  _buildBookSummaryTile(),
-
-                  const SizedBox(height: 12),
-
-                  // 4. Status specific context panel
-                  if (isReadyPickup) _buildPickupLocationBox(),
-                  if (isShipping) _buildShippingCourierBox(context),
-                  if (isCompleted) _buildCompletionReceiptBox(),
-
-                  const SizedBox(height: 14),
-
-                  // 5. Action buttons
-                  _buildActionButtons(context),
-                ],
-              ),
-            ),
-          ],
+        child: InkWell(
+          borderRadius: BorderRadius.circular(16),
+          onTap: isCompleted ? onViewDetail : null,
+          splashColor: AppColors.primaryContainer.withValues(alpha: 0.08),
+          highlightColor: AppColors.primaryContainer.withValues(alpha: 0.04),
+          child: cardContent,
         ),
       ),
     );
@@ -580,30 +592,48 @@ class OrderCardItem extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Row(
-            children: [
-              const Icon(
-                Icons.verified_rounded,
-                size: 16,
-                color: AppColors.secondary,
-              ),
-              const SizedBox(width: 6),
-              Text(
-                order.completionNote ?? 'Buku telah diterima di Gerai Utama Buka Buku',
-                style: AppTypography.caption.copyWith(
+          Expanded(
+            child: Row(
+              children: [
+                const Icon(
+                  Icons.verified_rounded,
+                  size: 16,
                   color: AppColors.secondary,
-                  fontWeight: FontWeight.w600,
+                ),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: Text(
+                    order.completionNote ?? 'Buku telah diterima di Gerai Utama Buka Buku',
+                    style: AppTypography.caption.copyWith(
+                      color: AppColors.secondary,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 11,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 6),
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                order.completionDate ?? '28 Apr',
+                style: AppTypography.caption.copyWith(
+                  color: AppColors.onSurfaceVariant,
                   fontSize: 11,
                 ),
               ),
+              const SizedBox(width: 2),
+              const Icon(
+                Icons.chevron_right_rounded,
+                size: 14,
+                color: AppColors.onSurfaceVariant,
+              ),
             ],
-          ),
-          Text(
-            order.completionDate ?? '28 Apr',
-            style: AppTypography.caption.copyWith(
-              color: AppColors.onSurfaceVariant,
-              fontSize: 11,
-            ),
           ),
         ],
       ),
