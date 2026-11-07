@@ -25,8 +25,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   late TextEditingController _nameController;
   late TextEditingController _emailController;
   late TextEditingController _phoneController;
-  late TextEditingController _birthDateController;
-  late String _selectedGender;
   bool _isSaving = false;
 
   @override
@@ -35,9 +33,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     _nameController = TextEditingController(text: widget.user.name);
     _emailController = TextEditingController(text: widget.user.email);
     _phoneController = TextEditingController(text: widget.user.phone);
-    _birthDateController =
-        TextEditingController(text: widget.user.birthDate ?? '15 Agustus 1990');
-    _selectedGender = widget.user.gender ?? 'Laki-laki';
   }
 
   @override
@@ -45,51 +40,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     _nameController.dispose();
     _emailController.dispose();
     _phoneController.dispose();
-    _birthDateController.dispose();
     super.dispose();
-  }
-
-  Future<void> _selectBirthDate() async {
-    final DateTime? picked = await showDatePicker(
-      context: context,
-      initialDate: DateTime(1990, 8, 15),
-      firstDate: DateTime(1940),
-      lastDate: DateTime.now(),
-      builder: (context, child) {
-        return Theme(
-          data: Theme.of(context).copyWith(
-            colorScheme: ColorScheme.light(
-              primary: AppColors.primaryContainer,
-              onPrimary: Colors.white,
-              surface: AppColors.surface,
-              onSurface: AppColors.onSurface,
-            ),
-          ),
-          child: child!,
-        );
-      },
-    );
-
-    if (picked != null) {
-      final months = [
-        'Januari',
-        'Februari',
-        'Maret',
-        'April',
-        'Mei',
-        'Juni',
-        'Juli',
-        'Agustus',
-        'September',
-        'Oktober',
-        'November',
-        'Desember'
-      ];
-      setState(() {
-        _birthDateController.text =
-            '${picked.day} ${months[picked.month - 1]} ${picked.year}';
-      });
-    }
   }
 
   Future<void> _handleSave() async {
@@ -100,11 +51,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         name: _nameController.text.trim(),
         email: _emailController.text.trim(),
         phone: _phoneController.text.trim(),
-        birthDate: _birthDateController.text.trim(),
-        gender: _selectedGender,
       );
 
-      await ProfileService.updateProfile(updatedUser);
+      final success = await ProfileService.updateProfile(updatedUser);
 
       if (!mounted) return;
       setState(() => _isSaving = false);
@@ -112,26 +61,39 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       final messenger = ScaffoldMessenger.of(context);
       final nav = Navigator.of(context);
 
-      messenger.showSnackBar(
-        SnackBar(
-          content: Row(
-            children: [
-              const Icon(Icons.check_circle_rounded, color: Colors.white, size: 20),
-              const SizedBox(width: 8),
-              Text(
-                'Profil berhasil diperbarui!',
-                style: AppTypography.bodyMd.copyWith(color: Colors.white),
-              ),
-            ],
+      if (success) {
+        messenger.showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                const Icon(Icons.check_circle_rounded, color: Colors.white, size: 20),
+                const SizedBox(width: 8),
+                Text(
+                  'Profil berhasil diperbarui!',
+                  style: AppTypography.bodyMd.copyWith(color: Colors.white),
+                ),
+              ],
+            ),
+            backgroundColor: AppColors.success,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            duration: const Duration(seconds: 2),
           ),
-          backgroundColor: AppColors.success,
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-          duration: const Duration(seconds: 2),
-        ),
-      );
-
-      nav.pop(updatedUser);
+        );
+        nav.pop(updatedUser);
+      } else {
+        messenger.showSnackBar(
+          SnackBar(
+            content: Text(
+              'Gagal memperbarui profil. Periksa koneksi Anda.',
+              style: AppTypography.bodyMd.copyWith(color: Colors.white),
+            ),
+            backgroundColor: AppColors.error,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+          ),
+        );
+      }
     }
   }
 
@@ -196,6 +158,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                         prefixIcon: Icons.mail_outline_rounded,
                         keyboardType: TextInputType.emailAddress,
                         hintText: 'nama@email.com',
+                        readOnly: true,
                         labelTrailing: Container(
                           padding: const EdgeInsets.symmetric(
                               horizontal: 8, vertical: 2),
@@ -257,65 +220,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                           return null;
                         },
                       ),
-                      const SizedBox(height: 18),
-
-                      // Tanggal Lahir
-                      EditProfileField(
-                        label: 'Tanggal Lahir',
-                        controller: _birthDateController,
-                        readOnly: true,
-                        onTap: _selectBirthDate,
-                        prefixIcon: Icons.cake_outlined,
-                        suffix: const Icon(
-                          Icons.calendar_today_outlined,
-                          size: 18,
-                          color: AppColors.outline,
-                        ),
-                        helperText:
-                            'Dapatkan voucher potongan belanja spesial di bulan ulang tahun Anda.',
-                        helperIcon: Icons.card_giftcard_rounded,
-                        helperIconColor: AppColors.warning,
-                      ),
-                      const SizedBox(height: 20),
-
-                      // Jenis Kelamin
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Jenis Kelamin',
-                            style: AppTypography.titleMd.copyWith(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w600,
-                              color: AppColors.onSurface,
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          Row(
-                            children: [
-                              Expanded(
-                                child: _buildGenderOption(
-                                  label: 'Laki-laki',
-                                  icon: Icons.male_rounded,
-                                  isSelected: _selectedGender == 'Laki-laki',
-                                  onTap: () => setState(
-                                      () => _selectedGender = 'Laki-laki'),
-                                ),
-                              ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: _buildGenderOption(
-                                  label: 'Perempuan',
-                                  icon: Icons.female_rounded,
-                                  isSelected: _selectedGender == 'Perempuan',
-                                  onTap: () => setState(
-                                      () => _selectedGender = 'Perempuan'),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
                       const SizedBox(height: 24),
 
                       // Security Info Card
@@ -340,7 +244,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                             const SizedBox(width: 10),
                             Expanded(
                               child: Text(
-                                'Data profil Anda dilindungi dengan enkripsi standar industri dan hanya digunakan untuk keperluan pemesanan & pengiriman Buka Buku.',
+                                'Data profil Anda dilindungi dan disimpan aman di server Buka Buku untuk keperluan transaksi & pengiriman.',
                                 style: AppTypography.caption.copyWith(
                                   color: AppColors.onSurfaceVariant,
                                   fontSize: 11.5,
@@ -408,62 +312,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                           ),
                         ),
                 ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildGenderOption({
-    required String label,
-    required IconData icon,
-    required bool isSelected,
-    required VoidCallback onTap,
-  }) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(12),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 180),
-        padding: const EdgeInsets.symmetric(vertical: 12),
-        decoration: BoxDecoration(
-          color: isSelected
-              ? AppColors.primaryContainer
-              : AppColors.surfaceContainerLowest,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: isSelected
-                ? AppColors.primaryContainer
-                : AppColors.outlineVariant.withValues(alpha: 0.6),
-            width: isSelected ? 1.5 : 1.0,
-          ),
-          boxShadow: isSelected
-              ? [
-                  BoxShadow(
-                    color: AppColors.primaryContainer.withValues(alpha: 0.2),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
-                  ),
-                ]
-              : null,
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              icon,
-              size: 18,
-              color: isSelected ? Colors.white : AppColors.onSurfaceVariant,
-            ),
-            const SizedBox(width: 8),
-            Text(
-              label,
-              style: AppTypography.titleMd.copyWith(
-                fontSize: 14,
-                fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-                color: isSelected ? Colors.white : AppColors.onSurface,
               ),
             ),
           ],

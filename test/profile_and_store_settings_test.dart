@@ -15,8 +15,6 @@ void main() {
         'full_name': 'Rendra Pratama',
         'email': 'rendra@tokobukubudi.id',
         'phone': '08123456789',
-        'birth_date': '20 Mei 1995',
-        'gender': 'Laki-laki',
         'membership_level': 'Pembaca Setia',
         'avatar_url': 'assets/images/Profile.png',
       };
@@ -27,16 +25,12 @@ void main() {
       expect(profile.name, 'Rendra Pratama');
       expect(profile.email, 'rendra@tokobukubudi.id');
       expect(profile.phone, '08123456789');
-      expect(profile.birthDate, '20 Mei 1995');
-      expect(profile.gender, 'Laki-laki');
       expect(profile.membershipLevel, 'Pembaca Setia');
       expect(profile.orderCount, 7);
 
       final outMap = profile.toSupabaseMap();
       expect(outMap['full_name'], 'Rendra Pratama');
       expect(outMap['phone'], '08123456789');
-      expect(outMap['birth_date'], '20 Mei 1995');
-      expect(outMap['gender'], 'Laki-laki');
       expect(outMap['membership_level'], 'Pembaca Setia');
     });
 
@@ -102,10 +96,9 @@ void main() {
     test('ProfileService & StoreSettingsService safely fallback offline', () async {
       final profile = await ProfileService.fetchCurrentUserProfile();
       expect(profile, isNotNull);
-      expect(profile.name, isNotEmpty);
 
       final addresses = await ProfileService.fetchUserAddresses();
-      expect(addresses, isNotEmpty);
+      expect(addresses, isA<List<ShippingAddress>>());
 
       final settings = await StoreSettingsService.fetchStoreSettings();
       expect(settings.storeName, isNotEmpty);

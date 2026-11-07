@@ -3,6 +3,7 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../shared/widgets/bookstore_app_bar.dart';
 import '../models/shipping_address.dart';
+import '../models/user_profile.dart';
 import '../services/profile_service.dart';
 import '../widgets/address_card.dart';
 import '../widgets/address_delivery_banner.dart';
@@ -15,24 +16,30 @@ class ShippingAddressScreen extends StatefulWidget {
 }
 
 class _ShippingAddressScreenState extends State<ShippingAddressScreen> {
-  late List<ShippingAddress> _addresses;
-  bool _isLoading = false;
+  List<ShippingAddress> _addresses = [];
+  UserProfile? _currentUser;
+  bool _isLoading = true;
 
   @override
   void initState() {
     super.initState();
-    _addresses = List.from(ShippingAddress.defaultAddresses);
-    _loadAddresses();
+    _loadData();
   }
 
-  Future<void> _loadAddresses() async {
+  Future<void> _loadData() async {
     setState(() => _isLoading = true);
-    final addrs = await ProfileService.fetchUserAddresses();
-    if (mounted) {
-      setState(() {
-        _addresses = addrs;
-        _isLoading = false;
-      });
+    try {
+      final user = await ProfileService.fetchCurrentUserProfile();
+      final addrs = await ProfileService.fetchUserAddresses();
+      if (mounted) {
+        setState(() {
+          _currentUser = user;
+          _addresses = addrs;
+          _isLoading = false;
+        });
+      }
+    } catch (_) {
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
@@ -70,20 +77,6 @@ class _ShippingAddressScreenState extends State<ShippingAddressScreen> {
 
   void _deleteAddress(String id) {
     final addrToDelete = _addresses.firstWhere((a) => a.id == id);
-    if (_addresses.length <= 1) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            'Minimal harus ada 1 alamat pengiriman tersimpan.',
-            style: AppTypography.bodyMd.copyWith(color: Colors.white),
-          ),
-          backgroundColor: AppColors.error,
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-        ),
-      );
-      return;
-    }
 
     showDialog(
       context: context,
@@ -131,6 +124,7 @@ class _ShippingAddressScreenState extends State<ShippingAddressScreen> {
                     'Alamat berhasil dihapus',
                     style: AppTypography.bodyMd.copyWith(color: Colors.white),
                   ),
+                  backgroundColor: AppColors.success,
                   behavior: SnackBarBehavior.floating,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(10),
@@ -163,10 +157,10 @@ class _ShippingAddressScreenState extends State<ShippingAddressScreen> {
   void _openAddressForm([ShippingAddress? existingAddress]) {
     final isEditing = existingAddress != null;
     final nameCtrl = TextEditingController(
-      text: existingAddress?.recipientName ?? 'Budi Santoso',
+      text: existingAddress?.recipientName ?? _currentUser?.name ?? '',
     );
     final phoneCtrl = TextEditingController(
-      text: existingAddress?.phoneNumber ?? '+62 812-3456-7890',
+      text: existingAddress?.phoneNumber ?? _currentUser?.phone ?? '',
     );
     final addressCtrl = TextEditingController(
       text: existingAddress?.fullAddress ?? '',
@@ -279,7 +273,7 @@ class _ShippingAddressScreenState extends State<ShippingAddressScreen> {
                     _buildModalTextField(
                       controller: nameCtrl,
                       label: 'Nama Penerima',
-                      hint: 'Contoh: Budi Santoso',
+                      hint: 'Masukkan nama penerima',
                       prefixIcon: Icons.person_outline_rounded,
                     ),
                     const SizedBox(height: 12),
@@ -367,7 +361,7 @@ class _ShippingAddressScreenState extends State<ShippingAddressScreen> {
                             isPrimary: makePrimary,
                             isGeotagVerified: isEditing
                                 ? existingAddress.isGeotagVerified
-                                : true,
+                                : false,
                           );
 
                           setState(() {
@@ -553,16 +547,55 @@ class _ShippingAddressScreenState extends State<ShippingAddressScreen> {
                     ),
                     const SizedBox(height: 18),
 
-                    // Address List
-                    for (int i = 0; i < _addresses.length; i++) ...[
-                      AddressCard(
-                        address: _addresses[i],
-                        onSetPrimary: () => _setAsPrimary(_addresses[i].id),
-                        onEdit: () => _openAddressForm(_addresses[i]),
-                        onDelete: () => _deleteAddress(_addresses[i].id),
-                      ),
-                      const SizedBox(height: 14),
-                    ],
+                    // Empty or Address List
+                    if (!_isLoading && _addresses.isEmpty)
+                      Container(
+                        padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 20),
+                        margin: const EdgeInsets.symmetric(vertical: 16),
+                        decoration: BoxDecoration(
+                          color: AppColors.surfaceContainerLowest,
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(
+                            color: AppColors.outlineVariant.withValues(alpha: 0.4),
+                          ),
+                        ),
+                        child: Column(
+                          children: [
+                            const Icon(
+                              Icons.location_off_outlined,
+                              size: 48,
+                              color: AppColors.outline,
+                            ),
+                            const SizedBox(height: 12),
+                            Text(
+                              'Belum Ada Alamat Tersimpan',
+                              style: AppTypography.titleMd.copyWith(
+                                fontWeight: FontWeight.w600,
+                                color: AppColors.onSurface,
+                              ),
+                            ),
+                            const SizedBox(height: 6),
+                            Text(
+                              'Tambahkan alamat rumah atau kantormu agar proses checkout dan pengantaran buku lebih cepat.',
+                              textAlign: TextAlign.center,
+                              style: AppTypography.bodyMd.copyWith(
+                                color: AppColors.onSurfaceVariant,
+                                fontSize: 13,
+                              ),
+                            ),
+                          ],
+                        ),
+                      )
+                    else
+                      for (int i = 0; i < _addresses.length; i++) ...[
+                        AddressCard(
+                          address: _addresses[i],
+                          onSetPrimary: () => _setAsPrimary(_addresses[i].id),
+                          onEdit: () => _openAddressForm(_addresses[i]),
+                          onDelete: () => _deleteAddress(_addresses[i].id),
+                        ),
+                        const SizedBox(height: 14),
+                      ],
 
                     const SizedBox(height: 8),
 

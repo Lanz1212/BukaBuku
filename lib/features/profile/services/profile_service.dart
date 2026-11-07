@@ -15,7 +15,7 @@ class ProfileService {
   }
 
   /// Fetches the profile of the current logged-in user,
-  /// including real-time order count from public.orders.
+  /// including real-time order count and favorite count from database.
   static Future<UserProfile> fetchCurrentUserProfile() async {
     final client = _client;
     if (client == null) {
@@ -24,46 +24,56 @@ class ProfileService {
 
     try {
       final user = client.auth.currentUser;
-      String? userId = user?.id;
-
-      // If no authenticated session (e.g. testing), check if default customer exists
-      Map<String, dynamic>? data;
-      if (userId != null) {
-        data = await client
-            .from('profiles')
-            .select()
-            .eq('id', userId)
-            .maybeSingle();
-      }
-
-      if (data == null) {
-        data = await client
-            .from('profiles')
-            .select()
-            .eq('email', 'testpembeli@tokobukubudi.id')
-            .maybeSingle();
-        if (data != null) {
-          userId = data['id']?.toString();
-        }
-      }
-
-      if (data == null) {
+      if (user == null) {
         return UserProfile.defaultProfile;
+      }
+      final userId = user.id;
+
+      final data = await client
+          .from('profiles')
+          .select()
+          .eq('id', userId)
+          .maybeSingle();
+
+      if (data == null) {
+        return UserProfile(
+          id: userId,
+          name: user.email?.split('@').first ?? 'Pengguna',
+          email: user.email ?? '',
+          phone: '',
+        );
       }
 
       // Query real count of orders placed by this user
       int orderCount = 0;
-      if (userId != null) {
-        try {
-          final orders = await client
-              .from('orders')
-              .select('id')
-              .eq('user_id', userId);
-          orderCount = (orders as List).length;
-        } catch (_) {}
+      try {
+        final orders = await client
+            .from('orders')
+            .select('id')
+            .eq('user_id', userId);
+        orderCount = (orders as List).length;
+      } catch (e) {
+        debugPrint('Error counting orders: $e');
       }
 
-      return UserProfile.fromSupabase(data, orderCount: orderCount);
+      // Query real count of favorite books saved by this user
+      int favoriteCount = 0;
+      try {
+        final favorites = await client
+            .from('favorite_items')
+            .select('id')
+            .eq('user_id', userId);
+        favoriteCount = (favorites as List).length;
+      } catch (e) {
+        debugPrint('Error counting favorites: $e');
+      }
+
+      return UserProfile.fromSupabase(
+        data,
+        orderCount: orderCount,
+        favoriteCount: favoriteCount,
+        activeVouchers: 0,
+      );
     } catch (e) {
       debugPrint('Error fetching user profile from Supabase: $e');
       return UserProfile.defaultProfile;
@@ -77,19 +87,15 @@ class ProfileService {
 
     try {
       final user = client.auth.currentUser;
-      final userId = user?.id ?? (profile.id.isNotEmpty && profile.id != 'user_001' ? profile.id : null);
+      final userId = user?.id ?? (profile.id.isNotEmpty ? profile.id : null);
 
-      if (userId != null) {
-        await client
-            .from('profiles')
-            .update(profile.toSupabaseMap())
-            .eq('id', userId);
-      } else {
-        await client
-            .from('profiles')
-            .update(profile.toSupabaseMap())
-            .eq('email', profile.email);
-      }
+      if (userId == null) return false;
+
+      await client
+          .from('profiles')
+          .update(profile.toSupabaseMap())
+          .eq('id', userId);
+
       return true;
     } catch (e) {
       debugPrint('Error updating profile in Supabase: $e');
@@ -97,37 +103,26 @@ class ProfileService {
     }
   }
 
-  /// Fetches stored shipping addresses for the user.
+  /// Fetches stored shipping addresses for the logged-in user.
   static Future<List<ShippingAddress>> fetchUserAddresses() async {
     final client = _client;
-    if (client == null) return List.from(ShippingAddress.defaultAddresses);
+    if (client == null) return [];
 
     try {
       final user = client.auth.currentUser;
-      Map<String, dynamic>? data;
+      if (user == null) return [];
 
-      if (user?.id != null) {
-        data = await client
-            .from('profiles')
-            .select('addresses')
-            .eq('id', user!.id)
-            .maybeSingle();
-      }
-
-      if (data == null || data['addresses'] == null) {
-        data = await client
-            .from('profiles')
-            .select('addresses')
-            .eq('email', 'testpembeli@tokobukubudi.id')
-            .maybeSingle();
-      }
+      final data = await client
+          .from('profiles')
+          .select('addresses')
+          .eq('id', user.id)
+          .maybeSingle();
 
       final raw = data?['addresses'] as String?;
       if (raw == null || raw.trim().isEmpty) {
-        return List.from(ShippingAddress.defaultAddresses);
+        return [];
       }
 
-      // If stored as JSON list
       try {
         final decoded = jsonDecode(raw);
         if (decoded is List) {
@@ -135,48 +130,36 @@ class ProfileService {
               .map((item) => ShippingAddress.fromMap(Map<String, dynamic>.from(item as Map)))
               .toList();
         }
-      } catch (_) {
-        // Plain string fallback
-        return [
-          ShippingAddress(
-            id: 'addr_saved_01',
-            recipientName: 'Budi Santoso',
-            phoneNumber: '+62 812-3456-7890',
-            label: 'Alamat Pengiriman',
-            fullAddress: raw,
-            isPrimary: true,
-            isGeotagVerified: true,
-          ),
-        ];
+      } catch (e) {
+        debugPrint('Error decoding addresses JSON: $e');
       }
 
-      return List.from(ShippingAddress.defaultAddresses);
+      return [];
     } catch (e) {
       debugPrint('Error fetching user addresses: $e');
-      return List.from(ShippingAddress.defaultAddresses);
+      return [];
     }
   }
 
-  /// Persists shipping addresses list to Supabase.
+  /// Persists shipping addresses list to Supabase for the logged-in user.
   static Future<bool> saveUserAddresses(List<ShippingAddress> addresses) async {
     final client = _client;
-    if (client == null) return true;
+    if (client == null) return false;
 
     try {
       final user = client.auth.currentUser;
+      if (user == null) return false;
+
       final jsonStr = jsonEncode(addresses.map((a) => a.toMap()).toList());
 
-      if (user?.id != null) {
-        await client
-            .from('profiles')
-            .update({'addresses': jsonStr, 'updated_at': DateTime.now().toIso8601String()})
-            .eq('id', user!.id);
-      } else {
-        await client
-            .from('profiles')
-            .update({'addresses': jsonStr, 'updated_at': DateTime.now().toIso8601String()})
-            .eq('email', 'testpembeli@tokobukubudi.id');
-      }
+      await client
+          .from('profiles')
+          .update({
+            'addresses': jsonStr,
+            'updated_at': DateTime.now().toIso8601String(),
+          })
+          .eq('id', user.id);
+
       return true;
     } catch (e) {
       debugPrint('Error saving user addresses: $e');

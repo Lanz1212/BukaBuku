@@ -23,7 +23,7 @@ import '../../auth/login_screen.dart';
 import '../../auth/services/auth_service.dart';
 
 /// Main Profile Screen for Toko Buku Budi
-/// Follows DESIGN.md, AppColors, AppTypography, and Stitch Toko Buku Budi Mobile UI.
+/// Follows DESIGN.md, AppColors, AppTypography, and real database values.
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
 
@@ -33,6 +33,8 @@ class ProfileScreen extends StatefulWidget {
 
 class _ProfileScreenState extends State<ProfileScreen> {
   UserProfile _user = UserProfile.defaultProfile;
+  int _addressCount = 0;
+  bool _isLoading = true;
 
   @override
   void initState() {
@@ -43,20 +45,25 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Future<void> _loadProfile() async {
     try {
       final profile = await ProfileService.fetchCurrentUserProfile();
+      final addresses = await ProfileService.fetchUserAddresses();
       if (mounted) {
         setState(() {
           _user = profile;
+          _addressCount = addresses.length;
+          _isLoading = false;
         });
       }
-    } catch (_) {}
+    } catch (_) {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
   }
 
   Future<void> _navigateToEditProfile() async {
     final updated = await Navigator.push<UserProfile>(
       context,
-      MaterialPageRoute(
-        builder: (context) => EditProfileScreen(user: _user),
-      ),
+      MaterialPageRoute(builder: (context) => EditProfileScreen(user: _user)),
     );
 
     if (updated != null && mounted) {
@@ -67,13 +74,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
-  void _navigateToShippingAddress() {
-    Navigator.push(
+  Future<void> _navigateToShippingAddress() async {
+    await Navigator.push(
       context,
-      MaterialPageRoute(
-        builder: (context) => const ShippingAddressScreen(),
-      ),
+      MaterialPageRoute(builder: (context) => const ShippingAddressScreen()),
     );
+    if (mounted) {
+      _loadProfile();
+    }
   }
 
   void _showLogoutDialog() {
@@ -113,9 +121,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               if (!mounted) return;
               Navigator.pushAndRemoveUntil(
                 context,
-                MaterialPageRoute(
-                  builder: (context) => const LoginScreen(),
-                ),
+                MaterialPageRoute(builder: (context) => const LoginScreen()),
                 (route) => false,
               );
             },
@@ -145,9 +151,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       SnackBar(
         content: Text('Fitur $featureName segera hadir di Buka Buku!'),
         behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(10),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
         duration: const Duration(seconds: 1),
       ),
     );
@@ -190,18 +194,24 @@ class _ProfileScreenState extends State<ProfileScreen> {
         onNotificationPressed: () {
           Navigator.push(
             context,
-            MaterialPageRoute(
-              builder: (context) => const NotificationScreen(),
-            ),
+            MaterialPageRoute(builder: (context) => const NotificationScreen()),
           );
         },
       ),
       body: SafeArea(
         child: Column(
           children: [
+            if (_isLoading)
+              const LinearProgressIndicator(
+                minHeight: 2,
+                color: AppColors.primaryContainer,
+              ),
             Expanded(
               child: SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 16,
+                ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
@@ -233,7 +243,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           ),
                         );
                       },
-                      onVouchersTap: () => _showFeatureNotice('Voucher Belanja'),
+                      onVouchersTap: () =>
+                          _showFeatureNotice('Voucher Belanja'),
                     ),
                     const SizedBox(height: 14),
 
@@ -298,7 +309,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           icon: Icons.location_on_outlined,
                           title: 'Alamat Pengiriman',
                           subtitle: 'Kelola alamat rumah dan kantor tujuan',
-                          badgeText: '2 Alamat',
+                          badgeText: '$_addressCount Alamat',
                           onTap: _navigateToShippingAddress,
                         ),
                         ProfileMenuTile(
@@ -309,7 +320,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             Navigator.push(
                               context,
                               MaterialPageRoute(
-                                builder: (context) => const NotificationScreen(),
+                                builder: (context) =>
+                                    const NotificationScreen(),
                               ),
                             );
                           },
@@ -331,7 +343,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         ProfileMenuTile(
                           icon: Icons.admin_panel_settings_rounded,
                           title: 'Panel Admin Toko',
-                          subtitle: 'Dashboard statistik, kelola buku & pesanan',
+                          subtitle:
+                              'Dashboard statistik, kelola buku & pesanan',
                           badgeText: 'Admin',
                           iconColor: AppColors.onPrimary,
                           iconBackgroundColor: AppColors.primary,

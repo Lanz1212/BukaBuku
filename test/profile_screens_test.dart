@@ -17,9 +17,7 @@ void main() {
       await tester.pumpAndSettle();
 
       // Check header info
-      expect(find.text('Budi Santoso'), findsOneWidget);
       expect(find.text('Pembaca Terdaftar'), findsOneWidget);
-      expect(find.text('budi.santoso@email.com'), findsOneWidget);
 
       // Check stats counters
       expect(find.text('Pesanan'), findsWidgets);
@@ -44,6 +42,12 @@ void main() {
     testWidgets('EditProfileScreen renders fields and updates profile on save',
         (WidgetTester tester) async {
       UserProfile? returnedUser;
+      const testUser = UserProfile(
+        id: 'u_123',
+        name: 'Andi Pembaca',
+        email: 'andi@gmail.com',
+        phone: '08123456789',
+      );
 
       await tester.pumpWidget(
         MaterialApp(
@@ -55,7 +59,7 @@ void main() {
                     returnedUser = await Navigator.push<UserProfile>(
                       context,
                       MaterialPageRoute(
-                        builder: (_) => const EditProfileScreen(),
+                        builder: (_) => const EditProfileScreen(user: testUser),
                       ),
                     );
                   },
@@ -76,12 +80,13 @@ void main() {
       expect(find.text('Alamat Email'), findsOneWidget);
       expect(find.text('Terverifikasi'), findsOneWidget);
       expect(find.text('Nomor Handphone'), findsOneWidget);
-      expect(find.text('Tanggal Lahir'), findsOneWidget);
+      // Tanggal Lahir should NOT exist
+      expect(find.text('Tanggal Lahir'), findsNothing);
       expect(find.text('Simpan Perubahan'), findsOneWidget);
 
       // Edit name field
-      final nameField = find.widgetWithText(TextFormField, 'Budi Santoso');
-      await tester.enterText(nameField, 'Budi Perkasa');
+      final nameField = find.widgetWithText(TextFormField, 'Andi Pembaca');
+      await tester.enterText(nameField, 'Andi Perkasa');
       await tester.pumpAndSettle();
 
       // Tap Simpan Perubahan
@@ -90,10 +95,10 @@ void main() {
 
       // Verify result was returned
       expect(returnedUser, isNotNull);
-      expect(returnedUser!.name, 'Budi Perkasa');
+      expect(returnedUser!.name, 'Andi Perkasa');
     });
 
-    testWidgets('ShippingAddressScreen renders address list and tags',
+    testWidgets('ShippingAddressScreen renders header and add button',
         (WidgetTester tester) async {
       await tester.pumpWidget(
         const MaterialApp(
@@ -105,11 +110,6 @@ void main() {
       // Verify header
       expect(find.text('Daftar Alamat Saya'), findsOneWidget);
       expect(find.text('BUKU & PENGIRIMAN'), findsOneWidget);
-
-      // Verify default addresses
-      expect(find.text('Alamat Utama'), findsOneWidget);
-      expect(find.text('Rumah'), findsOneWidget);
-      expect(find.text('Kantor'), findsOneWidget);
       expect(find.text('Tambah Alamat Baru'), findsOneWidget);
     });
   });

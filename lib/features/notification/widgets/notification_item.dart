@@ -7,85 +7,96 @@ import 'notification_qr_action.dart';
 
 class NotificationItem extends StatelessWidget {
   final NotificationModel notification;
+  final VoidCallback? onTap;
   final VoidCallback? onOpenQrPickup;
   final VoidCallback? onWriteReview;
 
   const NotificationItem({
     super.key,
     required this.notification,
+    this.onTap,
     this.onOpenQrPickup,
     this.onWriteReview,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: AppColors.surfaceContainerLowest,
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: notification.isUnread
-              ? AppColors.secondary.withValues(alpha: 0.25)
-              : AppColors.outlineVariant.withValues(alpha: 0.35),
-          width: 1,
+        child: Container(
+          decoration: BoxDecoration(
+            color: notification.isUnread
+                ? AppColors.surfaceContainerLowest
+                : AppColors.surfaceContainerLow.withValues(alpha: 0.6),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: notification.isUnread
+                  ? AppColors.secondary.withValues(alpha: 0.35)
+                  : AppColors.outlineVariant.withValues(alpha: 0.35),
+              width: 1,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: AppColors.primaryContainer.withValues(
+                  alpha: notification.isUnread ? 0.08 : 0.02,
+                ),
+                blurRadius: notification.isUnread ? 16 : 6,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          padding: const EdgeInsets.all(16),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Icon with Unread Badge indicator
+              _buildLeadingIcon(),
+              const SizedBox(width: 14),
+
+              // Content
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Title
+                    Text(
+                      notification.title,
+                      style: AppTypography.titleMd.copyWith(
+                        color: AppColors.onSurface,
+                        fontWeight: notification.isUnread ? FontWeight.w700 : FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: 3),
+
+                    // Time ago
+                    Text(
+                      notification.timeAgo,
+                      style: AppTypography.caption.copyWith(
+                        color: AppColors.onSurfaceVariant.withValues(alpha: 0.8),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+
+                    // Body text
+                    Text(
+                      notification.body,
+                      style: AppTypography.bodyMd.copyWith(
+                        color: AppColors.onSurfaceVariant,
+                        height: 1.45,
+                      ),
+                    ),
+
+                    // Dynamic Action / Extra elements based on notification type
+                    _buildActionWidget(context),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.primaryContainer.withValues(
-              alpha: notification.isUnread ? 0.08 : 0.03,
-            ),
-            blurRadius: notification.isUnread ? 16 : 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      padding: const EdgeInsets.all(16),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Icon with Unread Badge indicator
-          _buildLeadingIcon(),
-          const SizedBox(width: 14),
-
-          // Content
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Title
-                Text(
-                  notification.title,
-                  style: AppTypography.titleMd.copyWith(
-                    color: AppColors.onSurface,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                const SizedBox(height: 3),
-
-                // Time ago
-                Text(
-                  notification.timeAgo,
-                  style: AppTypography.caption.copyWith(
-                    color: AppColors.onSurfaceVariant.withValues(alpha: 0.8),
-                  ),
-                ),
-                const SizedBox(height: 8),
-
-                // Body text
-                Text(
-                  notification.body,
-                  style: AppTypography.bodyMd.copyWith(
-                    color: AppColors.onSurfaceVariant,
-                    height: 1.45,
-                  ),
-                ),
-
-                // Dynamic Action / Extra elements based on notification type
-                _buildActionWidget(context),
-              ],
-            ),
-          ),
-        ],
       ),
     );
   }
@@ -205,7 +216,7 @@ class NotificationItem extends StatelessWidget {
               ),
               const SizedBox(width: 4),
               Text(
-                'No. Ref: ${notification.refId ?? 'QRIS-9928104'}',
+                'No. Ref: ${notification.refId ?? (notification.orderId != null ? 'PAY-${notification.orderId!.replaceAll('#', '')}' : 'QRIS-VERIFIED')}',
                 style: AppTypography.caption.copyWith(
                   color: AppColors.onSurfaceVariant.withValues(alpha: 0.8),
                 ),
@@ -260,9 +271,9 @@ class NotificationItem extends StatelessWidget {
                   color: AppColors.onSurfaceVariant.withValues(alpha: 0.8),
                 ),
               ),
-              ElevatedButton(
-                onPressed: () {
-                  if (notification.voucherCode != null) {
+              if (notification.voucherCode != null)
+                ElevatedButton(
+                  onPressed: () {
                     Clipboard.setData(ClipboardData(text: notification.voucherCode!));
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
@@ -271,26 +282,25 @@ class NotificationItem extends StatelessWidget {
                         backgroundColor: AppColors.primaryContainer,
                       ),
                     );
-                  }
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.secondary,
-                  foregroundColor: AppColors.onSecondary,
-                  elevation: 0,
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                  minimumSize: const Size(0, 32),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(6),
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.secondary,
+                    foregroundColor: AppColors.onSecondary,
+                    elevation: 0,
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    minimumSize: const Size(0, 32),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                  ),
+                  child: Text(
+                    'Salin Kode',
+                    style: AppTypography.caption.copyWith(
+                      color: AppColors.onSecondary,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                 ),
-                child: Text(
-                  'Salin Kode',
-                  style: AppTypography.caption.copyWith(
-                    color: AppColors.onSecondary,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
             ],
           ),
         );
