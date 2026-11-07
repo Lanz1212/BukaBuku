@@ -19,7 +19,7 @@ class SearchScreen extends StatefulWidget {
   const SearchScreen({
     super.key,
     this.initialCategory,
-    this.initialQuery = 'Atomic Habits',
+    this.initialQuery = '',
   });
 
   @override
@@ -30,30 +30,40 @@ class _SearchScreenState extends State<SearchScreen> {
   late final TextEditingController _searchController;
   late Set<String> _selectedCategories;
   String _currentSort = 'Terpopuler';
-  RangeValues _priceRange = const RangeValues(50000, 150000);
-  String _selectedStockOption = 'instock';
-  bool _forceEmptyPreview = false;
+  RangeValues _priceRange = const RangeValues(0, 500000);
+  String _selectedStockOption = 'all';
   List<AdminBookItem> _dbBooks = [];
+  List<String> _availableCategories = [];
+  bool _isLoading = true;
 
   @override
   void initState() {
     super.initState();
     _searchController = TextEditingController(text: widget.initialQuery);
-    _selectedCategories = widget.initialCategory != null
+    _selectedCategories = widget.initialCategory != null && widget.initialCategory!.isNotEmpty && widget.initialCategory != 'Semua'
         ? {widget.initialCategory!}
-        : (widget.initialQuery.isNotEmpty ? {'Self-Help'} : {'Psikologi', 'Pengembangan Diri'});
+        : {};
     _loadDbBooks();
   }
 
   Future<void> _loadDbBooks() async {
     try {
-      final books = await BookService.fetchBooks(onlyActive: true);
+      final results = await Future.wait([
+        BookService.fetchBooks(onlyActive: true),
+        BookService.fetchCategoryNames(),
+      ]);
       if (mounted) {
         setState(() {
-          _dbBooks = books;
+          _dbBooks = results[0] as List<AdminBookItem>;
+          _availableCategories = results[1] as List<String>;
+          _isLoading = false;
         });
       }
-    } catch (_) {}
+    } catch (_) {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
   }
 
   @override
@@ -73,6 +83,7 @@ class _SearchScreenState extends State<SearchScreen> {
           initialCategories: _selectedCategories,
           initialPriceRange: _priceRange,
           initialStockOption: _selectedStockOption,
+          categoryOptions: _availableCategories,
           onApply: (result) {
             setState(() {
               _currentSort = result.sortOption;
@@ -141,20 +152,21 @@ class _SearchScreenState extends State<SearchScreen> {
 
   List<BookSearchItem> get _displayBooks {
     final query = _searchController.text.trim().toLowerCase();
-    final sourceList = _dbBooks.isNotEmpty
-        ? _dbBooks.map((b) => BookSearchItem.fromAdminBookItem(b)).toList()
-        : BookSearchItem.defaultSearchItems;
+    final sourceList = _dbBooks.map((b) => BookSearchItem.fromAdminBookItem(b)).toList();
+
     var list = sourceList.where((book) {
       final matchesQuery = query.isEmpty ||
           book.title.toLowerCase().contains(query) ||
-          book.author.toLowerCase().contains(query);
+          book.author.toLowerCase().contains(query) ||
+          book.category.toLowerCase().contains(query);
 
       // Category matching
       final matchesCategory = _selectedCategories.isEmpty ||
           _selectedCategories.any((cat) {
             final c = cat.toLowerCase();
             final bookCat = book.category.toLowerCase();
-            return bookCat.contains(c) ||
+            return bookCat == c ||
+                bookCat.contains(c) ||
                 c.contains(bookCat) ||
                 (c.contains('pengembangan') && bookCat.contains('self-help')) ||
                 (c.contains('psikologi') && (bookCat.contains('self-help') || book.title.toLowerCase().contains('habit')));
@@ -177,8 +189,10 @@ class _SearchScreenState extends State<SearchScreen> {
       list.sort((a, b) => a.priceValue.compareTo(b.priceValue));
     } else if (_currentSort == 'Harga: Tinggi ke Rendah' || _currentSort == 'Harga tertinggi') {
       list.sort((a, b) => b.priceValue.compareTo(a.priceValue));
-    } else if (_currentSort == 'Rating Tertinggi') {
+    } else if (_currentSort == 'Rating Tertinggi' || _currentSort == 'Terpopuler') {
       list.sort((a, b) => b.rating.compareTo(a.rating));
+    } else if (_currentSort == 'Terbaru') {
+      // Kept in recent created_at order from Supabase
     }
 
     return list;
@@ -187,7 +201,7 @@ class _SearchScreenState extends State<SearchScreen> {
   @override
   Widget build(BuildContext context) {
     final books = _displayBooks;
-    final bool showEmpty = _forceEmptyPreview || books.isEmpty;
+    final bool showEmpty = !_isLoading && books.isEmpty;
     final int activeFilterCount = _selectedCategories.length +
         (_selectedStockOption != 'all' ? 1 : 0);
 
@@ -273,9 +287,7 @@ class _SearchScreenState extends State<SearchScreen> {
                                 isDense: true,
                               ),
                               onChanged: (_) {
-                                setState(() {
-                                  _forceEmptyPreview = false;
-                                });
+                                setState(() {});
                               },
                             ),
                           ),
@@ -284,7 +296,6 @@ class _SearchScreenState extends State<SearchScreen> {
                               onTap: () {
                                 setState(() {
                                   _searchController.clear();
-                                  _forceEmptyPreview = false;
                                 });
                               },
                               child: Container(
@@ -329,138 +340,26 @@ class _SearchScreenState extends State<SearchScreen> {
                 ),
               ),
 
-              // State Preview Selector Switch (UX Testing Mode)
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                child: Container(
-                  padding: const EdgeInsets.all(4),
-                  decoration: BoxDecoration(
-                    color: AppColors.surfaceContainer,
-                    borderRadius: BorderRadius.circular(12),
+              // Content View (Loading, Empty, or Results)
+              if (_isLoading)
+                const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 48),
+                  child: Center(
+                    child: CircularProgressIndicator(),
                   ),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: GestureDetector(
-                          onTap: () {
-                            setState(() {
-                              _forceEmptyPreview = false;
-                            });
-                          },
-                          child: AnimatedContainer(
-                            duration: const Duration(milliseconds: 150),
-                            padding: const EdgeInsets.symmetric(vertical: 8),
-                            decoration: BoxDecoration(
-                              color: !showEmpty
-                                  ? AppColors.surfaceContainerLowest
-                                  : Colors.transparent,
-                              borderRadius: BorderRadius.circular(9),
-                              boxShadow: !showEmpty
-                                  ? [
-                                      BoxShadow(
-                                        color: AppColors.primaryContainer.withValues(alpha: 0.06),
-                                        blurRadius: 6,
-                                        offset: const Offset(0, 2),
-                                      ),
-                                    ]
-                                  : null,
-                            ),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(
-                                  Icons.menu_book_rounded,
-                                  size: 16,
-                                  color: !showEmpty
-                                      ? AppColors.primaryContainer
-                                      : AppColors.onSurfaceVariant,
-                                ),
-                                const SizedBox(width: 6),
-                                Text(
-                                  'Hasil Ditemukan (12)',
-                                  style: AppTypography.labelMd.copyWith(
-                                    color: !showEmpty
-                                        ? AppColors.primaryContainer
-                                        : AppColors.onSurfaceVariant,
-                                    fontWeight: !showEmpty ? FontWeight.w600 : FontWeight.w500,
-                                    fontSize: 12.5,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 4),
-                      Expanded(
-                        child: GestureDetector(
-                          onTap: () {
-                            setState(() {
-                              _forceEmptyPreview = true;
-                            });
-                          },
-                          child: AnimatedContainer(
-                            duration: const Duration(milliseconds: 150),
-                            padding: const EdgeInsets.symmetric(vertical: 8),
-                            decoration: BoxDecoration(
-                              color: showEmpty
-                                  ? AppColors.surfaceContainerLowest
-                                  : Colors.transparent,
-                              borderRadius: BorderRadius.circular(9),
-                              boxShadow: showEmpty
-                                  ? [
-                                      BoxShadow(
-                                        color: AppColors.primaryContainer.withValues(alpha: 0.06),
-                                        blurRadius: 6,
-                                        offset: const Offset(0, 2),
-                                      ),
-                                    ]
-                                  : null,
-                            ),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(
-                                  Icons.search_off_rounded,
-                                  size: 16,
-                                  color: showEmpty
-                                      ? AppColors.primaryContainer
-                                      : AppColors.onSurfaceVariant,
-                                ),
-                                const SizedBox(width: 6),
-                                Text(
-                                  'Pratinjau Kosong',
-                                  style: AppTypography.labelMd.copyWith(
-                                    color: showEmpty
-                                        ? AppColors.primaryContainer
-                                        : AppColors.onSurfaceVariant,
-                                    fontWeight: showEmpty ? FontWeight.w600 : FontWeight.w500,
-                                    fontSize: 12.5,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-
-              // Content View (Results or Empty State)
-              if (showEmpty)
+                )
+              else if (showEmpty)
                 SearchEmptyState(
                   onShowRecommendations: () {
                     setState(() {
-                      _forceEmptyPreview = false;
-                      _searchController.text = 'Atomic Habits';
-                      _selectedCategories = {'Self-Help'};
+                      _searchController.clear();
+                      _selectedCategories.clear();
+                      _priceRange = const RangeValues(0, 500000);
+                      _selectedStockOption = 'all';
                     });
                   },
                   onClearKeywords: () {
                     setState(() {
-                      _forceEmptyPreview = false;
                       _searchController.clear();
                       _selectedCategories.clear();
                     });
@@ -482,20 +381,22 @@ class _SearchScreenState extends State<SearchScreen> {
                           children: [
                             const TextSpan(text: 'Menampilkan '),
                             TextSpan(
-                              text: '12 hasil',
+                              text: '${books.length} buku',
                               style: const TextStyle(
                                 fontWeight: FontWeight.w700,
                                 color: AppColors.onSurface,
                               ),
                             ),
-                            const TextSpan(text: ' untuk '),
-                            TextSpan(
-                              text: '"${_searchController.text.isNotEmpty ? _searchController.text : "Semua"}"',
-                              style: const TextStyle(
-                                fontWeight: FontWeight.w700,
-                                color: AppColors.secondary,
+                            if (_searchController.text.isNotEmpty) ...[
+                              const TextSpan(text: ' untuk '),
+                              TextSpan(
+                                text: '"${_searchController.text}"',
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.w700,
+                                  color: AppColors.secondary,
+                                ),
                               ),
-                            ),
+                            ],
                           ],
                         ),
                       ),

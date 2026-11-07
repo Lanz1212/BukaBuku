@@ -39,6 +39,45 @@ class BookService {
         .toList();
   }
 
+  // ─── READ: Top Rated Books (for Rekomendasi / Terpopuler) ─────────────────
+  static Future<List<AdminBookItem>> fetchTopRatedBooks({int limit = 8}) async {
+    try {
+      final response = await _client
+          .from('books')
+          .select()
+          .eq('is_active', true)
+          .order('rating', ascending: false)
+          .limit(limit);
+
+      return (response as List<dynamic>)
+          .map((e) => AdminBookItem.fromMap(e as Map<String, dynamic>))
+          .toList();
+    } catch (_) {
+      return [];
+    }
+  }
+
+  // ─── READ: Distinct Authors ────────────────────────────────────────────────
+  static Future<List<String>> fetchDistinctAuthors({int limit = 8}) async {
+    try {
+      final response = await _client
+          .from('books')
+          .select('author')
+          .eq('is_active', true)
+          .order('author', ascending: true);
+
+      final authors = (response as List<dynamic>)
+          .map((e) => (e['author'] as String?)?.trim() ?? '')
+          .where((a) => a.isNotEmpty)
+          .toSet()
+          .take(limit)
+          .toList();
+      return authors;
+    } catch (_) {
+      return [];
+    }
+  }
+
   // ─── READ: Single Book by ID ───────────────────────────────────────────────
   static Future<AdminBookItem?> fetchBookById(String id) async {
     final response = await _client

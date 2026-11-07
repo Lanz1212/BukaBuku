@@ -82,7 +82,7 @@ class BookPriceHeader extends StatelessWidget {
 
         const SizedBox(height: 14),
 
-        // Price, Original Price, and Discount Badge
+        // Price
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           crossAxisAlignment: CrossAxisAlignment.center,
@@ -94,31 +94,6 @@ class BookPriceHeader extends StatelessWidget {
                 fontWeight: FontWeight.w800,
                 fontSize: 24,
                 letterSpacing: -0.5,
-              ),
-            ),
-            const SizedBox(width: 8),
-            Text(
-              book.originalPrice,
-              style: AppTypography.bodyMd.copyWith(
-                color: AppColors.outline,
-                decoration: TextDecoration.lineThrough,
-                fontSize: 14,
-              ),
-            ),
-            const SizedBox(width: 8),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
-              decoration: BoxDecoration(
-                color: const Color(0xFFFFECEB),
-                borderRadius: BorderRadius.circular(6),
-              ),
-              child: Text(
-                book.discountPercentage,
-                style: AppTypography.caption.copyWith(
-                  color: const Color(0xFFD9534F),
-                  fontWeight: FontWeight.w700,
-                  fontSize: 11,
-                ),
               ),
             ),
           ],

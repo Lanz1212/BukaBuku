@@ -38,9 +38,6 @@ class BookDetail {
   final int pageCount;
   final String price;
   final int priceValue;
-  final String originalPrice;
-  final int originalPriceValue;
-  final String discountPercentage;
   final double rating;
   final int reviewCount;
   final String reviewCountFormatted;
@@ -65,9 +62,6 @@ class BookDetail {
     required this.pageCount,
     required this.price,
     required this.priceValue,
-    required this.originalPrice,
-    required this.originalPriceValue,
-    required this.discountPercentage,
     required this.rating,
     required this.reviewCount,
     required this.reviewCountFormatted,
@@ -96,8 +90,6 @@ class BookDetail {
     }
 
     final priceFormatted = 'Rp ${book.price.toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (m) => '${m[1]}.')}';
-    final originalPriceVal = (book.price * 1.1).round();
-    final originalPriceFormatted = 'Rp ${originalPriceVal.toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (m) => '${m[1]}.')}';
 
     return BookDetail(
       id: book.id,
@@ -112,9 +104,6 @@ class BookDetail {
       pageCount: book.pageCount,
       price: priceFormatted,
       priceValue: book.price,
-      originalPrice: originalPriceFormatted,
-      originalPriceValue: originalPriceVal,
-      discountPercentage: '10%',
       rating: book.rating,
       reviewCount: book.reviewCount,
       reviewCountFormatted: '${book.reviewCount} ulasan',
@@ -130,93 +119,58 @@ class BookDetail {
 
   /// Factory helper to build or fallback from a BookSearchItem
   factory BookDetail.fromSearchItem(BookSearchItem item) {
-    if (item.id == 'atomic-habits-new' || item.title.toLowerCase().contains('atomic habits')) {
-      return atomicHabitsSample;
-    }
-
     return BookDetail(
       id: item.id,
       title: item.title,
       author: item.author,
       authorPrefix: 'Karya',
-      publisher: 'Gramedia Pustaka',
-      publishYear: '2021',
+      publisher: 'Penerbit Toko Budi',
+      publishYear: '2024',
       category: item.category,
-      isbn: '978-602-06-3317-6',
-      format: 'Softcover • 356 Hal.',
-      pageCount: 356,
+      isbn: 'Tersedia di Toko',
+      format: 'Softcover',
+      pageCount: 0,
       price: item.price,
       priceValue: item.priceValue,
-      originalPrice: 'Rp105.000',
-      originalPriceValue: 105000,
-      discountPercentage: '-19%',
       rating: item.rating,
-      reviewCount: 1240,
+      reviewCount: 0,
       reviewCountFormatted: item.reviewCount,
       coverUrl: item.coverUrl,
       stockStatus: item.stockStatus,
       stockLabel: item.stockLabel,
-      storeLocation: 'Toko Cikini',
-      remainingStock: item.stockStatus == StockStatus.inStock ? 14 : (item.stockStatus == StockStatus.limited ? 2 : 0),
-      description:
-          'Perubahan nyata tidak berasal dari revolusi besar dalam satu malam, melainkan dari efek kumulatif ratusan keputusan kecil—seperti push-up dua kali sehari, bangun lima menit lebih awal, atau membaca satu halaman buku setiap pagi.\n\nDalam buku ini, James Clear membongkar bagaimana kebiasaan-kebiasaan kecil dapat menghasilkan perubahan besar yang mengubah hidup. Dilengkapi riset ilmiah mutakhir dan strategi praktis yang terbukti berhasil diterapkan ribuan pembaca di seluruh dunia.',
-      reviews: const [
-        BookReview(
-          id: 'rev-1',
-          reviewerName: 'Anindya Rahma',
-          reviewerInitials: 'AR',
-          isVerified: true,
-          rating: 5.0,
-          timeAgo: '2 hari yang lalu',
-          purchaseLocation: 'Pembeli Toko Buku Budi',
-          comment:
-              'Buku sangat membuka wawasan dan mengubah caraku memandang resolusi tahun baru. Kemasan buku dari Toko Budi sangat rapi dengan bubble wrap tebal dan pembatas buku estetik!',
-        ),
-      ],
+      storeLocation: item.shelfLocation ?? 'Rak Buku Utama',
+      remainingStock: item.stockStatus == StockStatus.inStock ? 10 : (item.stockStatus == StockStatus.limited ? 2 : 0),
+      description: 'Deskripsi buku belum tersedia.',
+      reviews: const [],
     );
   }
 
   /// Default sample matching the reference screen exactly
   static const BookDetail atomicHabitsSample = BookDetail(
-    id: 'atomic-habits-new',
+    id: 'B001',
     title: 'Atomic Habits',
     author: 'James Clear',
     authorPrefix: 'Karya',
-    publisher: 'Gramedia Pustaka',
+    publisher: 'Gramedia Pustaka Utama',
     publishYear: '2019',
-    category: 'Self Development',
-    isbn: '978 - 602 - 06 - 3317 - 6',
+    category: 'Pengembangan Diri',
+    isbn: '978-602-06-3317-6',
     format: 'Softcover • 356 Hal.',
     pageCount: 356,
-    price: 'Rp85.000',
+    price: 'Rp 85.000',
     priceValue: 85000,
-    originalPrice: 'Rp105.000',
-    originalPriceValue: 105000,
-    discountPercentage: '-19%',
     rating: 4.8,
     reviewCount: 1240,
     reviewCountFormatted: '1.240',
     coverUrl:
-        'https://lh3.googleusercontent.com/aida-public/AB6AXuB6U3tZ1CSsiY38CMBF6ffD0OgiXUbbBeJpnGght2Ai6QVdy10xGbxTxw89-yIaOJ766IipQ3lRYmqC08-l3tffU25FIUvpZ3C81RXElJItxyc4IlDXFGqPcUVaSXwsT8K9B6xiol9NxzFNm3uEosQJ4I9s3q-AqVnbH2a8A7r4Gewk6THB-DQrWOx3bP1aCUJXWBrgj9J6JukRZCtSHA964UKcF1Nn4VUB8PU_4Lh3NOhaRnGq5Th0pw',
+        'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&q=80&w=400',
     stockStatus: StockStatus.inStock,
     stockLabel: 'Stok Tersedia',
-    storeLocation: 'Toko Cikini',
-    remainingStock: 14,
+    storeLocation: 'Rak B2 • Bisnis & Self-Help (Lantai 1)',
+    remainingStock: 4,
     description:
-        'Perubahan nyata tidak berasal dari revolusi besar dalam satu malam, melainkan dari efek kumulatif ratusan keputusan kecil—seperti push-up dua kali sehari, bangun lima menit lebih awal, atau membaca satu halaman buku setiap pagi.\n\nDalam buku bestseller nomor 1 New York Times ini, James Clear menyajikan cara praktis dan terbukti untuk membentuk kebiasaan baik, mematahkan kebiasaan buruk, dan menguasai perilaku kecil yang membawa hasil luar biasa.',
-    reviews: [
-      BookReview(
-        id: 'rev-1',
-        reviewerName: 'Anindya Rahma',
-        reviewerInitials: 'AR',
-        isVerified: true,
-        rating: 5.0,
-        timeAgo: '2 hari yang lalu',
-        purchaseLocation: 'Pembeli Toko Buku Budi',
-        comment:
-            'Buku sangat membuka wawasan dan mengubah caraku memandang resolusi tahun baru. Kemasan buku dari Toko Budi sangat rapi dengan bubble wrap tebal dan pembatas buku estetik!',
-      ),
-    ],
+        'Perubahan kecil yang memberikan hasil luar biasa melalui pembentukan kebiasaan harian secara konsisten.',
+    reviews: [],
   );
 
   BookDetail copyWith({
@@ -232,9 +186,6 @@ class BookDetail {
     int? pageCount,
     String? price,
     int? priceValue,
-    String? originalPrice,
-    int? originalPriceValue,
-    String? discountPercentage,
     double? rating,
     int? reviewCount,
     String? reviewCountFormatted,
@@ -259,9 +210,6 @@ class BookDetail {
       pageCount: pageCount ?? this.pageCount,
       price: price ?? this.price,
       priceValue: priceValue ?? this.priceValue,
-      originalPrice: originalPrice ?? this.originalPrice,
-      originalPriceValue: originalPriceValue ?? this.originalPriceValue,
-      discountPercentage: discountPercentage ?? this.discountPercentage,
       rating: rating ?? this.rating,
       reviewCount: reviewCount ?? this.reviewCount,
       reviewCountFormatted: reviewCountFormatted ?? this.reviewCountFormatted,

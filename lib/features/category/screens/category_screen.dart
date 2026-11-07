@@ -3,6 +3,7 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../shared/widgets/bookstore_app_bar.dart';
 import '../../../shared/widgets/bookstore_bottom_nav.dart';
+import '../../../core/services/book_service.dart';
 import '../models/book_category.dart';
 import '../widgets/category_card.dart';
 import '../widgets/curator_banner.dart';
@@ -22,13 +23,79 @@ class CategoryScreen extends StatefulWidget {
 
 class _CategoryScreenState extends State<CategoryScreen> {
   final TextEditingController _searchController = TextEditingController();
-  List<BookCategory> _filteredCategories = BookCategory.defaultCategories;
+  List<BookCategory> _allCategories = [];
+  List<BookCategory> _filteredCategories = [];
+  bool _isLoading = true;
   String _searchQuery = '';
 
   @override
   void initState() {
     super.initState();
     _searchController.addListener(_onSearchChanged);
+    _loadCategories();
+  }
+
+  Future<void> _loadCategories() async {
+    try {
+      final results = await Future.wait([
+        BookService.fetchCategoryNames(),
+        BookService.fetchBooks(onlyActive: true),
+      ]);
+      final catNames = results[0] as List<String>;
+      final books = results[1] as List<dynamic>;
+
+      final countMap = <String, int>{};
+      for (final b in books) {
+        final cat = b.category as String;
+        countMap[cat] = (countMap[cat] ?? 0) + 1;
+      }
+
+      final cats = catNames.map((name) {
+        final count = countMap[name] ?? 0;
+        return BookCategory(
+          id: name.toLowerCase().replaceAll(' ', '-'),
+          name: name,
+          bookCount: '$count Buku',
+          icon: _iconForCategory(name),
+        );
+      }).toList();
+
+      if (mounted) {
+        setState(() {
+          _allCategories = cats;
+          _filteredCategories = _applyFilter(cats, _searchController.text);
+          _isLoading = false;
+        });
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() {
+          _allCategories = BookCategory.defaultCategories;
+          _filteredCategories = _applyFilter(BookCategory.defaultCategories, _searchController.text);
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
+  List<BookCategory> _applyFilter(List<BookCategory> list, String query) {
+    final q = query.trim().toLowerCase();
+    if (q.isEmpty) return list;
+    return list.where((category) => category.name.toLowerCase().contains(q)).toList();
+  }
+
+  static IconData _iconForCategory(String name) {
+    final n = name.toLowerCase();
+    if (n.contains('novel') || n.contains('sastra')) return Icons.auto_stories_outlined;
+    if (n.contains('komik') || n.contains('manga')) return Icons.forum_outlined;
+    if (n.contains('pendidikan')) return Icons.school_outlined;
+    if (n.contains('teknologi')) return Icons.memory_outlined;
+    if (n.contains('bisnis') || n.contains('finansial')) return Icons.trending_up_rounded;
+    if (n.contains('psikologi') || n.contains('pengembangan')) return Icons.psychology_outlined;
+    if (n.contains('agama') || n.contains('religi') || n.contains('filsafat')) return Icons.account_balance_outlined;
+    if (n.contains('anak') || n.contains('dongeng')) return Icons.star_outline_rounded;
+    if (n.contains('sejarah') || n.contains('budaya')) return Icons.history_edu_outlined;
+    return Icons.menu_book_outlined;
   }
 
   @override
@@ -42,13 +109,7 @@ class _CategoryScreenState extends State<CategoryScreen> {
     final query = _searchController.text.trim().toLowerCase();
     setState(() {
       _searchQuery = query;
-      if (query.isEmpty) {
-        _filteredCategories = BookCategory.defaultCategories;
-      } else {
-        _filteredCategories = BookCategory.defaultCategories.where((category) {
-          return category.name.toLowerCase().contains(query);
-        }).toList();
-      }
+      _filteredCategories = _applyFilter(_allCategories, query);
     });
   }
 
@@ -307,7 +368,12 @@ class _CategoryScreenState extends State<CategoryScreen> {
             const SizedBox(height: 20),
 
             // 2-Column Categories Grid or Empty State
-            if (_filteredCategories.isNotEmpty)
+            if (_isLoading)
+              const SizedBox(
+                height: 200,
+                child: Center(child: CircularProgressIndicator()),
+              )
+            else if (_filteredCategories.isNotEmpty)
               GridView.builder(
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),

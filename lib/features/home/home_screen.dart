@@ -26,28 +26,48 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   int _selectedCategory = 0;
   List<AdminBookItem> _books = [];
-  bool _isLoadingBooks = true;
+  List<AdminBookItem> _topRatedBooks = [];
+  List<String> _categories = ['Semua'];
+  List<String> _authors = [];
+  bool _isLoading = true;
 
   @override
   void initState() {
     super.initState();
-    _loadBooks();
+    _loadData();
   }
 
-  Future<void> _loadBooks() async {
+  Future<void> _loadData() async {
     try {
-      final books = await BookService.fetchBooks(onlyActive: true);
+      final results = await Future.wait([
+        BookService.fetchBooks(onlyActive: true),
+        BookService.fetchTopRatedBooks(limit: 10),
+        BookService.fetchCategoryNames(),
+        BookService.fetchDistinctAuthors(limit: 8),
+      ]);
       if (mounted) {
         setState(() {
-          _books = books;
-          _isLoadingBooks = false;
+          _books = results[0] as List<AdminBookItem>;
+          _topRatedBooks = results[1] as List<AdminBookItem>;
+          _categories = ['Semua', ...(results[2] as List<String>)];
+          _authors = results[3] as List<String>;
+          _isLoading = false;
         });
       }
     } catch (_) {
       if (mounted) {
-        setState(() => _isLoadingBooks = false);
+        setState(() => _isLoading = false);
       }
     }
+  }
+
+  List<AdminBookItem> get _filteredBooks {
+    if (_selectedCategory == 0 || _categories.isEmpty) return _books;
+    final selectedCat = _categories[_selectedCategory].toLowerCase();
+    return _books.where((b) {
+      final cat = b.category.toLowerCase();
+      return cat == selectedCat || cat.contains(selectedCat) || selectedCat.contains(cat);
+    }).toList();
   }
 
   @override
@@ -63,37 +83,90 @@ class _HomeScreenState extends State<HomeScreen> {
 
             // Content
             Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    // Categories
-                    _buildCategories(),
-                    const SizedBox(height: 24),
+              child: RefreshIndicator(
+                onRefresh: _loadData,
+                color: AppColors.primaryContainer,
+                child: SingleChildScrollView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      // Categories
+                      _buildCategories(),
+                      const SizedBox(height: 24),
 
-                    // Featured Books
-                    _buildSectionTitle('Buku Rekomendasi'),
-                    const SizedBox(height: 12),
-                    _buildFeaturedBooks(),
-                    const SizedBox(height: 24),
+                      // Featured Books / Rekomendasi
+                      _buildSectionTitle(
+                        'Buku Rekomendasi',
+                        onSeeAll: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const SearchScreen(),
+                            ),
+                          );
+                        },
+                      ),
+                      const SizedBox(height: 12),
+                      _buildFeaturedBooks(),
+                      const SizedBox(height: 24),
 
-                    // New Arrivals
-                    _buildSectionTitle('Buku Terbaru'),
-                    const SizedBox(height: 12),
-                    _buildNewArrivals(),
-                    const SizedBox(height: 24),
+                      // New Arrivals / Filtered
+                      _buildSectionTitle(
+                        _selectedCategory == 0
+                            ? 'Buku Terbaru'
+                            : 'Buku ${_categories[_selectedCategory]}',
+                        onSeeAll: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => SearchScreen(
+                                initialCategory: _selectedCategory == 0 ? null : _categories[_selectedCategory],
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                      const SizedBox(height: 12),
+                      _buildNewArrivals(),
+                      const SizedBox(height: 24),
 
-                    // Promo Banner
-                    _buildPromoBanner(),
-                    const SizedBox(height: 24),
+                      // Koleksi Populer (Direct books replacing promo banner)
+                      _buildSectionTitle(
+                        'Koleksi Populer',
+                        onSeeAll: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const SearchScreen(),
+                            ),
+                          );
+                        },
+                      ),
+                      const SizedBox(height: 12),
+                      _buildPopularCollection(),
+                      const SizedBox(height: 24),
 
-                    // Popular Authors
-                    _buildSectionTitle('Penulis Populer'),
-                    const SizedBox(height: 12),
-                    _buildPopularAuthors(),
-                    const SizedBox(height: 16),
-                  ],
+                      // Popular Authors (from Database)
+                      if (_authors.isNotEmpty) ...[
+                        _buildSectionTitle(
+                          'Penulis Populer',
+                          onSeeAll: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => const SearchScreen(),
+                              ),
+                            );
+                          },
+                        ),
+                        const SizedBox(height: 12),
+                        _buildPopularAuthors(),
+                        const SizedBox(height: 16),
+                      ],
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -369,20 +442,11 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildCategories() {
-    final categories = [
-      'Semua',
-      'Fiksi',
-      'Non-Fiksi',
-      'Anak',
-      'Komik',
-      'Self-Help',
-    ];
-
     return SizedBox(
       height: 40,
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
-        itemCount: categories.length,
+        itemCount: _categories.length,
         itemBuilder: (context, index) {
           final isSelected = index == _selectedCategory;
           return Padding(
@@ -402,7 +466,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   borderRadius: BorderRadius.circular(9999),
                 ),
                 child: Text(
-                  categories[index],
+                  _categories[index],
                   style: AppTypography.labelMd.copyWith(
                     color: isSelected
                         ? AppColors.onPrimary
@@ -418,7 +482,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildSectionTitle(String title) {
+  Widget _buildSectionTitle(String title, {VoidCallback? onSeeAll}) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
@@ -429,11 +493,21 @@ class _HomeScreenState extends State<HomeScreen> {
             fontWeight: FontWeight.w600,
           ),
         ),
-        Text(
-          'Lihat Semua',
-          style: AppTypography.labelMd.copyWith(
-            color: AppColors.primaryContainer,
-            fontWeight: FontWeight.w500,
+        GestureDetector(
+          onTap: onSeeAll ?? () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => const SearchScreen(),
+              ),
+            );
+          },
+          child: Text(
+            'Lihat Semua',
+            style: AppTypography.labelMd.copyWith(
+              color: AppColors.primaryContainer,
+              fontWeight: FontWeight.w500,
+            ),
           ),
         ),
       ],
@@ -441,14 +515,14 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildFeaturedBooks() {
-    if (_isLoadingBooks) {
+    if (_isLoading) {
       return const SizedBox(
         height: 200,
         child: Center(child: CircularProgressIndicator()),
       );
     }
 
-    final featuredList = _books.take(6).toList();
+    final featuredList = _topRatedBooks.isNotEmpty ? _topRatedBooks.take(6).toList() : _books.take(6).toList();
     if (featuredList.isEmpty) {
       return const SizedBox(
         height: 100,
@@ -473,18 +547,34 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildNewArrivals() {
-    if (_isLoadingBooks) {
+    if (_isLoading) {
       return const SizedBox(
         height: 200,
         child: Center(child: CircularProgressIndicator()),
       );
     }
 
-    final newList = _books.reversed.take(6).toList();
-    if (newList.isEmpty) {
-      return const SizedBox(
-        height: 100,
-        child: Center(child: Text('Belum ada buku terbaru')),
+    final list = _filteredBooks;
+    if (list.isEmpty) {
+      return Container(
+        height: 120,
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: AppColors.surfaceContainerLowest,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: AppColors.outlineVariant.withValues(alpha: 0.5)),
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(Icons.menu_book_outlined, size: 28, color: AppColors.outline),
+            const SizedBox(height: 6),
+            Text(
+              'Belum ada buku untuk kategori ini',
+              style: AppTypography.bodyMd.copyWith(color: AppColors.onSurfaceVariant),
+            ),
+          ],
+        ),
       );
     }
 
@@ -492,9 +582,38 @@ class _HomeScreenState extends State<HomeScreen> {
       height: 200,
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
-        itemCount: newList.length,
+        itemCount: list.length,
         itemBuilder: (context, index) {
-          final book = newList[index];
+          final book = list[index];
+          return Padding(
+            padding: const EdgeInsets.only(right: 12),
+            child: _buildBookCard(book),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildPopularCollection() {
+    if (_isLoading) {
+      return const SizedBox(
+        height: 200,
+        child: Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    final collection = _books.take(8).toList();
+    if (collection.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    return SizedBox(
+      height: 200,
+      child: ListView.builder(
+        scrollDirection: Axis.horizontal,
+        itemCount: collection.length,
+        itemBuilder: (context, index) {
+          final book = collection[index];
           return Padding(
             padding: const EdgeInsets.only(right: 12),
             child: _buildBookCard(book),
@@ -610,102 +729,60 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildPromoBanner() {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            AppColors.primaryContainer,
-            AppColors.secondary,
-          ],
-        ),
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Diskon 20%',
-                  style: AppTypography.headlineLg.copyWith(
-                    color: AppColors.onPrimary,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  'Untuk pembelian pertama',
-                  style: AppTypography.bodyMd.copyWith(
-                    color: AppColors.onPrimary.withValues(alpha: 0.9),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(width: 16),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            decoration: BoxDecoration(
-              color: AppColors.onPrimary,
-              borderRadius: BorderRadius.circular(9999),
-            ),
-            child: Text(
-              'Ambil Promo',
-              style: AppTypography.labelMd.copyWith(
-                color: AppColors.primaryContainer,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   Widget _buildPopularAuthors() {
-    final authors = [
-      'Andrea Hirata',
-      'Pramoedya A. Toer',
-      'Tere Liye',
-      'Dee Lestari',
-    ];
-
     return SizedBox(
-      height: 80,
+      height: 90,
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
-        itemCount: authors.length,
+        itemCount: _authors.length,
         itemBuilder: (context, index) {
+          final author = _authors[index];
           return Padding(
-            padding: const EdgeInsets.only(right: 12),
-            child: Column(
-              children: [
-                Container(
-                  width: 60,
-                  height: 60,
-                  decoration: BoxDecoration(
-                    color: AppColors.surfaceContainer,
-                    shape: BoxShape.circle,
+            padding: const EdgeInsets.only(right: 14),
+            child: GestureDetector(
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => SearchScreen(initialQuery: author),
                   ),
-                  child: const Icon(
-                    Icons.person,
-                    size: 30,
-                    color: AppColors.outline,
-                  ),
+                );
+              },
+              child: SizedBox(
+                width: 72,
+                child: Column(
+                  children: [
+                    Container(
+                      width: 54,
+                      height: 54,
+                      decoration: BoxDecoration(
+                        color: AppColors.surfaceContainerHigh,
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: AppColors.primaryContainer.withValues(alpha: 0.15),
+                        ),
+                      ),
+                      child: const Icon(
+                        Icons.person_outline_rounded,
+                        size: 26,
+                        color: AppColors.primaryContainer,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      author,
+                      style: AppTypography.caption.copyWith(
+                        color: AppColors.onSurfaceVariant,
+                        fontWeight: FontWeight.w500,
+                        fontSize: 11,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 4),
-                Text(
-                  authors[index],
-                  style: AppTypography.caption.copyWith(
-                    color: AppColors.onSurfaceVariant,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ],
+              ),
             ),
           );
         },

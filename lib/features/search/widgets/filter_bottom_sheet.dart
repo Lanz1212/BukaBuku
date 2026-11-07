@@ -23,6 +23,7 @@ class FilterBottomSheet extends StatefulWidget {
   final Set<String> initialCategories;
   final RangeValues initialPriceRange;
   final String initialStockOption;
+  final List<String> categoryOptions;
   final ValueChanged<FilterResult> onApply;
 
   const FilterBottomSheet({
@@ -31,6 +32,7 @@ class FilterBottomSheet extends StatefulWidget {
     required this.initialCategories,
     required this.initialPriceRange,
     required this.initialStockOption,
+    this.categoryOptions = const [],
     required this.onApply,
   });
 
@@ -65,49 +67,40 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
     'Terpopuler',
   ];
 
-  final List<String> _categoryOptions = [
-    'Novel',
-    'Psikologi',
-    'Pengembangan Diri',
-    'Bisnis',
-    'Teknologi',
-    'Komik',
-  ];
+  List<String> get _categoryOptions => widget.categoryOptions.isNotEmpty
+      ? widget.categoryOptions
+      : [
+          'Pengembangan Diri',
+          'Novel & Sastra',
+          'Non-Fiksi',
+          'Bisnis & Finansial',
+          'Filsafat & Pemikiran',
+          'Sejarah & Budaya',
+          'Pendidikan',
+          'Komik & Manga',
+          'Buku Anak',
+        ];
 
   @override
   void initState() {
     super.initState();
     _selectedSort = widget.currentSort;
-    _selectedCategories = Set<String>.from(
-      widget.initialCategories.isNotEmpty
-          ? widget.initialCategories
-          : {'Psikologi', 'Pengembangan Diri'},
-    );
+    _selectedCategories = Set<String>.from(widget.initialCategories);
     _priceRange = widget.initialPriceRange;
     _selectedStockOption = widget.initialStockOption;
   }
 
   void _resetFilter() {
     setState(() {
-      _selectedSort = 'Terpopuler';
-      _selectedCategories = {'Psikologi', 'Pengembangan Diri'};
-      _priceRange = const RangeValues(50000, 150000);
-      _selectedStockOption = 'instock';
+      _selectedSort = 'Terbaru';
+      _selectedCategories = {};
+      _priceRange = const RangeValues(0, 500000);
+      _selectedStockOption = 'all';
     });
-  }
-
-  int _calculateMatchedBooks() {
-    // Dynamically calculate matching books preview count
-    int count = 12;
-    if (_selectedCategories.isEmpty) count = 28;
-    if (_selectedStockOption == 'cikini') count = 6;
-    if (_priceRange.end < 100000) count = (count * 0.5).round();
-    return count.clamp(1, 45);
   }
 
   @override
   Widget build(BuildContext context) {
-    final int matchedCount = _calculateMatchedBooks();
 
     return Container(
       constraints: BoxConstraints(
@@ -490,33 +483,14 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
                             borderRadius: BorderRadius.circular(14),
                           ),
                         ),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Text(
-                              'Terapkan Filter',
-                              style: AppTypography.labelLg.copyWith(
-                                color: Colors.white,
-                                fontWeight: FontWeight.w600,
-                              ),
+                        child: Center(
+                          child: Text(
+                            'Terapkan Filter',
+                            style: AppTypography.labelLg.copyWith(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w600,
                             ),
-                            const SizedBox(width: 6),
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                              decoration: BoxDecoration(
-                                color: AppColors.primary,
-                                borderRadius: BorderRadius.circular(9999),
-                              ),
-                              child: Text(
-                                '($matchedCount Buku)',
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ),
-                          ],
+                          ),
                         ),
                       ),
                     ),
