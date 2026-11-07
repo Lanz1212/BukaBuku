@@ -19,7 +19,7 @@ class CustomerInfoSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final pickupPoint = order.pickupPoint ??
-        'Gerai Utama Cikini, Meja Kasir 1 (Jl. Cikini Raya No. 45)';
+        'Gerai Utama Buka Buku, Meja Kasir 1';
     final accountAddress = order.accountAddress ??
         order.address ??
         'Jl. Cikini Raya No. 42, Menteng, Jakarta Pusat, DKI Jakarta 10330';

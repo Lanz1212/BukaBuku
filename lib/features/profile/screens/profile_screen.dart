@@ -90,7 +90,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
         ),
         content: Text(
-          'Apakah Anda yakin ingin keluar dari akun Toko Buku Budi Anda?',
+          'Apakah Anda yakin ingin keluar dari akun Buka Buku Anda?',
           style: AppTypography.bodyMd.copyWith(
             color: AppColors.onSurfaceVariant,
           ),
@@ -143,7 +143,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   void _showFeatureNotice(String featureName) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('Fitur $featureName segera hadir di Toko Buku Budi!'),
+        content: Text('Fitur $featureName segera hadir di Buka Buku!'),
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(10),
@@ -360,9 +360,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         ),
                         ProfileMenuTile(
                           icon: Icons.info_outline_rounded,
-                          title: 'Tentang Toko Buku Budi',
-                          subtitle: 'Cikini, Jakarta Pusat — Est. 1982',
-                          onTap: () => _showFeatureNotice('Tentang Toko Buku Budi'),
+                          title: 'Tentang Buka Buku',
+                          subtitle: 'Gerai Utama Buka Buku',
+                          onTap: () => _showFeatureNotice('Tentang Buka Buku'),
                         ),
                         ProfileMenuTile(
                           icon: Icons.description_outlined,
@@ -407,7 +407,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     Column(
                       children: [
                         Text(
-                          'Toko Buku Budi v1.0.0',
+                          'Buka Buku v1.0.0',
                           style: AppTypography.caption.copyWith(
                             color: AppColors.outline,
                             fontWeight: FontWeight.w600,

@@ -29,7 +29,7 @@ class OrderBrandStoryCard extends StatelessWidget {
               ),
               const SizedBox(width: 8),
               Text(
-                'Sentuhan Kasih Toko Buku Budi',
+                'Sentuhan Kasih Buka Buku',
                 style: AppTypography.titleMd.copyWith(
                   color: AppColors.onSecondaryFixed,
                   fontWeight: FontWeight.w600,
@@ -50,7 +50,7 @@ class OrderBrandStoryCard extends StatelessWidget {
                       'Setiap paket dibungkus dengan kertas daur ulang ramah lingkungan (plastic-free), lengkap dengan ',
                 ),
                 TextSpan(
-                  text: 'pembatas buku kayu jati khas Budi',
+                  text: 'pembatas buku khas Buka Buku',
                   style: TextStyle(
                     fontWeight: FontWeight.w600,
                     color: AppColors.primary,

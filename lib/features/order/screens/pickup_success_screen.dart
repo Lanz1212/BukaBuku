@@ -48,7 +48,7 @@ class PickupSuccessScreen extends StatelessWidget {
               PickupSuccessDetailCard(
                 orderId: _order.id,
                 customerName: _order.customerName,
-                cashierName: 'Siti (Kasir 1 - Cikini)',
+                cashierName: 'Siti (Kasir 1 - Buka Buku)',
                 pickupTime: '12 Mei 2024, 16:45 WIB',
                 totalAmount: _order.totalAmount,
                 paymentMethod: 'Lunas via QRIS',
@@ -106,7 +106,7 @@ class PickupSuccessScreen extends StatelessWidget {
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
-                        'Termasuk pembatas buku kayu khas Toko Budi & sampul kraft rapi.',
+                        'Termasuk pembatas buku khas Buka Buku & sampul kraft rapi.',
                         style: AppTypography.caption.copyWith(
                           color: AppColors.onSecondaryFixedVariant,
                           fontWeight: FontWeight.w500,

@@ -589,7 +589,7 @@ class OrderCardItem extends StatelessWidget {
               ),
               const SizedBox(width: 6),
               Text(
-                order.completionNote ?? 'Buku telah diterima di Toko Buku Budi Cikini',
+                order.completionNote ?? 'Buku telah diterima di Gerai Utama Buka Buku',
                 style: AppTypography.caption.copyWith(
                   color: AppColors.secondary,
                   fontWeight: FontWeight.w600,

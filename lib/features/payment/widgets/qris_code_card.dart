@@ -11,7 +11,7 @@ class QrisCodeCard extends StatelessWidget {
 
   const QrisCodeCard({
     super.key,
-    this.merchantName = 'Toko Buku Budi Cikini',
+    this.merchantName = 'Gerai Utama Buka Buku',
     this.nmid = 'NMID: ID1020038891002',
     this.onDownload,
   });

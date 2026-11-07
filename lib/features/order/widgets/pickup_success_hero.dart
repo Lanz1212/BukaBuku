@@ -51,7 +51,7 @@ class PickupSuccessHero extends StatelessWidget {
     super.key,
     this.title = 'Pesanan Berhasil Diambil!',
     this.subtitle =
-        'Pesanan telah diserahkan kepada customer di gerai Toko Buku Budi Cikini. Selamat menikmati bacaan barumu!',
+        'Pesanan telah diserahkan kepada customer di Gerai Utama Buka Buku. Selamat menikmati bacaan barumu!',
   });
 
   @override

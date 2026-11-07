@@ -116,7 +116,7 @@ class BookstoreAppBar extends StatelessWidget implements PreferredSizeWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Toko Buku Budi',
+                            'Buka Buku',
                             style: AppTypography.labelMd.copyWith(
                               color: AppColors.secondary,
                               fontWeight: FontWeight.w600,

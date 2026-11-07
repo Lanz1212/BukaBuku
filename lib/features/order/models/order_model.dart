@@ -141,9 +141,9 @@ final List<OrderModel> mockOrders = [
     deliveryType: DeliveryType.pickup,
     deliveryBadgeLabel: 'Ambil di Toko Cabang',
     packageNote: 'Buku Telah Dibungkus Rapih',
-    pickupLocation: 'Meja Kasir 1 • Toko Buku Budi Cabang Cikini, Jakarta Pusat',
+    pickupLocation: 'Meja Kasir 1 • Gerai Utama Buka Buku',
     pickupSchedule: 'Buka sampai 21.00 WIB hari ini',
-    branchName: 'Toko Buku Budi Cikini',
+    branchName: 'Gerai Utama Buka Buku',
     branchAddress: 'Jl. Cikini Raya No. 42, Menteng, Jakarta Pusat 10330',
     branchSchedule: 'Buka Hari Ini: 08.00 – 21.00 WIB',
     summaryTitle: 'Laut Bercerita & 1 Buku Lainnya',
@@ -198,7 +198,7 @@ final List<OrderModel> mockOrders = [
       OrderTimelineStepModel(
         title: 'Pesanan Dibuat',
         time: '14:30 WIB',
-        description: 'Pesanan berhasil tercatat di sistem Toko Buku Budi.',
+        description: 'Pesanan berhasil tercatat di sistem Buka Buku.',
         isDone: true,
       ),
       OrderTimelineStepModel(
@@ -211,14 +211,14 @@ final List<OrderModel> mockOrders = [
         title: 'Diproses Kurator Buku',
         time: '15:00 WIB',
         description:
-            'Dibungkus rapi dengan kertas kraft ramah lingkungan & pembatas buku khas Cikini.',
+            'Dibungkus rapi dengan kertas kraft ramah lingkungan & pembatas buku khas Buka Buku.',
         isDone: true,
       ),
       OrderTimelineStepModel(
         title: 'Siap Diambil di Toko',
         time: '16:15 WIB',
         description:
-            'Tersedia di meja kasir Toko Cikini dengan nomor referensi #ORD00125.',
+            'Tersedia di meja kasir Buka Buku dengan nomor referensi #ORD00125.',
         isActive: true,
       ),
       OrderTimelineStepModel(
@@ -275,7 +275,7 @@ final List<OrderModel> mockOrders = [
       OrderTimelineStepModel(
         title: 'Pesanan Dibuat',
         time: '09:15 WIB',
-        description: 'Pesanan berhasil tercatat di sistem Toko Buku Budi.',
+        description: 'Pesanan berhasil tercatat di sistem Buka Buku.',
         isDone: true,
       ),
       OrderTimelineStepModel(
@@ -287,7 +287,7 @@ final List<OrderModel> mockOrders = [
       OrderTimelineStepModel(
         title: 'Sedang Dikirim',
         time: '13:00 WIB',
-        description: 'Dibawa oleh Kurir Buku Budi Express menuju alamat Anda.',
+        description: 'Dibawa oleh Kurir Buka Buku Express menuju alamat Anda.',
         isActive: true,
       ),
       OrderTimelineStepModel(
@@ -305,7 +305,7 @@ final List<OrderModel> mockOrders = [
     isPaid: true,
     deliveryType: DeliveryType.pickup,
     deliveryBadgeLabel: 'Ambil di Toko',
-    completionNote: 'Buku telah diterima di Toko Buku Budi Cikini',
+    completionNote: 'Buku telah diterima di Gerai Utama Buka Buku',
     completionDate: '28 Apr',
     summaryTitle: 'Nusantara: Sejarah Silang Budaya',
     summarySubtitle: 'Bernard H.M. Vlekke • Jilid 1',
@@ -355,7 +355,7 @@ final List<OrderModel> mockOrders = [
       OrderTimelineStepModel(
         title: 'Siap Diambil',
         time: '14:00 WIB',
-        description: 'Paket siap di cabang Cikini.',
+        description: 'Paket siap di gerai toko.',
         isDone: true,
       ),
       OrderTimelineStepModel(
@@ -375,9 +375,9 @@ final List<OrderModel> mockOrders = [
     deliveryType: DeliveryType.pickup,
     deliveryBadgeLabel: 'Ambil di Toko Cabang',
     packageNote: 'Sedang disiapkan kurator buku',
-    pickupLocation: 'Meja Kasir 1 • Toko Buku Budi Cabang Cikini',
+    pickupLocation: 'Meja Kasir 1 • Gerai Utama Buka Buku',
     pickupSchedule: 'Estimasi siap 2 jam lagi',
-    branchName: 'Toko Buku Budi Cikini',
+    branchName: 'Gerai Utama Buka Buku',
     branchAddress: 'Jl. Cikini Raya No. 42, Menteng, Jakarta Pusat 10330',
     branchSchedule: 'Buka Hari Ini: 08.00 – 21.00 WIB',
     summaryTitle: 'Sapiens: Riwayat Singkat Umat Manusia',

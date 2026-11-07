@@ -16,7 +16,7 @@ class QrPickupOrderMeta extends StatelessWidget {
     this.bookTitlesText = 'Atomic Habits • Filosofi Teras',
     this.totalAmount = 'Rp181.000',
     this.paymentStatus = 'Lunas via QRIS',
-    this.pickupLocation = 'Meja Kasir 1, Toko Buku Budi Cikini',
+    this.pickupLocation = 'Meja Kasir 1, Gerai Utama Buka Buku',
     this.pickupSchedule = 'Buka Hari Ini: 08.00 - 21.00 WIB',
   });
 

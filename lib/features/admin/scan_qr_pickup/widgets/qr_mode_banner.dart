@@ -8,7 +8,7 @@ class QrModeBanner extends StatelessWidget {
 
   const QrModeBanner({
     super.key,
-    this.outletName = 'Gerai Cikini',
+    this.outletName = 'Gerai Buka Buku',
     this.isActive = true,
   });
 

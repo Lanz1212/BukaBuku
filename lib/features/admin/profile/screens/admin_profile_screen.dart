@@ -44,7 +44,7 @@ class AdminProfileScreen extends StatelessWidget {
           ),
         ),
         content: Text(
-          'Apakah Anda yakin ingin mengakhiri sesi admin Toko Buku Budi dan kembali ke mode pembeli?',
+          'Apakah Anda yakin ingin mengakhiri sesi admin Buka Buku dan kembali ke mode pembeli?',
           style: AppTypography.bodyMd.copyWith(
             color: AppColors.onSurfaceVariant,
           ),
@@ -107,7 +107,7 @@ class AdminProfileScreen extends StatelessWidget {
           AdminShiftCard(
             onOpenCashier: () => _showNotice(
               context,
-              'Membuka terminal Kasir Cepat Toko Buku Budi Cikini',
+              'Membuka terminal Kasir Cepat Buka Buku',
             ),
           ),
           const SizedBox(height: 18),
@@ -126,7 +126,7 @@ class AdminProfileScreen extends StatelessWidget {
               AdminInfoTile(
                 icon: Icons.storefront_outlined,
                 title: 'Pengaturan Toko',
-                titleBadge: 'Cikini Raya',
+                titleBadge: 'Buka Buku',
                 subtitle: 'Identitas toko, jam buka, kontak WhatsApp resmi',
                 showDivider: true,
                 onTap: () {
@@ -175,7 +175,7 @@ class AdminProfileScreen extends StatelessWidget {
                 showDivider: false,
                 onTap: () => _showNotice(
                   context,
-                  'Buka modul panduan staf Toko Buku Budi',
+                  'Buka modul panduan staf Buka Buku',
                 ),
               ),
             ],
@@ -259,7 +259,7 @@ class AdminProfileScreen extends StatelessWidget {
         ),
         const SizedBox(height: 4),
         Text(
-          'Toko Buku Budi Admin v2.4.1 (Build 108)',
+          'Buka Buku Admin v2.4.1 (Build 108)',
           style: AppTypography.caption.copyWith(
             color: AppColors.outlineVariant,
             fontSize: 11,

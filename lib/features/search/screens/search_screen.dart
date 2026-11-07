@@ -11,15 +11,17 @@ import '../../book_detail/screens/book_detail_screen.dart';
 import '../../../core/services/book_service.dart';
 import '../../admin/book_management/models/admin_book_item.dart';
 
-/// Screen for searching and browsing books in Toko Buku Budi
+/// Screen for searching and browsing books in Buka Buku
 class SearchScreen extends StatefulWidget {
   final String? initialCategory;
   final String initialQuery;
+  final String initialSort;
 
   const SearchScreen({
     super.key,
     this.initialCategory,
     this.initialQuery = '',
+    this.initialSort = 'Terpopuler',
   });
 
   @override
@@ -29,7 +31,7 @@ class SearchScreen extends StatefulWidget {
 class _SearchScreenState extends State<SearchScreen> {
   late final TextEditingController _searchController;
   late Set<String> _selectedCategories;
-  String _currentSort = 'Terpopuler';
+  late String _currentSort;
   RangeValues _priceRange = const RangeValues(0, 500000);
   String _selectedStockOption = 'all';
   List<AdminBookItem> _dbBooks = [];
@@ -40,6 +42,7 @@ class _SearchScreenState extends State<SearchScreen> {
   void initState() {
     super.initState();
     _searchController = TextEditingController(text: widget.initialQuery);
+    _currentSort = widget.initialSort;
     _selectedCategories = widget.initialCategory != null && widget.initialCategory!.isNotEmpty && widget.initialCategory != 'Semua'
         ? {widget.initialCategory!}
         : {};
@@ -108,42 +111,42 @@ class _SearchScreenState extends State<SearchScreen> {
           'Harga tertinggi',
           'Terpopuler',
         ];
-        return Container(
-          decoration: const BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-          ),
-          padding: const EdgeInsets.symmetric(vertical: 20),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                'Urutkan Hasil',
-                style: AppTypography.titleMd.copyWith(fontWeight: FontWeight.w600),
-              ),
-              const SizedBox(height: 12),
-              ...options.map((option) {
-                final isSelected = option == _currentSort;
-                return ListTile(
-                  title: Text(
-                    option,
-                    style: AppTypography.bodyMd.copyWith(
-                      color: isSelected ? AppColors.secondary : AppColors.onSurface,
-                      fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+        return Material(
+          color: Colors.white,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  'Urutkan Hasil',
+                  style: AppTypography.titleMd.copyWith(fontWeight: FontWeight.w600),
+                ),
+                const SizedBox(height: 12),
+                ...options.map((option) {
+                  final isSelected = option == _currentSort;
+                  return ListTile(
+                    title: Text(
+                      option,
+                      style: AppTypography.bodyMd.copyWith(
+                        color: isSelected ? AppColors.secondary : AppColors.onSurface,
+                        fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+                      ),
                     ),
-                  ),
-                  trailing: isSelected
-                      ? const Icon(Icons.check_rounded, color: AppColors.secondary)
-                      : null,
-                  onTap: () {
-                    setState(() {
-                      _currentSort = option;
-                    });
-                    Navigator.pop(context);
-                  },
-                );
-              }),
-            ],
+                    trailing: isSelected
+                        ? const Icon(Icons.check_rounded, color: AppColors.secondary)
+                        : null,
+                    onTap: () {
+                      setState(() {
+                        _currentSort = option;
+                      });
+                      Navigator.pop(context);
+                    },
+                  );
+                }),
+              ],
+            ),
           ),
         );
       },

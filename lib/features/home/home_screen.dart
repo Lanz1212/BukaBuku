@@ -14,7 +14,7 @@ import '../notification/screens/notification_screen.dart';
 import '../profile/screens/profile_screen.dart';
 import '../../shared/widgets/bookstore_bottom_nav.dart';
 
-/// Home Page — Toko Buku Budi
+/// Home Page — Buka Buku
 /// Design: DESIGN.md | AppColors | AppTypography
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -28,7 +28,6 @@ class _HomeScreenState extends State<HomeScreen> {
   List<AdminBookItem> _books = [];
   List<AdminBookItem> _topRatedBooks = [];
   List<String> _categories = ['Semua'];
-  List<String> _authors = [];
   bool _isLoading = true;
 
   @override
@@ -43,14 +42,12 @@ class _HomeScreenState extends State<HomeScreen> {
         BookService.fetchBooks(onlyActive: true),
         BookService.fetchTopRatedBooks(limit: 10),
         BookService.fetchCategoryNames(),
-        BookService.fetchDistinctAuthors(limit: 8),
       ]);
       if (mounted) {
         setState(() {
           _books = results[0] as List<AdminBookItem>;
           _topRatedBooks = results[1] as List<AdminBookItem>;
           _categories = ['Semua', ...(results[2] as List<String>)];
-          _authors = results[3] as List<String>;
           _isLoading = false;
         });
       }
@@ -103,7 +100,9 @@ class _HomeScreenState extends State<HomeScreen> {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (context) => const SearchScreen(),
+                              builder: (context) => const SearchScreen(
+                                initialSort: 'Terpopuler',
+                              ),
                             ),
                           );
                         },
@@ -123,6 +122,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             MaterialPageRoute(
                               builder: (context) => SearchScreen(
                                 initialCategory: _selectedCategory == 0 ? null : _categories[_selectedCategory],
+                                initialSort: 'Terbaru',
                               ),
                             ),
                           );
@@ -139,32 +139,16 @@ class _HomeScreenState extends State<HomeScreen> {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (context) => const SearchScreen(),
+                              builder: (context) => const SearchScreen(
+                                initialSort: 'Terpopuler',
+                              ),
                             ),
                           );
                         },
                       ),
                       const SizedBox(height: 12),
                       _buildPopularCollection(),
-                      const SizedBox(height: 24),
-
-                      // Popular Authors (from Database)
-                      if (_authors.isNotEmpty) ...[
-                        _buildSectionTitle(
-                          'Penulis Populer',
-                          onSeeAll: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => const SearchScreen(),
-                              ),
-                            );
-                          },
-                        ),
-                        const SizedBox(height: 12),
-                        _buildPopularAuthors(),
-                        const SizedBox(height: 16),
-                      ],
+                      const SizedBox(height: 20),
                     ],
                   ),
                 ),
@@ -217,7 +201,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Toko Buku Budi',
+                        'Buka Buku',
                         style: AppTypography.titleMd.copyWith(
                           color: AppColors.onSurface,
                           fontWeight: FontWeight.w600,
@@ -443,9 +427,10 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildCategories() {
     return SizedBox(
-      height: 40,
+      height: 42,
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
+        physics: const BouncingScrollPhysics(),
         itemCount: _categories.length,
         itemBuilder: (context, index) {
           final isSelected = index == _selectedCategory;
@@ -517,7 +502,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildFeaturedBooks() {
     if (_isLoading) {
       return const SizedBox(
-        height: 200,
+        height: 230,
         child: Center(child: CircularProgressIndicator()),
       );
     }
@@ -531,9 +516,10 @@ class _HomeScreenState extends State<HomeScreen> {
     }
 
     return SizedBox(
-      height: 200,
+      height: 230,
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
+        physics: const BouncingScrollPhysics(),
         itemCount: featuredList.length,
         itemBuilder: (context, index) {
           final book = featuredList[index];
@@ -549,7 +535,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildNewArrivals() {
     if (_isLoading) {
       return const SizedBox(
-        height: 200,
+        height: 230,
         child: Center(child: CircularProgressIndicator()),
       );
     }
@@ -579,9 +565,10 @@ class _HomeScreenState extends State<HomeScreen> {
     }
 
     return SizedBox(
-      height: 200,
+      height: 230,
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
+        physics: const BouncingScrollPhysics(),
         itemCount: list.length,
         itemBuilder: (context, index) {
           final book = list[index];
@@ -597,7 +584,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildPopularCollection() {
     if (_isLoading) {
       return const SizedBox(
-        height: 200,
+        height: 230,
         child: Center(child: CircularProgressIndicator()),
       );
     }
@@ -608,9 +595,10 @@ class _HomeScreenState extends State<HomeScreen> {
     }
 
     return SizedBox(
-      height: 200,
+      height: 230,
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
+        physics: const BouncingScrollPhysics(),
         itemCount: collection.length,
         itemBuilder: (context, index) {
           final book = collection[index];
@@ -655,7 +643,6 @@ class _HomeScreenState extends State<HomeScreen> {
           children: [
             // Book Cover
             Expanded(
-              flex: 3,
               child: ClipRRect(
                 borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
                 child: Container(
@@ -686,106 +673,43 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
             // Book Info
-            Expanded(
-              flex: 2,
-              child: Padding(
-                padding: const EdgeInsets.all(8),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      book.title,
-                      style: AppTypography.labelMd.copyWith(
-                        color: AppColors.onSurface,
-                        fontWeight: FontWeight.w600,
-                      ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
+            Padding(
+              padding: const EdgeInsets.all(8),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    book.title,
+                    style: AppTypography.labelMd.copyWith(
+                      color: AppColors.onSurface,
+                      fontWeight: FontWeight.w600,
                     ),
-                    const SizedBox(height: 2),
-                    Text(
-                      book.author,
-                      style: AppTypography.caption.copyWith(
-                        color: AppColors.onSurfaceVariant,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    book.author,
+                    style: AppTypography.caption.copyWith(
+                      color: AppColors.onSurfaceVariant,
                     ),
-                    const Spacer(),
-                    Text(
-                      formattedPrice,
-                      style: AppTypography.labelMd.copyWith(
-                        color: AppColors.primaryContainer,
-                        fontWeight: FontWeight.w600,
-                      ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    formattedPrice,
+                    style: AppTypography.labelMd.copyWith(
+                      color: AppColors.primaryContainer,
+                      fontWeight: FontWeight.w600,
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
             ),
           ],
         ),
-      ),
-    );
-  }
-
-  Widget _buildPopularAuthors() {
-    return SizedBox(
-      height: 90,
-      child: ListView.builder(
-        scrollDirection: Axis.horizontal,
-        itemCount: _authors.length,
-        itemBuilder: (context, index) {
-          final author = _authors[index];
-          return Padding(
-            padding: const EdgeInsets.only(right: 14),
-            child: GestureDetector(
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => SearchScreen(initialQuery: author),
-                  ),
-                );
-              },
-              child: SizedBox(
-                width: 72,
-                child: Column(
-                  children: [
-                    Container(
-                      width: 54,
-                      height: 54,
-                      decoration: BoxDecoration(
-                        color: AppColors.surfaceContainerHigh,
-                        shape: BoxShape.circle,
-                        border: Border.all(
-                          color: AppColors.primaryContainer.withValues(alpha: 0.15),
-                        ),
-                      ),
-                      child: const Icon(
-                        Icons.person_outline_rounded,
-                        size: 26,
-                        color: AppColors.primaryContainer,
-                      ),
-                    ),
-                    const SizedBox(height: 6),
-                    Text(
-                      author,
-                      style: AppTypography.caption.copyWith(
-                        color: AppColors.onSurfaceVariant,
-                        fontWeight: FontWeight.w500,
-                        fontSize: 11,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      textAlign: TextAlign.center,
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          );
-        },
       ),
     );
   }

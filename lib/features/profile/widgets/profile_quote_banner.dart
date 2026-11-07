@@ -48,7 +48,7 @@ class ProfileQuoteBanner extends StatelessWidget {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  '— Toko Buku Budi, Cikini 1982',
+                  '— Buka Buku',
                   style: AppTypography.caption.copyWith(
                     color: AppColors.secondary,
                     fontWeight: FontWeight.w600,

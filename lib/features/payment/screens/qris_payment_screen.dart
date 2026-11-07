@@ -192,7 +192,7 @@ class _QrisPaymentScreenState extends State<QrisPaymentScreen> {
 
                 // 5-Step Payment Guide Card
                 QrisGuideAccordion(
-                  merchantName: 'Toko Buku Budi',
+                  merchantName: 'Buka Buku',
                   formattedAmount: _formatRupiah(widget.totalAmount),
                 ),
 

@@ -77,7 +77,7 @@ class AdminAppBar extends StatelessWidget implements PreferredSizeWidget {
                       Row(
                         children: [
                           Text(
-                            'Toko Buku Budi',
+                            'Buka Buku',
                             style: AppTypography.titleMd.copyWith(
                               fontSize: 15,
                               fontWeight: FontWeight.w700,

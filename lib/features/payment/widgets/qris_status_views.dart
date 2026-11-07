@@ -130,7 +130,7 @@ class QrisSuccessView extends StatelessWidget {
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    'Pesanan Anda segera dikemas rapi dengan pembatas buku tematik dari Cikini.',
+                    'Pesanan Anda segera dikemas rapi dengan pembatas buku tematik dari Buka Buku.',
                     style: AppTypography.caption.copyWith(
                       color: AppColors.onSurfaceVariant,
                       fontSize: 12,

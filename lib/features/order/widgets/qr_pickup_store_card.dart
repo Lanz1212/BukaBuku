@@ -10,7 +10,7 @@ class QrPickupStoreCard extends StatelessWidget {
 
   const QrPickupStoreCard({
     super.key,
-    this.storeName = 'Toko Buku Budi Cikini',
+    this.storeName = 'Gerai Utama Buka Buku',
     this.deskName = 'Meja Kasir Pengambilan',
     this.orderId = '#ORD00125',
     this.customerName = 'Budi Santoso',

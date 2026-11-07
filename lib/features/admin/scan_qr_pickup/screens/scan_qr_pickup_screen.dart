@@ -297,7 +297,7 @@ class _ScanQrPickupScreenState extends State<ScanQrPickupScreen> {
             children: [
               // 1. Mode Kasir Banner
               const QrModeBanner(
-                outletName: 'Gerai Cikini',
+                outletName: 'Gerai Buka Buku',
                 isActive: true,
               ),
 

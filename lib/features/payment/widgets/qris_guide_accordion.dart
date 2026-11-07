@@ -9,7 +9,7 @@ class QrisGuideAccordion extends StatelessWidget {
 
   const QrisGuideAccordion({
     super.key,
-    this.merchantName = 'Toko Buku Budi',
+    this.merchantName = 'Buka Buku',
     this.formattedAmount = 'Rp181.000',
   });
 

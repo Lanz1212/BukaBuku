@@ -352,8 +352,8 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
                     const SizedBox(height: 8),
                     _buildStockRadioCard(
                       value: 'cikini',
-                      title: 'Bisa Ambil Hari Ini di Cikini',
-                      subtitle: 'Ambil langsung di meja kasir Budi Cikini',
+                      title: 'Bisa Ambil di Toko',
+                      subtitle: 'Ambil langsung di meja kasir Buka Buku',
                       badgeIcon: Icons.storefront_rounded,
                       badgeColor: AppColors.onSurfaceVariant,
                     ),

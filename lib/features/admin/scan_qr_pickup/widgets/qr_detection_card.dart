@@ -213,7 +213,7 @@ class QrDetectionCard extends StatelessWidget {
 
           // 4. Footer Microcopy
           Text(
-            'Otomatis mengenali QR resmi Toko Buku Budi dalam hitungan detik.',
+            'Otomatis mengenali QR resmi Buka Buku dalam hitungan detik.',
             textAlign: TextAlign.center,
             style: AppTypography.caption.copyWith(
               color: const Color(0xFF737373),

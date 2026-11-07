@@ -10,7 +10,7 @@ class PickupSuccessStorePhoto extends StatelessWidget {
     super.key,
     this.imageUrl =
         'https://lh3.googleusercontent.com/aida-public/AB6AXuDX3oLp4fI1bQ1Q63NbkjRVpAORqWETKaNjhjX5ijB560tZDNwgv-EvI6QhhUQdz4HB4XyRAWRBcFzLrWvUlWFqVMw_7b9J6Tq0SKIvU41xIbPaxPVon7EJ6WQ7nPdix7TDMmxzjibW9aWqV3hWjPdobfP6i-sIifEyhNBeYTuZ42al3_FdBPaeKBfjqx9K0FRC4uf3YPzrneoFe0lB1Hn8qNRWvEyxpi5hbWRIzbXGblrqwvzPwmBMmQ',
-    this.locationLabel = 'Gerai Cikini • Konter Pengambilan #01',
+    this.locationLabel = 'Gerai Buka Buku • Konter Pengambilan #01',
   });
 
   @override

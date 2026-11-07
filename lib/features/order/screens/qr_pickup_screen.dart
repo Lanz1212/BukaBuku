@@ -267,7 +267,7 @@ class _QrPickupScreenState extends State<QrPickupScreen> {
           child: Column(
             children: [
               QrPickupStoreCard(
-                storeName: _order.branchName ?? 'Toko Buku Budi Cikini',
+                storeName: _order.branchName ?? 'Gerai Utama Buka Buku',
                 deskName: 'Meja Kasir Pengambilan',
                 orderId: _order.id,
                 customerName: _order.customerName,
@@ -281,7 +281,7 @@ class _QrPickupScreenState extends State<QrPickupScreen> {
                 totalAmount: _order.totalAmount,
                 paymentStatus: 'Lunas via QRIS',
                 pickupLocation: _order.pickupLocation ??
-                    'Meja Kasir 1, Toko Buku Budi Cikini',
+                    'Meja Kasir 1, Gerai Utama Buka Buku',
                 pickupSchedule: _order.pickupSchedule ??
                     'Buka Hari Ini: 08.00 - 21.00 WIB',
               ),
@@ -736,7 +736,7 @@ class _QrPickupScreenState extends State<QrPickupScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Toko Buku Budi • Cikini',
+                  'Gerai Utama Buka Buku',
                   style: AppTypography.labelLg.copyWith(
                     color: AppColors.onSurface,
                   ),
@@ -757,7 +757,7 @@ class _QrPickupScreenState extends State<QrPickupScreen> {
               onTap: () {
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
-                    content: Text('Menghubungi Meja Kasir Toko Buku Budi...'),
+                    content: Text('Menghubungi Meja Kasir Buka Buku...'),
                     duration: Duration(seconds: 2),
                     backgroundColor: AppColors.primaryContainer,
                   ),

@@ -101,7 +101,7 @@ class QrResultHeaderCard extends StatelessWidget {
                     const SizedBox(height: 3),
                     Text(
                       isValid
-                          ? 'Kode pesanan terverifikasi sistem pusat Toko Buku Budi'
+                          ? 'Kode pesanan terverifikasi sistem pusat Buka Buku'
                           : 'Kode QR sudah pernah digunakan atau tidak terdaftar',
                       style: AppTypography.bodyMd.copyWith(
                         color: AppColors.onSurfaceVariant,

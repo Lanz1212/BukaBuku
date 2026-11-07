@@ -14,7 +14,7 @@ class PickupSuccessDetailCard extends StatelessWidget {
     super.key,
     this.orderId = '#ORD00125',
     this.customerName = 'Budi Santoso',
-    this.cashierName = 'Siti (Kasir 1 - Cikini)',
+    this.cashierName = 'Siti (Kasir 1 - Buka Buku)',
     this.pickupTime = '12 Mei 2024, 16:45 WIB',
     this.totalAmount = 'Rp181.000',
     this.paymentMethod = 'Lunas via QRIS',

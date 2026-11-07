@@ -135,7 +135,7 @@ class OrderFlowPanel extends StatelessWidget {
         const SizedBox(height: 8),
         _buildInfoBox(
           'Lokasi Toko',
-          'Toko Buku Budi Cikini\nJl. Cikini Raya No. 42 (Pojok Baca & Rak Sastra)',
+          'Gerai Utama Buka Buku\n(Pojok Baca & Rak Sastra)',
         ),
         const SizedBox(height: 12),
         Container(
@@ -221,7 +221,7 @@ class OrderFlowPanel extends StatelessWidget {
         const SizedBox(height: 8),
         _buildInfoBox(
           'Lokasi Kasir',
-          'Toko Buku Budi Cikini (Jl. Cikini Raya No. 42)',
+          'Gerai Utama Buka Buku (Meja Kasir 1)',
         ),
         const SizedBox(height: 12),
 

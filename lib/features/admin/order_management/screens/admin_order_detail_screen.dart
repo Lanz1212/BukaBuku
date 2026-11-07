@@ -109,7 +109,7 @@ class _AdminOrderDetailScreenState extends State<AdminOrderDetailScreen> {
                 children: [
                   Center(
                     child: Text(
-                      'TOKO BUKU BUDI',
+                      'BUKA BUKU',
                       style: AppTypography.titleMd.copyWith(
                         fontWeight: FontWeight.w800,
                         color: AppColors.primary,
@@ -119,7 +119,7 @@ class _AdminOrderDetailScreenState extends State<AdminOrderDetailScreen> {
                   ),
                   const Center(
                     child: Text(
-                      'Gerai Utama Cikini • Meja Kasir 1',
+                      'Gerai Utama Buka Buku • Meja Kasir 1',
                       style: TextStyle(fontSize: 11, color: Colors.grey),
                     ),
                   ),

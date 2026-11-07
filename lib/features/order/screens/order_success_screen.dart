@@ -145,7 +145,7 @@ class _OrderSuccessScreenState extends State<OrderSuccessScreen> {
                     ConstrainedBox(
                       constraints: const BoxConstraints(maxWidth: 280),
                       child: Text(
-                        'Nomor pesananmu telah tercatat di sistem Toko Buku Budi.',
+                        'Nomor pesananmu telah tercatat di sistem Buka Buku.',
                         style: AppTypography.bodyMd.copyWith(
                           color: AppColors.onSurfaceVariant,
                           height: 1.4,

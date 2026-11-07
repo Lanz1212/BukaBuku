@@ -340,7 +340,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                             const SizedBox(width: 10),
                             Expanded(
                               child: Text(
-                                'Data profil Anda dilindungi dengan enkripsi standar industri dan hanya digunakan untuk keperluan pemesanan & pengiriman Toko Buku Budi.',
+                                'Data profil Anda dilindungi dengan enkripsi standar industri dan hanya digunakan untuk keperluan pemesanan & pengiriman Buka Buku.',
                                 style: AppTypography.caption.copyWith(
                                   color: AppColors.onSurfaceVariant,
                                   fontSize: 11.5,

@@ -65,7 +65,7 @@ class PickupSuccessScreen extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Toko Buku Budi',
+                    'Buka Buku',
                     style: AppTypography.titleMd.copyWith(
                       fontWeight: FontWeight.w800,
                       color: AppColors.onSurface,
@@ -104,7 +104,7 @@ class PickupSuccessScreen extends StatelessWidget {
                   ),
                   const SizedBox(width: 5),
                   Text(
-                    'Kasir Cikini',
+                    'Kasir Buka Buku',
                     style: AppTypography.caption.copyWith(
                       fontWeight: FontWeight.w700,
                       color: AppColors.onSurface,

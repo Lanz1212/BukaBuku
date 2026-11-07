@@ -185,7 +185,7 @@ class _QrScanResultScreenState extends State<QrScanResultScreen> {
               ),
               const SizedBox(width: 6),
               Text(
-                'Gerai Cikini • Meja Kasir 1',
+                'Gerai Buka Buku • Meja Kasir 1',
                 style: AppTypography.labelMd.copyWith(
                   fontWeight: FontWeight.w700,
                   color: AppColors.onSurface,
@@ -323,7 +323,7 @@ class _QrScanResultScreenState extends State<QrScanResultScreen> {
               const SizedBox(width: 6),
               Expanded(
                 child: Text(
-                  'Titik Pengambilan: Gerai Cikini (Kasir 1)',
+                  'Titik Pengambilan: Gerai Buka Buku (Kasir 1)',
                   style: AppTypography.bodyMd.copyWith(
                     color: AppColors.onSurfaceVariant,
                     fontSize: 12,

@@ -152,7 +152,7 @@ class PaymentSecurityFooter extends StatelessWidget {
           ),
           const SizedBox(height: 4),
           Text(
-            'Toko Buku Budi • Est. 1982 • Cikini, Menteng',
+            'Buka Buku • Toko Buku Terpercaya',
             style: AppTypography.caption.copyWith(
               color: AppColors.outline,
               fontSize: 11,

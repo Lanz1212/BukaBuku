@@ -72,7 +72,7 @@ class PaymentMethodItem {
       category: PaymentCategory.onSite,
       title: 'Cash Saat Pengambilan',
       subtitle:
-          'Bayar tunai di meja kasir saat mengambil buku di Toko Buku Budi Cikini.',
+          'Bayar tunai di meja kasir saat mengambil buku di Gerai Utama Buka Buku.',
       badge: 'Ambil di Toko',
       icon: Icons.store_outlined,
       subline: 'Buku disisihkan hingga 3 hari kerja',

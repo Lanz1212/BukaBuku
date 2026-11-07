@@ -155,7 +155,7 @@ class OrderDetailScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  'Paket buku telah dirapikan & siap di kasir Cikini.',
+                  'Paket buku telah dirapikan & siap di kasir toko.',
                   style: AppTypography.caption.copyWith(
                     color: AppColors.onSecondaryContainer.withValues(alpha: 0.9),
                   ),
@@ -299,7 +299,7 @@ class OrderDetailScreen extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      order.branchName ?? 'Toko Buku Budi Cikini',
+                      order.branchName ?? 'Gerai Utama Buka Buku',
                       style: AppTypography.titleMd.copyWith(
                         color: AppColors.onSurface,
                         fontWeight: FontWeight.w700,
@@ -715,7 +715,7 @@ class OrderDetailScreen extends StatelessWidget {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
                   content: Text(
-                    'Menghubungi Pustakawan Toko Buku Budi terkait pesanan ${order.id}...',
+                    'Menghubungi Pustakawan Buka Buku terkait pesanan ${order.id}...',
                   ),
                   behavior: SnackBarBehavior.floating,
                 ),
