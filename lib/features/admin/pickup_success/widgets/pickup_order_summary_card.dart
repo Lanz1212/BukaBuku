@@ -350,17 +350,17 @@ class PickupOrderSummaryCard extends StatelessWidget {
               ),
               Row(
                 children: [
-                  const Icon(
-                    Icons.qr_code_2_rounded,
+                  Icon(
+                    order.isPaid ? Icons.check_circle_rounded : Icons.pending_rounded,
                     size: 14,
-                    color: AppColors.success,
+                    color: order.isPaid ? AppColors.success : AppColors.warning,
                   ),
                   const SizedBox(width: 4),
                   Text(
-                    'QRIS BCA Instan • Lunas',
+                    '${order.paymentMethod} • ${order.isPaid ? "Lunas" : "Belum Lunas"}',
                     style: AppTypography.labelMd.copyWith(
                       fontWeight: FontWeight.w600,
-                      color: AppColors.success,
+                      color: order.isPaid ? AppColors.success : AppColors.warning,
                       fontSize: 12,
                     ),
                   ),

@@ -210,40 +210,21 @@ class _ManualOrderInputSheetState extends State<ManualOrderInputSheet> {
           ),
           const SizedBox(height: 12),
 
-          // Quick selection suggestion chips
-          Wrap(
-            spacing: 8,
-            runSpacing: 6,
+          // Helper hint text
+          Row(
             children: [
-              Text(
-                'Saran Cepat:',
-                style: AppTypography.caption.copyWith(
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.onSurfaceVariant,
-                ),
+              const Icon(
+                Icons.info_outline,
+                size: 15,
+                color: AppColors.secondary,
               ),
-              InkWell(
-                onTap: () {
-                  _controller.text = 'ORD00125';
-                  setState(() => _errorMessage = null);
-                },
-                borderRadius: BorderRadius.circular(9999),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 4,
-                  ),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFFDECDA),
-                    borderRadius: BorderRadius.circular(9999),
-                  ),
-                  child: Text(
-                    '#ORD00125 (Budi Santoso)',
-                    style: AppTypography.caption.copyWith(
-                      color: const Color(0xFFB5702F),
-                      fontWeight: FontWeight.w700,
-                      fontSize: 11.5,
-                    ),
+              const SizedBox(width: 6),
+              Expanded(
+                child: Text(
+                  'Masukkan ID pesanan atau kode pickup yang tertera pada aplikasi pelanggan.',
+                  style: AppTypography.caption.copyWith(
+                    color: AppColors.onSurfaceVariant,
+                    fontSize: 11.5,
                   ),
                 ),
               ),

@@ -79,7 +79,7 @@ class OrderQrPickupModal extends StatelessWidget {
                     ),
                     const SizedBox(height: 1),
                     Text(
-                      '${order.id} • Cabang Cikini',
+                      '${order.id} • ${order.branchName ?? "Gerai Utama"}',
                       style: AppTypography.caption.copyWith(
                         color: AppColors.onSurfaceVariant,
                       ),

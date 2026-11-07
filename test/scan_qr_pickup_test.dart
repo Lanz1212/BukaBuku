@@ -25,7 +25,7 @@ void main() {
       expect(find.byIcon(Icons.cameraswitch_outlined), findsOneWidget);
 
       // 2. Mode Kasir Banner
-      expect(find.text('Mode Kasir: Gerai Cikini'), findsOneWidget);
+      expect(find.text('Mode Kasir: Gerai Buka Buku'), findsOneWidget);
       expect(find.text('Aktif'), findsOneWidget);
 
       // 3. Viewfinder
@@ -57,7 +57,7 @@ void main() {
       expect(find.text('Buka Hasil Validasi'), findsOneWidget);
       expect(
         find.text(
-          'Otomatis mengenali QR resmi Toko Buku Budi dalam hitungan detik.',
+          'Otomatis mengenali QR resmi Buka Buku dalam hitungan detik.',
         ),
         findsOneWidget,
       );
@@ -110,10 +110,10 @@ void main() {
 
       // Verify sheet is open
       expect(find.text('Ketik nomor pesanan dari nota atau struk'), findsOneWidget);
-      expect(find.text('#ORD00125 (Budi Santoso)'), findsOneWidget);
+      expect(find.text('Masukkan ID pesanan atau kode pickup yang tertera pada aplikasi pelanggan.'), findsOneWidget);
 
-      // Tap quick chip
-      await tester.tap(find.text('#ORD00125 (Budi Santoso)'), warnIfMissed: false);
+      // Enter code in text field
+      await tester.enterText(find.byType(TextField), 'ORD00125');
       await tester.pump(const Duration(milliseconds: 200));
 
       // Tap submit

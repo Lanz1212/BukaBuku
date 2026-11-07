@@ -16,10 +16,47 @@ class PickupSuccessScreen extends StatelessWidget {
     this.order,
   });
 
-  OrderModel get _order => order ?? mockOrders.first;
-
   @override
   Widget build(BuildContext context) {
+    final effectiveOrder = order;
+    if (effectiveOrder == null) {
+      return Scaffold(
+        backgroundColor: AppColors.surface,
+        appBar: BookstoreAppBar(
+          title: 'Pickup Success',
+          showBackButton: true,
+          onBackPressed: () => Navigator.of(context).maybePop(),
+        ),
+        body: Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(
+                Icons.error_outline_rounded,
+                size: 48,
+                color: AppColors.outline,
+              ),
+              const SizedBox(height: 12),
+              Text(
+                'Data pesanan tidak ditemukan.',
+                style: AppTypography.titleMd.copyWith(color: AppColors.onSurface),
+              ),
+              const SizedBox(height: 16),
+              ElevatedButton(
+                onPressed: () => Navigator.of(context).popUntil((route) => route.isFirst),
+                child: const Text('Kembali ke Beranda'),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    final totalBookCount = effectiveOrder.items.fold<int>(
+      0,
+      (sum, item) => sum + item.quantity,
+    );
+
     return Scaffold(
       backgroundColor: AppColors.surface,
       appBar: BookstoreAppBar(
@@ -46,12 +83,16 @@ class PickupSuccessScreen extends StatelessWidget {
 
               // Verification Receipt Bento Card
               PickupSuccessDetailCard(
-                orderId: _order.id,
-                customerName: _order.customerName,
-                cashierName: 'Siti (Kasir 1 - Buka Buku)',
-                pickupTime: '12 Mei 2024, 16:45 WIB',
-                totalAmount: _order.totalAmount,
-                paymentMethod: 'Lunas via QRIS',
+                orderId: effectiveOrder.id,
+                customerName: effectiveOrder.customerName,
+                cashierName: 'Kasir Gerai Utama Buka Buku',
+                pickupTime: effectiveOrder.completionDate ??
+                    (effectiveOrder.orderDateExact.isNotEmpty
+                        ? effectiveOrder.orderDateExact
+                        : effectiveOrder.dateTimeStr),
+                totalAmount: effectiveOrder.totalAmount,
+                paymentMethod:
+                    '${effectiveOrder.paymentMethod} • ${effectiveOrder.isPaid ? "Lunas" : "Menunggu"}',
               ),
 
               const SizedBox(height: 22),
@@ -77,7 +118,7 @@ class PickupSuccessScreen extends StatelessWidget {
                       borderRadius: BorderRadius.circular(9999),
                     ),
                     child: Text(
-                      '2 Fisik + Souvenir',
+                      '$totalBookCount Fisik + Souvenir',
                       style: AppTypography.caption.copyWith(
                         color: AppColors.onSurfaceVariant,
                         fontWeight: FontWeight.w600,
@@ -119,34 +160,35 @@ class PickupSuccessScreen extends StatelessWidget {
 
               const SizedBox(height: 12),
 
-              // Handed Over Book Items
-              PickupSuccessBookItem(
-                category: 'Self Development',
-                title: _order.items.isNotEmpty
-                    ? _order.items[0].title
-                    : 'Atomic Habits',
-                author: _order.items.isNotEmpty
-                    ? _order.items[0].author
-                    : 'James Clear',
-                coverUrl: _order.items.isNotEmpty
-                    ? _order.items[0].coverUrl
-                    : 'https://lh3.googleusercontent.com/aida-public/AB6AXuD_tbxwogOC7QET_Fyd00xL8FVIkybub4HyA4I_BAn32wFFvjXP6yXTe88wImXX-iA_aPUblMNGNhYU3AijkJAg2gB-2cIIHwvkiXfmkavGG4KuWQT2aPYwD8de30XnJD4VmOQmMlJXYYibkOUF--l-Sw_-rxGg1bLGvQDYdesBuDunPeOqt8O1AcvBOTKcC_GhNnweK51Fq-h4BmsFLridoGH2AlV5FM9xBggdG7AacUtmAORmnNfkCg',
-              ),
-
-              const SizedBox(height: 10),
-
-              PickupSuccessBookItem(
-                category: 'Filsafat Populer',
-                title: _order.items.length > 1
-                    ? _order.items[1].title
-                    : 'Filosofi Teras',
-                author: _order.items.length > 1
-                    ? _order.items[1].author
-                    : 'Henry Manampiring',
-                coverUrl: _order.items.length > 1
-                    ? _order.items[1].coverUrl
-                    : 'https://lh3.googleusercontent.com/aida-public/AB6AXuD3aaIos9DvsKkWZqHq0Kxc1xb6pyQZDISlpxFZ8F_ZJPX2jc1dvkKHotePV0H3tGhZOupX51fREEiIkvAthcqW7qQOjbttsZX2Pf8YQeFcN2-83lFwAH_V6CdE1jnA5Fk9wM7lX0Xck58Z4zLT4w5OVKHY_SrufUkp8-0My3eLt5Sv6d-odXGos8dZsgG2qhHWs5LYltqTVBGSucd8-oDEd81VKPXLpPhKTox7uCllFSxOAjz4WtTKpA',
-              ),
+              // Handed Over Book Items (Dynamic list from Database)
+              if (effectiveOrder.items.isEmpty)
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: AppColors.surfaceContainerLowest,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(
+                    effectiveOrder.summaryTitle,
+                    style: AppTypography.bodyMd,
+                  ),
+                )
+              else
+                ListView.separated(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemCount: effectiveOrder.items.length,
+                  separatorBuilder: (context, index) => const SizedBox(height: 10),
+                  itemBuilder: (context, index) {
+                    final item = effectiveOrder.items[index];
+                    return PickupSuccessBookItem(
+                      category: item.tag ?? 'Buku Fisik',
+                      title: item.title,
+                      author: item.author,
+                      coverUrl: item.coverUrl,
+                    );
+                  },
+                ),
 
               const SizedBox(height: 20),
 

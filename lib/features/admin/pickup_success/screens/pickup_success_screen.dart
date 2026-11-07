@@ -11,11 +11,13 @@ import '../widgets/pickup_success_header.dart';
 class PickupSuccessScreen extends StatelessWidget {
   final QrScanResult result;
   final String kasirName;
+  final String? pickupTime;
 
   const PickupSuccessScreen({
     super.key,
     required this.result,
     this.kasirName = 'Kasir 1',
+    this.pickupTime,
   });
 
   AdminOrderDetail get _order {
@@ -23,6 +25,23 @@ class PickupSuccessScreen extends StatelessWidget {
       return result.fullOrder!;
     }
     return AdminOrderDetail.mockOrders.first;
+  }
+
+  String get _formattedPickupTime {
+    if (pickupTime != null && pickupTime!.isNotEmpty) {
+      return pickupTime!;
+    }
+    final now = DateTime.now();
+    const months = [
+      'Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun',
+      'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'
+    ];
+    final day = now.day.toString().padLeft(2, '0');
+    final month = months[now.month - 1];
+    final year = now.year;
+    final hour = now.hour.toString().padLeft(2, '0');
+    final minute = now.minute.toString().padLeft(2, '0');
+    return '$day $month $year • $hour:$minute WIB';
   }
 
   @override
@@ -125,7 +144,7 @@ class PickupSuccessScreen extends StatelessWidget {
                   child: Column(
                     children: [
                       PickupSuccessHeader(
-                        timeText: '12 Mei 2024 • 10:48 WIB',
+                        timeText: _formattedPickupTime,
                         cashierName: kasirName,
                       ),
                       const SizedBox(height: 18),
@@ -134,8 +153,10 @@ class PickupSuccessScreen extends StatelessWidget {
                         formattedPrice: result.formattedPrice,
                       ),
                       const SizedBox(height: 14),
-                      const PickupDigitalReceipt(
-                        customerEmail: 'budi.santoso@email.com',
+                      PickupDigitalReceipt(
+                        customerEmail: order.accountAddress?.contains('@') == true
+                            ? order.accountAddress!
+                            : '${order.customerName.toLowerCase().replaceAll(' ', '.')}@email.com',
                       ),
                       const SizedBox(height: 20),
                     ],

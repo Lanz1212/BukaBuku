@@ -397,6 +397,7 @@ class _QrScanResultScreenState extends State<QrScanResultScreen> {
                       await OrderService.updateOrderStatus(
                         cleanId,
                         AdminOrderStatus.selesai,
+                        setPickupConfirmed: true,
                       );
 
                       // 2. Jika bayar tunai di kasir, tandai is_paid = true
@@ -406,6 +407,7 @@ class _QrScanResultScreenState extends State<QrScanResultScreen> {
                           true,
                           paymentMethod: 'Bayar di Kasir (Tunai)',
                           newStatus: AdminOrderStatus.selesai,
+                          setPickupConfirmed: true,
                         );
                       }
 
@@ -421,11 +423,41 @@ class _QrScanResultScreenState extends State<QrScanResultScreen> {
                         ),
                       );
 
+                      final now = DateTime.now();
+                      const monthNames = [
+                        'Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun',
+                        'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'
+                      ];
+                      final day = now.day.toString().padLeft(2, '0');
+                      final month = monthNames[now.month - 1];
+                      final year = now.year;
+                      final hour = now.hour.toString().padLeft(2, '0');
+                      final minute = now.minute.toString().padLeft(2, '0');
+                      final formattedNow = '$day $month $year • $hour:$minute WIB';
+
+                      final updatedOrder = _order.copyWith(
+                        status: AdminOrderStatus.selesai,
+                        isPaid: true,
+                        paymentMethod: (!_order.isPaid || _scenario == ScanScenario.validCash)
+                            ? 'Bayar di Kasir (Tunai)'
+                            : _order.paymentMethod,
+                      );
+                      final updatedResult = QrScanResult(
+                        orderId: widget.result.orderId,
+                        customerName: widget.result.customerName,
+                        bookCount: widget.result.bookCount,
+                        totalPrice: widget.result.totalPrice,
+                        status: 'Selesai',
+                        verificationTime: widget.result.verificationTime,
+                        fullOrder: updatedOrder,
+                      );
+
                       navigator.pushReplacement(
                         MaterialPageRoute(
                           builder: (context) => PickupSuccessScreen(
-                            result: widget.result,
+                            result: updatedResult,
                             kasirName: 'Kasir 1',
+                            pickupTime: formattedNow,
                           ),
                         ),
                       );

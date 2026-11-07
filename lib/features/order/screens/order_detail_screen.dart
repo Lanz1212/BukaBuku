@@ -10,6 +10,7 @@ import '../models/order_model.dart';
 import '../widgets/order_detail_book_item.dart';
 import '../widgets/order_detail_stepper.dart';
 import '../widgets/order_qr_pickup_modal.dart';
+import 'pickup_success_screen.dart';
 
 class OrderDetailScreen extends StatelessWidget {
   final OrderModel order;
@@ -443,20 +444,32 @@ class OrderDetailScreen extends StatelessWidget {
             width: double.infinity,
             height: 50,
             child: ElevatedButton.icon(
-              onPressed: () => OrderQrPickupModal.show(context, order),
-              icon: const Icon(Icons.qr_code_2_rounded, size: 20),
+              onPressed: () {
+                if (order.status == OrderStatus.completed) {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => PickupSuccessScreen(order: order),
+                    ),
+                  );
+                } else {
+                  OrderQrPickupModal.show(context, order);
+                }
+              },
+              icon: Icon(
+                order.status == OrderStatus.completed
+                    ? Icons.verified_outlined
+                    : Icons.qr_code_2_rounded,
+                size: 20,
+              ),
               label: Text(
                 order.status == OrderStatus.completed
-                    ? 'Lihat Bukti QR Pickup'
+                    ? 'Lihat Bukti Pengambilan Buku'
                     : 'Lihat QR Pickup',
               ),
               style: ElevatedButton.styleFrom(
-                backgroundColor: order.status == OrderStatus.completed
-                    ? AppColors.surfaceContainerHigh
-                    : AppColors.primaryContainer,
-                foregroundColor: order.status == OrderStatus.completed
-                    ? AppColors.onSurface
-                    : AppColors.onPrimary,
+                backgroundColor: AppColors.primaryContainer,
+                foregroundColor: AppColors.onPrimary,
                 elevation: 0,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(14),
