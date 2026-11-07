@@ -72,7 +72,6 @@ class ProfileService {
         data,
         orderCount: orderCount,
         favoriteCount: favoriteCount,
-        activeVouchers: 0,
       );
     } catch (e) {
       debugPrint('Error fetching user profile from Supabase: $e');
@@ -114,7 +113,7 @@ class ProfileService {
 
       final data = await client
           .from('profiles')
-          .select('addresses')
+          .select('addresses, full_name, phone')
           .eq('id', user.id)
           .maybeSingle();
 
@@ -123,18 +122,42 @@ class ProfileService {
         return [];
       }
 
-      try {
-        final decoded = jsonDecode(raw);
-        if (decoded is List) {
-          return decoded
-              .map((item) => ShippingAddress.fromMap(Map<String, dynamic>.from(item as Map)))
-              .toList();
+      final trimmed = raw.trim();
+
+      // If it's a valid JSON array or object
+      if (trimmed.startsWith('[') || trimmed.startsWith('{')) {
+        try {
+          final decoded = jsonDecode(trimmed);
+          if (decoded is List) {
+            return decoded
+                .map((item) => ShippingAddress.fromMap(
+                    Map<String, dynamic>.from(item as Map)))
+                .toList();
+          } else if (decoded is Map) {
+            return [
+              ShippingAddress.fromMap(Map<String, dynamic>.from(decoded))
+            ];
+          }
+        } catch (e) {
+          debugPrint('Warning parsing addresses JSON: $e');
         }
-      } catch (e) {
-        debugPrint('Error decoding addresses JSON: $e');
       }
 
-      return [];
+      // Graceful fallback for non-JSON string (e.g. plain text addresses)
+      final name = (data?['full_name'] as String?)?.trim();
+      final phone = (data?['phone'] as String?)?.trim();
+      return [
+        ShippingAddress(
+          id: 'addr_default',
+          recipientName:
+              (name != null && name.isNotEmpty) ? name : 'Penerima',
+          phoneNumber: phone ?? '',
+          label: 'Rumah',
+          fullAddress: trimmed,
+          isPrimary: true,
+          isGeotagVerified: false,
+        ),
+      ];
     } catch (e) {
       debugPrint('Error fetching user addresses: $e');
       return [];

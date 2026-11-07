@@ -18,7 +18,9 @@ import '../widgets/profile_quote_banner.dart';
 import '../widgets/profile_stats_row.dart';
 import 'edit_profile_screen.dart';
 import 'shipping_address_screen.dart';
-import '../../admin/shared/screens/admin_main_screen.dart';
+import 'help_center_screen.dart';
+import 'about_screen.dart';
+import 'privacy_policy_screen.dart';
 import '../../auth/login_screen.dart';
 import '../../auth/services/auth_service.dart';
 
@@ -222,11 +224,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ),
                     const SizedBox(height: 14),
 
-                    // Stats Row
+                    // Stats Row (Pesanan & Buku Favorit)
                     ProfileStatsRow(
                       orderCount: _user.orderCount,
                       favoriteCount: _user.favoriteCount,
-                      activeVouchers: _user.activeVouchers,
                       onOrdersTap: () {
                         Navigator.push(
                           context,
@@ -243,8 +244,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           ),
                         );
                       },
-                      onVouchersTap: () =>
-                          _showFeatureNotice('Voucher Belanja'),
                     ),
                     const SizedBox(height: 14),
 
@@ -283,13 +282,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               ),
                             );
                           },
-                        ),
-                        ProfileMenuTile(
-                          icon: Icons.confirmation_number_outlined,
-                          title: 'Voucher & Kupon',
-                          subtitle: 'Klaim diskon ongkir & voucher belanja',
-                          badgeText: '${_user.activeVouchers} Aktif',
-                          onTap: () => _showFeatureNotice('Voucher'),
                         ),
                       ],
                     ),
@@ -336,31 +328,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ),
                     const SizedBox(height: 18),
 
-                    // Section Khusus: Pengelola Toko
-                    ProfileMenuSection(
-                      title: 'Pengelola Toko',
-                      items: [
-                        ProfileMenuTile(
-                          icon: Icons.admin_panel_settings_rounded,
-                          title: 'Panel Admin Toko',
-                          subtitle:
-                              'Dashboard statistik, kelola buku & pesanan',
-                          badgeText: 'Admin',
-                          iconColor: AppColors.onPrimary,
-                          iconBackgroundColor: AppColors.primary,
-                          onTap: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => const AdminMainScreen(),
-                              ),
-                            );
-                          },
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 18),
-
                     // Section 3: Tentang & Bantuan
                     ProfileMenuSection(
                       title: 'Tentang & Bantuan',
@@ -369,19 +336,41 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           icon: Icons.help_outline_rounded,
                           title: 'Pusat Bantuan',
                           subtitle: 'FAQ, panduan belanja & customer care',
-                          onTap: () => _showFeatureNotice('Pusat Bantuan'),
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => const HelpCenterScreen(),
+                              ),
+                            );
+                          },
                         ),
                         ProfileMenuTile(
                           icon: Icons.info_outline_rounded,
                           title: 'Tentang Buka Buku',
-                          subtitle: 'Gerai Utama Buka Buku',
-                          onTap: () => _showFeatureNotice('Tentang Buka Buku'),
+                          subtitle: 'Gerai Utama Buka Buku Cikini',
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => const AboutScreen(),
+                              ),
+                            );
+                          },
                         ),
                         ProfileMenuTile(
                           icon: Icons.description_outlined,
                           title: 'Syarat & Kebijakan Privasi',
                           subtitle: 'Aturan layanan & keamanan transaksi',
-                          onTap: () => _showFeatureNotice('Syarat & Ketentuan'),
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) =>
+                                    const PrivacyPolicyScreen(),
+                              ),
+                            );
+                          },
                         ),
                       ],
                     ),

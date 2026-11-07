@@ -16,13 +16,15 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      // Check header info
-      expect(find.text('Pembaca Terdaftar'), findsOneWidget);
+      // Verify removed items are NOT present
+      expect(find.text('Pembaca Terdaftar'), findsNothing);
+      expect(find.text('Voucher Aktif'), findsNothing);
+      expect(find.text('Voucher & Kupon'), findsNothing);
+      expect(find.text('Panel Admin Toko'), findsNothing);
 
       // Check stats counters
       expect(find.text('Pesanan'), findsWidgets);
       expect(find.text('Buku Favorit'), findsWidgets);
-      expect(find.text('Voucher Aktif'), findsOneWidget);
 
       // Check quote
       expect(

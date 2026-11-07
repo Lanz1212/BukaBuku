@@ -15,7 +15,6 @@ void main() {
         'full_name': 'Rendra Pratama',
         'email': 'rendra@tokobukubudi.id',
         'phone': '08123456789',
-        'membership_level': 'Pembaca Setia',
         'avatar_url': 'assets/images/Profile.png',
       };
 
@@ -25,13 +24,11 @@ void main() {
       expect(profile.name, 'Rendra Pratama');
       expect(profile.email, 'rendra@tokobukubudi.id');
       expect(profile.phone, '08123456789');
-      expect(profile.membershipLevel, 'Pembaca Setia');
       expect(profile.orderCount, 7);
 
       final outMap = profile.toSupabaseMap();
       expect(outMap['full_name'], 'Rendra Pratama');
       expect(outMap['phone'], '08123456789');
-      expect(outMap['membership_level'], 'Pembaca Setia');
     });
 
     test('ShippingAddress serializes and deserializes to map correctly', () {

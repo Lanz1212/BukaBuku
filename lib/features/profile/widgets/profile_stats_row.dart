@@ -5,19 +5,15 @@ import '../../../core/theme/app_typography.dart';
 class ProfileStatsRow extends StatelessWidget {
   final int orderCount;
   final int favoriteCount;
-  final int activeVouchers;
   final VoidCallback? onOrdersTap;
   final VoidCallback? onFavoritesTap;
-  final VoidCallback? onVouchersTap;
 
   const ProfileStatsRow({
     super.key,
     required this.orderCount,
     required this.favoriteCount,
-    required this.activeVouchers,
     this.onOrdersTap,
     this.onFavoritesTap,
-    this.onVouchersTap,
   });
 
   @override
@@ -60,19 +56,6 @@ class ProfileStatsRow extends StatelessWidget {
               icon: Icons.favorite_rounded,
               onTap: onFavoritesTap,
             ),
-            VerticalDivider(
-              width: 1,
-              thickness: 1,
-              indent: 10,
-              endIndent: 10,
-              color: AppColors.outlineVariant.withValues(alpha: 0.4),
-            ),
-            _buildStatItem(
-              value: '$activeVouchers',
-              label: 'Voucher Aktif',
-              icon: Icons.confirmation_number_rounded,
-              onTap: onVouchersTap,
-            ),
           ],
         ),
       ),
@@ -94,7 +77,7 @@ class ProfileStatsRow extends StatelessWidget {
           splashColor: AppColors.primaryFixed.withValues(alpha: 0.2),
           highlightColor: Colors.transparent,
           child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+            padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 8),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -103,14 +86,14 @@ class ProfileStatsRow extends StatelessWidget {
                   children: [
                     Icon(
                       icon,
-                      size: 15,
+                      size: 16,
                       color: AppColors.secondary,
                     ),
-                    const SizedBox(width: 5),
+                    const SizedBox(width: 6),
                     Text(
                       value,
                       style: AppTypography.headlineSm.copyWith(
-                        fontSize: 17,
+                        fontSize: 18,
                         fontWeight: FontWeight.w700,
                         color: AppColors.primaryContainer,
                         height: 1.1,
@@ -118,12 +101,12 @@ class ProfileStatsRow extends StatelessWidget {
                     ),
                   ],
                 ),
-                const SizedBox(height: 3),
+                const SizedBox(height: 4),
                 Text(
                   label,
                   style: AppTypography.caption.copyWith(
                     color: AppColors.onSurfaceVariant,
-                    fontSize: 11,
+                    fontSize: 12,
                     fontWeight: FontWeight.w500,
                   ),
                   textAlign: TextAlign.center,
