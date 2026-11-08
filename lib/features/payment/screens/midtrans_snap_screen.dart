@@ -241,6 +241,21 @@ class _MidtransSnapScreenState extends State<MidtransSnapScreen> {
       final dbOrder = await OrderService.fetchOrderById(widget.orderId);
       if (dbOrder != null && dbOrder.isPaid) {
         if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Row(
+              children: [
+                Icon(Icons.check_circle_rounded, color: Colors.white, size: 20),
+                SizedBox(width: 8),
+                Expanded(
+                  child: Text('Pembayaran berhasil diverifikasi oleh Midtrans!'),
+                ),
+              ],
+            ),
+            backgroundColor: AppColors.success,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
         _finishWithResult(MidtransPaymentResult.success);
         return;
       }
@@ -496,46 +511,175 @@ class _MidtransSnapScreenState extends State<MidtransSnapScreen> {
   void _handleCloseConfirmation() {
     showDialog(
       context: context,
+      builder: (ctx) {
+        bool isCheckingBeforeCancel = false;
+
+        return StatefulBuilder(
+          builder: (dialogCtx, setDialogState) {
+            return AlertDialog(
+              backgroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              title: Text(
+                'Tutup Pembayaran?',
+                style: AppTypography.titleMd.copyWith(fontWeight: FontWeight.w700),
+              ),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Pesanan #${widget.orderId}.\n\nJika Anda sudah menyelesaikan pembayaran di Midtrans, sistem akan memverifikasi terlebih dahulu sebelum menutup.',
+                    style: AppTypography.bodyMd.copyWith(color: AppColors.onSurfaceVariant),
+                  ),
+                  if (isCheckingBeforeCancel) ...[
+                    const SizedBox(height: 16),
+                    const Row(
+                      children: [
+                        SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        ),
+                        SizedBox(width: 12),
+                        Text(
+                          'Memeriksa status pembayaran...',
+                          style: TextStyle(fontSize: 13, color: AppColors.primary),
+                        ),
+                      ],
+                    ),
+                  ],
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: isCheckingBeforeCancel
+                      ? null
+                      : () => Navigator.of(dialogCtx).pop(),
+                  child: const Text(
+                    'Lanjutkan Bayar',
+                    style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.w600),
+                  ),
+                ),
+                ElevatedButton(
+                  onPressed: isCheckingBeforeCancel
+                      ? null
+                      : () async {
+                          setDialogState(() => isCheckingBeforeCancel = true);
+
+                          // 1. Cek di database Supabase dulu
+                          try {
+                            final recheck = await OrderService.fetchOrderById(widget.orderId);
+                            if (recheck != null && recheck.isPaid) {
+                              if (dialogCtx.mounted) Navigator.of(dialogCtx).pop();
+                              if (mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text('Pembayaran berhasil terverifikasi!'),
+                                    backgroundColor: AppColors.success,
+                                  ),
+                                );
+                                _finishWithResult(MidtransPaymentResult.success);
+                              }
+                              return;
+                            }
+                          } catch (_) {}
+
+                          // 2. Cek ke Midtrans API langsung
+                          try {
+                            final status = await MidtransService.checkTransactionStatus(widget.orderId);
+                            if (status.isPaid) {
+                              await OrderService.updateMidtransPaymentData(
+                                orderId: widget.orderId,
+                                isPaid: true,
+                                snapToken: widget.snapToken,
+                                paymentType: status.paymentType,
+                                transactionStatus: status.transactionStatus,
+                                newStatus: AdminOrderStatus.diproses,
+                              );
+                              if (dialogCtx.mounted) Navigator.of(dialogCtx).pop();
+                              if (mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text('Pembayaran terverifikasi lunas di Midtrans!'),
+                                    backgroundColor: AppColors.success,
+                                  ),
+                                );
+                                _finishWithResult(MidtransPaymentResult.success);
+                              }
+                              return;
+                            }
+
+                            if (status.isPending) {
+                              // Jangan batalkan otomatis jika user masih mau bayar nanti
+                              if (dialogCtx.mounted) Navigator.of(dialogCtx).pop();
+                              if (!mounted) return;
+                              _showPendingExitDialog();
+                              return;
+                            }
+                          } catch (e) {
+                            debugPrint('Check before cancel error: $e');
+                          }
+
+                          // 3. Jika belum bayar sama sekali / gagal, baru batalkan
+                          if (dialogCtx.mounted) Navigator.of(dialogCtx).pop();
+                          await OrderService.cancelOrder(widget.orderId);
+                          _finishWithResult(MidtransPaymentResult.cancelled);
+                        },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.error,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  ),
+                  child: const Text('Keluar & Batalkan'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
+  void _showPendingExitDialog() {
+    showDialog(
+      context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: Colors.white,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Text(
-          'Batalkan Pembayaran?',
-          style: AppTypography.titleMd.copyWith(fontWeight: FontWeight.w700),
+        title: const Row(
+          children: [
+            Icon(Icons.hourglass_top_rounded, color: Colors.orange, size: 24),
+            SizedBox(width: 8),
+            Text('Pembayaran Pending'),
+          ],
         ),
         content: Text(
-          'Pesanan #${widget.orderId} belum dibayar. Jika Anda menutup halaman ini, pesanan akan otomatis dibatalkan.',
+          'Transaksi #${widget.orderId} tercatat MENUNGGU PEMBAYARAN di Midtrans.\n\nApakah Anda ingin menyimpan pesanan ini agar bisa dibayar nanti, atau ingin membatalkannya sekarang?',
           style: AppTypography.bodyMd.copyWith(color: AppColors.onSurfaceVariant),
         ),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(),
-            child: const Text(
-              'Lanjutkan Bayar',
-              style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.w600),
-            ),
-          ),
-          ElevatedButton(
+          OutlinedButton(
             onPressed: () async {
               Navigator.of(ctx).pop();
-              // Cek ulang sebelum membatalkan (mencegah cancel pesanan yang baru saja terbayar)
-              try {
-                final recheck = await OrderService.fetchOrderById(widget.orderId);
-                if (recheck != null && recheck.isPaid) {
-                  _finishWithResult(MidtransPaymentResult.success);
-                  return;
-                }
-              } catch (_) {}
-              // Otomatis batalkan pesanan di database!
               await OrderService.cancelOrder(widget.orderId);
               _finishWithResult(MidtransPaymentResult.cancelled);
             },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.error,
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            style: OutlinedButton.styleFrom(
+              foregroundColor: AppColors.error,
+              side: const BorderSide(color: AppColors.error),
             ),
-            child: const Text('Batalkan & Tutup'),
+            child: const Text('Batalkan Pesanan'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.of(ctx).pop();
+              _finishWithResult(MidtransPaymentResult.pending);
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primaryContainer,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Simpan & Keluar'),
           ),
         ],
       ),

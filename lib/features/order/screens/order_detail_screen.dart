@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
+import '../../../core/services/midtrans_service.dart';
 import '../../../core/services/order_service.dart';
 import '../../../core/utils/app_navigation.dart';
 import '../../../shared/widgets/bookstore_app_bar.dart';
+import '../../admin/order_management/models/admin_order_detail.dart';
 import '../../cart/screens/cart_screen.dart';
 import '../../review/screens/write_review_screen.dart';
 import '../models/order_model.dart';
@@ -13,7 +16,7 @@ import '../widgets/order_detail_stepper.dart';
 import '../widgets/order_qr_pickup_modal.dart';
 import 'pickup_success_screen.dart';
 
-class OrderDetailScreen extends StatelessWidget {
+class OrderDetailScreen extends StatefulWidget {
   final OrderModel order;
 
   const OrderDetailScreen({
@@ -21,15 +24,166 @@ class OrderDetailScreen extends StatelessWidget {
     required this.order,
   });
 
+  @override
+  State<OrderDetailScreen> createState() => _OrderDetailScreenState();
+}
+
+class _OrderDetailScreenState extends State<OrderDetailScreen> {
+  late OrderModel _currentOrder;
+  OrderModel get order => _currentOrder;
+  RealtimeChannel? _orderChannel;
+  bool _isVerifyingPayment = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _currentOrder = widget.order;
+    _subscribeToOrderUpdates();
+    _refreshOrder();
+  }
+
+  @override
+  void dispose() {
+    _orderChannel?.unsubscribe();
+    super.dispose();
+  }
+
+  void _subscribeToOrderUpdates() {
+    _orderChannel = OrderService.subscribeToOrderChanges(
+      orderId: widget.order.id,
+      onStatusChanged: (newStatus) {
+        _refreshOrder();
+      },
+      onPaymentStatusChanged: (isPaid) {
+        _refreshOrder();
+      },
+    );
+  }
+
+  Future<void> _refreshOrder() async {
+    try {
+      final updated = await OrderService.fetchOrderByIdForUser(widget.order.id);
+      if (updated != null && mounted) {
+        setState(() {
+          _currentOrder = updated;
+        });
+      }
+    } catch (e) {
+      debugPrint('Error refreshing order details: $e');
+    }
+  }
+
+  Future<void> _verifyPaymentFromMidtrans() async {
+    if (_isVerifyingPayment) return;
+    setState(() => _isVerifyingPayment = true);
+
+    try {
+      // 1. Cek langsung ke status API Midtrans / Supabase
+      final status = await MidtransService.checkTransactionStatus(_currentOrder.id);
+
+      if (status.isPaid) {
+        // Update database agar sinkron
+        await OrderService.updateMidtransPaymentData(
+          orderId: _currentOrder.id,
+          isPaid: true,
+          paymentType: status.paymentType,
+          transactionStatus: status.transactionStatus,
+          newStatus: AdminOrderStatus.diproses,
+        );
+
+        await _refreshOrder();
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Row(
+                children: [
+                  Icon(Icons.check_circle_rounded, color: Colors.white, size: 20),
+                  SizedBox(width: 8),
+                  Expanded(
+                    child: Text('Pembayaran berhasil diverifikasi! Pesanan kini sedang diproses.'),
+                  ),
+                ],
+              ),
+              backgroundColor: AppColors.success,
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+        }
+        return;
+      }
+
+      if (mounted) {
+        showDialog(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            backgroundColor: Colors.white,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            title: Row(
+              children: [
+                Icon(
+                  status.isPending ? Icons.hourglass_top_rounded : Icons.info_outline_rounded,
+                  color: status.isPending ? Colors.orange : AppColors.primary,
+                  size: 24,
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  status.isPending ? 'Pembayaran Pending' : 'Status: ${status.transactionStatus}',
+                  style: AppTypography.titleMd.copyWith(fontWeight: FontWeight.w700),
+                ),
+              ],
+            ),
+            content: Text(
+              status.isPending
+                  ? 'Status transaksi di Midtrans masih menunggu pembayaran. Jika Anda baru saja membayar, mohon tunggu sebentar lalu coba periksa kembali.'
+                  : (status.statusMessage ?? 'Transaksi belum terverifikasi lunas di Midtrans.'),
+              style: AppTypography.bodyMd.copyWith(color: AppColors.onSurfaceVariant),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(ctx).pop(),
+                child: const Text('Tutup'),
+              ),
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.of(ctx).pop();
+                  _verifyPaymentFromMidtrans();
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primaryContainer,
+                  foregroundColor: Colors.white,
+                ),
+                child: const Text('Cek Ulang'),
+              ),
+            ],
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Kendala saat verifikasi Midtrans: $e'),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isVerifyingPayment = false);
+      }
+    }
+  }
+
   void _copyOrderId(BuildContext context) {
-    Clipboard.setData(ClipboardData(text: order.id.replaceAll('#', '')));
+    Clipboard.setData(ClipboardData(text: _currentOrder.id.replaceAll('#', '')));
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Row(
           children: [
             const Icon(Icons.check_circle_rounded, size: 18, color: Colors.white),
             const SizedBox(width: 8),
-            Text('Nomor pesanan ${order.id} disalin!'),
+            Text('Nomor pesanan ${_currentOrder.id} disalin!'),
           ],
         ),
         behavior: SnackBarBehavior.floating,
@@ -44,6 +198,7 @@ class OrderDetailScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final order = _currentOrder;
     final isReadyPickup = order.status == OrderStatus.readyPickup;
 
     return Scaffold(
@@ -183,53 +338,122 @@ class OrderDetailScreen extends StatelessWidget {
   }
 
   Widget _buildCancelledStatusBanner() {
+    final isMidtrans = _currentOrder.paymentMethod.toLowerCase().contains('midtrans') ||
+        _currentOrder.paymentMethod.toLowerCase().contains('qris') ||
+        _currentOrder.paymentMethod.toLowerCase().contains('gateway');
+
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: AppColors.error.withValues(alpha: 0.1),
+        color: AppColors.error.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(14),
         border: Border.all(
           color: AppColors.error.withValues(alpha: 0.3),
         ),
       ),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            width: 38,
-            height: 38,
-            decoration: BoxDecoration(
-              color: AppColors.error.withValues(alpha: 0.15),
-              shape: BoxShape.circle,
-            ),
-            child: const Icon(
-              Icons.cancel_outlined,
-              size: 20,
-              color: AppColors.error,
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Pesanan Dibatalkan',
-                  style: AppTypography.labelLg.copyWith(
-                    color: AppColors.error,
-                    fontWeight: FontWeight.w700,
-                  ),
+          Row(
+            children: [
+              Container(
+                width: 38,
+                height: 38,
+                decoration: BoxDecoration(
+                  color: AppColors.error.withValues(alpha: 0.15),
+                  shape: BoxShape.circle,
                 ),
-                const SizedBox(height: 2),
-                Text(
-                  'Pembayaran pesanan ini belum diselesaikan atau telah dibatalkan.',
-                  style: AppTypography.caption.copyWith(
-                    color: AppColors.onSurfaceVariant,
-                  ),
+                child: const Icon(
+                  Icons.cancel_outlined,
+                  size: 20,
+                  color: AppColors.error,
                 ),
-              ],
-            ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Pesanan Dibatalkan',
+                      style: AppTypography.labelLg.copyWith(
+                        color: AppColors.error,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      'Pembayaran pesanan ini sebelumnya belum terverifikasi atau sempat dibatalkan.',
+                      style: AppTypography.caption.copyWith(
+                        color: AppColors.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
+          if (isMidtrans) ...[
+            const SizedBox(height: 12),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: AppColors.outlineVariant.withValues(alpha: 0.5)),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Sudah menyelesaikan pembayaran di Midtrans?',
+                    style: AppTypography.caption.copyWith(
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.onSurface,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    'Tekan tombol di bawah untuk menyinkronkan status pembayaran settlement dari Midtrans.',
+                    style: AppTypography.caption.copyWith(
+                      fontSize: 11,
+                      color: AppColors.onSurfaceVariant,
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  SizedBox(
+                    width: double.infinity,
+                    height: 42,
+                    child: ElevatedButton.icon(
+                      onPressed: _isVerifyingPayment ? null : _verifyPaymentFromMidtrans,
+                      icon: _isVerifyingPayment
+                          ? const SizedBox(
+                              width: 16,
+                              height: 16,
+                              child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                            )
+                          : const Icon(Icons.verified_outlined, size: 18),
+                      label: Text(
+                        _isVerifyingPayment
+                            ? 'Memeriksa Midtrans...'
+                            : 'Verifikasi Ulang Pembayaran Midtrans',
+                        style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 12),
+                      ),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primaryContainer,
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ],
       ),
     );
