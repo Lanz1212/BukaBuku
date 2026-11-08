@@ -21,6 +21,70 @@ class MidtransSnapResponse {
   }
 }
 
+class MidtransTransactionStatus {
+  final String orderId;
+  final String transactionStatus; // settlement, capture, pending, deny, cancel, expire, not_found, unknown
+  final String? fraudStatus;
+  final String? paymentType;
+  final int? grossAmount;
+  final String? transactionTime;
+  final String? statusCode;
+  final String? statusMessage;
+
+  const MidtransTransactionStatus({
+    required this.orderId,
+    required this.transactionStatus,
+    this.fraudStatus,
+    this.paymentType,
+    this.grossAmount,
+    this.transactionTime,
+    this.statusCode,
+    this.statusMessage,
+  });
+
+  /// Transaksi benar-benar sudah lunas di Midtrans
+  bool get isPaid =>
+      transactionStatus == 'settlement' ||
+      (transactionStatus == 'capture' && fraudStatus == 'accept');
+
+  /// Transaksi masih menunggu pembayaran
+  bool get isPending => transactionStatus == 'pending';
+
+  /// Transaksi belum pernah dibuat / tidak ditemukan di Midtrans
+  bool get isNotFound =>
+      transactionStatus == 'not_found' || statusCode == '404';
+
+  /// Transaksi ditolak, dibatalkan, atau kadaluarsa
+  bool get isFailed =>
+      transactionStatus == 'deny' ||
+      transactionStatus == 'cancel' ||
+      transactionStatus == 'expire' ||
+      transactionStatus == 'failure';
+
+  factory MidtransTransactionStatus.fromJson(
+    Map<String, dynamic> json,
+    String fallbackOrderId,
+  ) {
+    final status = (json['transaction_status'] as String? ?? '').toLowerCase();
+    final sCode = json['status_code']?.toString();
+    final sMsg = json['status_message'] as String?;
+
+    return MidtransTransactionStatus(
+      orderId: (json['order_id'] as String?) ?? fallbackOrderId,
+      transactionStatus: status.isNotEmpty
+          ? status
+          : (sCode == '404' ? 'not_found' : 'unknown'),
+      fraudStatus: (json['fraud_status'] as String?)?.toLowerCase(),
+      paymentType: json['payment_type'] as String?,
+      grossAmount: (json['gross_amount'] as num?)?.toInt() ??
+          int.tryParse(json['gross_amount']?.toString().split('.').first ?? ''),
+      transactionTime: json['transaction_time'] as String?,
+      statusCode: sCode,
+      statusMessage: sMsg,
+    );
+  }
+}
+
 class MidtransService {
   /// Meminta Snap Token dan Redirect URL dari Midtrans via Supabase Edge Function
   static Future<MidtransSnapResponse> createSnapToken({
@@ -85,5 +149,68 @@ class MidtransService {
       rethrow;
     }
   }
-}
 
+  /// Memeriksa status transaksi dari server Midtrans via Supabase Edge Function
+  static Future<MidtransTransactionStatus> checkTransactionStatus(
+    String orderId,
+  ) async {
+    final cleanOrderId = orderId.replaceAll('#', '').trim();
+
+    try {
+      final url = Uri.parse(MidtransConstants.checkStatusFunctionUrl);
+
+      final Map<String, dynamic> requestBody = {
+        'orderId': cleanOrderId,
+      };
+
+      if (MidtransConstants.serverKey.isNotEmpty &&
+          MidtransConstants.serverKey != 'YOUR_MIDTRANS_SERVER_KEY') {
+        requestBody['serverKeyOverride'] = MidtransConstants.serverKey;
+      }
+
+      final response = await http.post(
+        url,
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': SupabaseConstants.supabaseAnonKey,
+          'Authorization': 'Bearer ${SupabaseConstants.supabaseAnonKey}',
+        },
+        body: jsonEncode(requestBody),
+      );
+
+      final decoded = jsonDecode(response.body) as Map<String, dynamic>;
+      return MidtransTransactionStatus.fromJson(decoded, cleanOrderId);
+    } catch (e) {
+      debugPrint('MidtransService.checkTransactionStatus via Edge Function Error: $e');
+
+      // Fallback: Langsung panggil API Midtrans jika Edge Function gagal/offline
+      if (MidtransConstants.serverKey.isNotEmpty &&
+          MidtransConstants.serverKey != 'YOUR_MIDTRANS_SERVER_KEY') {
+        try {
+          final baseUrl = MidtransConstants.isProduction
+              ? 'https://api.midtrans.com/v2'
+              : 'https://api.sandbox.midtrans.com/v2';
+          final directUrl = Uri.parse('$baseUrl/$cleanOrderId/status');
+          final basicAuth = base64Encode(
+            utf8.encode('${MidtransConstants.serverKey.trim()}:'),
+          );
+
+          final directRes = await http.get(
+            directUrl,
+            headers: {
+              'Content-Type': 'application/json',
+              'Accept': 'application/json',
+              'Authorization': 'Basic $basicAuth',
+            },
+          );
+          final directDecoded = jsonDecode(directRes.body) as Map<String, dynamic>;
+          return MidtransTransactionStatus.fromJson(directDecoded, cleanOrderId);
+        } catch (directErr) {
+          debugPrint('Midtrans direct fallback error: $directErr');
+        }
+      }
+
+      rethrow;
+    }
+  }
+}

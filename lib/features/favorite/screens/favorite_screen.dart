@@ -4,6 +4,7 @@ import '../../../core/theme/app_typography.dart';
 import '../../../core/services/favorite_service.dart';
 import '../../../core/services/cart_service.dart';
 import '../../../core/utils/auth_dialog_helper.dart';
+import '../../../core/utils/app_navigation.dart';
 import '../../../shared/widgets/bookstore_app_bar.dart';
 import '../../../shared/widgets/bookstore_bottom_nav.dart';
 import '../../auth/services/auth_service.dart';
@@ -142,8 +143,8 @@ class _FavoriteScreenState extends State<FavoriteScreen> {
             label: 'KERANJANG',
             textColor: AppColors.secondaryFixed,
             onPressed: () {
-              Navigator.push(
-                context,
+              AppNavigation.hideCurrentSnackBar();
+              AppNavigation.push(
                 MaterialPageRoute(
                   builder: (context) => const CartScreen(),
                 ),

@@ -5,7 +5,9 @@ import 'package:webview_flutter/webview_flutter.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/constants/midtrans_constants.dart';
+import '../../../core/services/midtrans_service.dart';
 import '../../../core/services/order_service.dart';
+import '../../admin/order_management/models/admin_order_detail.dart';
 
 enum MidtransPaymentResult {
   success,
@@ -14,13 +16,14 @@ enum MidtransPaymentResult {
   cancelled,
 }
 
-/// Layar untuk menampilkan Snap Payment Midtrans di dalam aplikasi.
-/// Mendukung WebView pada Android/iOS dan Browser Launcher pada Web/Desktop.
+/// Layar / Modal Pop-up untuk menampilkan Snap Payment Midtrans di atas Flutter.
+/// Mendukung WebView pada Android/iOS dan Browser/In-app view pada Web/Desktop.
 class MidtransSnapScreen extends StatefulWidget {
   final String snapToken;
   final String? redirectUrl;
   final String orderId;
   final int totalAmount;
+  final bool isModal;
 
   const MidtransSnapScreen({
     super.key,
@@ -28,6 +31,7 @@ class MidtransSnapScreen extends StatefulWidget {
     this.redirectUrl,
     required this.orderId,
     required this.totalAmount,
+    this.isModal = false,
   });
 
   @override
@@ -62,7 +66,7 @@ class _MidtransSnapScreenState extends State<MidtransSnapScreen> {
     } else {
       _useExternalBrowser = true;
       _isLoading = false;
-      // Otomatis buka di browser eksternal jika di web / desktop
+      // Otomatis buka jika di web / desktop
       WidgetsBinding.instance.addPostFrameCallback((_) {
         _launchInBrowser();
       });
@@ -120,14 +124,15 @@ class _MidtransSnapScreenState extends State<MidtransSnapScreen> {
                   url.contains('transaction_status=settlement') ||
                   url.contains('transaction_status=capture') ||
                   (url.contains('status_code=200') && url.contains('order_id'))) {
-                _finishWithResult(MidtransPaymentResult.success);
+                // Jangan langsung percaya callback URL — verifikasi status ke server Midtrans!
+                _checkStatusFromMidtrans(silentIfPending: false);
                 return NavigationDecision.prevent;
               }
 
               if (url.contains('status_code=201') ||
                   url.contains('/pending') ||
                   url.contains('transaction_status=pending')) {
-                _finishWithResult(MidtransPaymentResult.pending);
+                _checkStatusFromMidtrans(silentIfPending: true);
                 return NavigationDecision.prevent;
               }
 
@@ -160,16 +165,11 @@ class _MidtransSnapScreenState extends State<MidtransSnapScreen> {
 
   void _checkPaymentStatusUrl(String rawUrl) {
     final url = rawUrl.toLowerCase();
-    // Hanya tangani jika navigasi mengarah ke callback Midtrans spesifik
     if (url.contains('/finish') ||
         (url.contains('status_code=200') && url.contains('order_id')) ||
         url.contains('transaction_status=settlement') ||
         url.contains('transaction_status=capture')) {
-      _finishWithResult(MidtransPaymentResult.success);
-    } else if (url.contains('status_code=201') ||
-        url.contains('/pending') ||
-        url.contains('transaction_status=pending')) {
-      _finishWithResult(MidtransPaymentResult.pending);
+      _checkStatusFromMidtrans(silentIfPending: false);
     }
   }
 
@@ -178,19 +178,166 @@ class _MidtransSnapScreenState extends State<MidtransSnapScreen> {
     Navigator.of(context).pop(result);
   }
 
-  Future<void> _checkStatusFromDatabase() async {
+  /// Cek status transaksi nyata langsung dari API server Midtrans
+  Future<void> _checkStatusFromMidtrans({bool silentIfPending = false}) async {
+    if (_isCheckingStatus) return;
     setState(() => _isCheckingStatus = true);
+
     try {
-      final order = await OrderService.fetchOrderById(widget.orderId);
-      if (order != null && order.isPaid) {
+      final status = await MidtransService.checkTransactionStatus(widget.orderId);
+
+      if (!mounted) return;
+
+      if (status.isPaid) {
+        // Pembayaran terverifikasi lunas di Midtrans!
+        await OrderService.updateMidtransPaymentData(
+          orderId: widget.orderId,
+          isPaid: true,
+          snapToken: widget.snapToken,
+          paymentType: status.paymentType,
+          transactionStatus: status.transactionStatus,
+          newStatus: AdminOrderStatus.diproses,
+        );
+
+        if (!mounted) return;
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Row(
+              children: [
+                Icon(Icons.check_circle_rounded, color: Colors.white, size: 20),
+                SizedBox(width: 8),
+                Expanded(
+                  child: Text('Pembayaran berhasil diverifikasi oleh Midtrans!'),
+                ),
+              ],
+            ),
+            backgroundColor: AppColors.success,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+
         _finishWithResult(MidtransPaymentResult.success);
         return;
       }
-    } catch (_) {}
-    if (mounted) {
-      setState(() => _isCheckingStatus = false);
-      _showManualCheckDialog();
+
+      if (status.isPending) {
+        if (!silentIfPending) {
+          _showStatusNoticeDialog(
+            title: 'Pembayaran Belum Diterima',
+            message:
+                'Status transaksi di Midtrans: MENUNGGU PEMBAYARAN (Pending).\n\n'
+                'Silakan selesaikan pembayaran sesuai metode yang Anda pilih di Midtrans '
+                '(misal scan QRIS atau transfer ke rekening VA), lalu klik tombol "Cek Status" kembali.',
+            icon: Icons.hourglass_top_rounded,
+            iconColor: Colors.orange,
+          );
+        }
+        return;
+      }
+
+      if (status.isNotFound) {
+        if (!silentIfPending) {
+          _showStatusNoticeDialog(
+            title: 'Belum Ada Pembayaran Masuk',
+            message:
+                'Midtrans belum mencatat aktivitas pembayaran untuk pesanan #${widget.orderId}.\n\n'
+                'Pastikan Anda telah memilih metode pembayaran dan menyelesaikan prosesnya di formulir Midtrans.',
+            icon: Icons.info_outline_rounded,
+            iconColor: AppColors.primary,
+          );
+        }
+        return;
+      }
+
+      if (status.isFailed) {
+        _showStatusNoticeDialog(
+          title: 'Pembayaran Tidak Berhasil',
+          message:
+              'Status pembayaran di Midtrans: ${status.transactionStatus.toUpperCase()}.\n\n'
+              'Pembayaran gagal atau dibatalkan. Silakan coba pilih metode pembayaran lain.',
+          icon: Icons.cancel_outlined,
+          iconColor: AppColors.error,
+        );
+        return;
+      }
+
+      if (!silentIfPending) {
+        _showStatusNoticeDialog(
+          title: 'Status Pembayaran: ${status.transactionStatus}',
+          message: status.statusMessage ??
+              'Pembayaran belum dinyatakan lunas oleh Midtrans. Silakan periksa kembali setelah menyelesaikan pembayaran.',
+          icon: Icons.help_outline_rounded,
+          iconColor: Colors.amber,
+        );
+      }
+    } catch (e) {
+      debugPrint('Error checking Midtrans status: $e');
+      if (mounted && !silentIfPending) {
+        _showStatusNoticeDialog(
+          title: 'Gagal Memeriksa Status',
+          message:
+              'Terjadi kendala saat memeriksa status ke Midtrans: $e\n\n'
+              'Pastikan pesanan telah dibayar dan coba lagi beberapa saat.',
+          icon: Icons.wifi_off_rounded,
+          iconColor: AppColors.error,
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isCheckingStatus = false);
+      }
     }
+  }
+
+  void _showStatusNoticeDialog({
+    required String title,
+    required String message,
+    required IconData icon,
+    required Color iconColor,
+  }) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: Colors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Row(
+          children: [
+            Icon(icon, color: iconColor, size: 26),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                title,
+                style: AppTypography.titleMd.copyWith(
+                  fontWeight: FontWeight.w700,
+                  fontSize: 16,
+                ),
+              ),
+            ),
+          ],
+        ),
+        content: Text(
+          message,
+          style: AppTypography.bodyMd.copyWith(
+            color: AppColors.onSurfaceVariant,
+            height: 1.45,
+          ),
+        ),
+        actions: [
+          ElevatedButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primaryContainer,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
+            ),
+            child: const Text('Mengerti'),
+          ),
+        ],
+      ),
+    );
   }
 
   void _handleCloseConfirmation() {
@@ -232,42 +379,6 @@ class _MidtransSnapScreenState extends State<MidtransSnapScreen> {
     );
   }
 
-  void _showManualCheckDialog() {
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: Colors.white,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Text(
-          'Konfirmasi Pembayaran',
-          style: AppTypography.titleMd.copyWith(fontWeight: FontWeight.w700),
-        ),
-        content: Text(
-          'Apakah Anda sudah menyelesaikan pembayaran melalui Midtrans?',
-          style: AppTypography.bodyMd.copyWith(color: AppColors.onSurfaceVariant),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(),
-            child: const Text('Belum', style: TextStyle(color: AppColors.onSurfaceVariant)),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.of(ctx).pop();
-              _finishWithResult(MidtransPaymentResult.success);
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.success,
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-            ),
-            child: const Text('Ya, Sudah Lunas'),
-          ),
-        ],
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return PopScope(
@@ -276,75 +387,172 @@ class _MidtransSnapScreenState extends State<MidtransSnapScreen> {
         if (didPop) return;
         _handleCloseConfirmation();
       },
-      child: Scaffold(
-        backgroundColor: Colors.white,
-        appBar: AppBar(
-          backgroundColor: Colors.white,
-          elevation: 1,
-          shadowColor: Colors.black12,
-          leading: IconButton(
-            icon: const Icon(Icons.close_rounded, color: AppColors.onSurface),
-            tooltip: 'Tutup',
-            onPressed: _handleCloseConfirmation,
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: widget.isModal
+              ? const BorderRadius.vertical(top: Radius.circular(24))
+              : BorderRadius.zero,
+        ),
+        child: Scaffold(
+          backgroundColor: Colors.transparent,
+          appBar: _buildAppBar(),
+          body: _buildBody(),
+          bottomNavigationBar: _buildBottomStatusBar(),
+        ),
+      ),
+    );
+  }
+
+  PreferredSizeWidget _buildAppBar() {
+    return AppBar(
+      backgroundColor: Colors.white,
+      elevation: 1,
+      shadowColor: Colors.black12,
+      automaticallyImplyLeading: false,
+      leading: IconButton(
+        icon: const Icon(Icons.close_rounded, color: AppColors.onSurface),
+        tooltip: 'Tutup',
+        onPressed: _handleCloseConfirmation,
+      ),
+      titleSpacing: 0,
+      title: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Pembayaran Midtrans',
+            style: AppTypography.titleMd.copyWith(
+              fontWeight: FontWeight.w700,
+              fontSize: 16,
+              color: AppColors.onSurface,
+            ),
           ),
-          titleSpacing: 0,
-          title: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+          Row(
             children: [
+              const Icon(Icons.lock_outline, size: 12, color: AppColors.success),
+              const SizedBox(width: 4),
               Text(
-                'Pembayaran Midtrans',
-                style: AppTypography.titleMd.copyWith(
-                  fontWeight: FontWeight.w700,
-                  fontSize: 16,
-                  color: AppColors.onSurface,
+                '${_formatRupiah(widget.totalAmount)} • Enkripsi SSL 256-Bit',
+                style: AppTypography.caption.copyWith(
+                  color: AppColors.onSurfaceVariant,
+                  fontSize: 11,
                 ),
-              ),
-              Row(
-                children: [
-                  const Icon(Icons.lock_outline, size: 12, color: AppColors.success),
-                  const SizedBox(width: 4),
-                  Text(
-                    '${_formatRupiah(widget.totalAmount)} • Enkripsi SSL 256-Bit',
-                    style: AppTypography.caption.copyWith(
-                      color: AppColors.onSurfaceVariant,
-                      fontSize: 11,
-                    ),
-                  ),
-                ],
               ),
             ],
           ),
-          actions: [
-            TextButton(
-              onPressed: _isCheckingStatus ? null : _checkStatusFromDatabase,
-              child: _isCheckingStatus
-                  ? const SizedBox(
-                      width: 14,
-                      height: 14,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : const Text(
-                      'Sudah Bayar?',
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w700,
-                        color: AppColors.primary,
-                      ),
-                    ),
+        ],
+      ),
+      actions: [
+        Padding(
+          padding: const EdgeInsets.only(right: 12),
+          child: TextButton.icon(
+            onPressed: _isCheckingStatus ? null : () => _checkStatusFromMidtrans(),
+            icon: _isCheckingStatus
+                ? const SizedBox(
+                    width: 14,
+                    height: 14,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Icon(Icons.verified_outlined, size: 16, color: AppColors.primary),
+            label: Text(
+              _isCheckingStatus ? 'Cek...' : 'Cek Status',
+              style: const TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w700,
+                color: AppColors.primary,
+              ),
             ),
-          ],
-          bottom: _isLoading
-              ? const PreferredSize(
-                  preferredSize: Size.fromHeight(2),
-                  child: LinearProgressIndicator(
-                    minHeight: 2,
-                    color: AppColors.primary,
-                    backgroundColor: AppColors.surfaceContainer,
-                  ),
-                )
-              : null,
+            style: TextButton.styleFrom(
+              backgroundColor: AppColors.surfaceContainerLow,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+            ),
+          ),
         ),
-        body: _buildBody(),
+      ],
+      bottom: _isLoading
+          ? const PreferredSize(
+              preferredSize: Size.fromHeight(2),
+              child: LinearProgressIndicator(
+                minHeight: 2,
+                color: AppColors.primary,
+                backgroundColor: AppColors.surfaceContainer,
+              ),
+            )
+          : null,
+    );
+  }
+
+  Widget? _buildBottomStatusBar() {
+    return Container(
+      padding: EdgeInsets.fromLTRB(
+        16,
+        10,
+        16,
+        MediaQuery.of(context).padding.bottom + 10,
+      ),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            offset: const Offset(0, -2),
+            blurRadius: 8,
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Order #${widget.orderId}',
+                  style: AppTypography.caption.copyWith(
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.onSurfaceVariant,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                ),
+                Text(
+                  _formatRupiah(widget.totalAmount),
+                  style: AppTypography.titleMd.copyWith(
+                    fontWeight: FontWeight.w800,
+                    color: AppColors.primary,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 12),
+          ElevatedButton.icon(
+            onPressed: _isCheckingStatus ? null : () => _checkStatusFromMidtrans(),
+            icon: _isCheckingStatus
+                ? const SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: Colors.white,
+                    ),
+                  )
+                : const Icon(Icons.check_circle_outline, size: 18),
+            label: Text(
+              _isCheckingStatus ? 'Memeriksa Midtrans...' : 'Saya Sudah Bayar',
+              style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
+            ),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.success,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -407,7 +615,8 @@ class _MidtransSnapScreenState extends State<MidtransSnapScreen> {
                 child: Column(
                   children: [
                     Text(
-                      'Halaman pembayaran Midtrans terbuka di browser Anda. Pilih metode pembayaran (QRIS, VA, E-Wallet, Kartu) lalu selesaikan transaksi.',
+                      'Pilih metode pembayaran (QRIS, VA Bank, E-Wallet, Kartu) di Midtrans. '
+                      'Setelah selesai membayar, tekan tombol "Saya Sudah Bayar" untuk verifikasi otomatis dari sistem.',
                       style: AppTypography.bodyMd.copyWith(
                         fontSize: 13,
                         color: AppColors.onSurfaceVariant,
@@ -439,7 +648,7 @@ class _MidtransSnapScreenState extends State<MidtransSnapScreen> {
                 width: double.infinity,
                 height: 50,
                 child: ElevatedButton.icon(
-                  onPressed: _isCheckingStatus ? null : _checkStatusFromDatabase,
+                  onPressed: _isCheckingStatus ? null : () => _checkStatusFromMidtrans(),
                   icon: _isCheckingStatus
                       ? const SizedBox(
                           width: 18,
@@ -449,9 +658,9 @@ class _MidtransSnapScreenState extends State<MidtransSnapScreen> {
                             color: Colors.white,
                           ),
                         )
-                      : const Icon(Icons.check_circle_outline, size: 20),
+                      : const Icon(Icons.verified, size: 20),
                   label: Text(
-                    _isCheckingStatus ? 'Memeriksa...' : 'Saya Sudah Bayar',
+                    _isCheckingStatus ? 'Memeriksa ke Midtrans...' : 'Saya Sudah Bayar (Verifikasi)',
                     style: const TextStyle(fontWeight: FontWeight.w700),
                   ),
                   style: ElevatedButton.styleFrom(

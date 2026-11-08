@@ -458,14 +458,24 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
 
         if (!mounted) return;
 
-        // Buka WebView Snap Midtrans
-        final paymentResult = await Navigator.of(context).push<MidtransPaymentResult>(
-          MaterialPageRoute(
-            builder: (context) => MidtransSnapScreen(
-              snapToken: snapResponse.token,
-              redirectUrl: snapResponse.redirectUrl,
-              orderId: createdOrder.orderId,
-              totalAmount: _totalPayment,
+        // Buka Pop-up Snap Midtrans di atas Flutter (bukan ke web lain)
+        final paymentResult = await showModalBottomSheet<MidtransPaymentResult>(
+          context: context,
+          isScrollControlled: true,
+          isDismissible: false,
+          enableDrag: false,
+          backgroundColor: Colors.transparent,
+          builder: (ctx) => ClipRRect(
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+            child: SizedBox(
+              height: MediaQuery.of(ctx).size.height * 0.94,
+              child: MidtransSnapScreen(
+                snapToken: snapResponse.token,
+                redirectUrl: snapResponse.redirectUrl,
+                orderId: createdOrder.orderId,
+                totalAmount: _totalPayment,
+                isModal: true,
+              ),
             ),
           ),
         );

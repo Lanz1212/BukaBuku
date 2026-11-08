@@ -11,6 +11,7 @@ import '../../book_detail/screens/book_detail_screen.dart';
 import '../../../core/services/book_service.dart';
 import '../../../core/services/cart_service.dart';
 import '../../../core/utils/auth_dialog_helper.dart';
+import '../../../core/utils/app_navigation.dart';
 import '../../auth/services/auth_service.dart';
 import '../../cart/screens/cart_screen.dart';
 import '../../admin/book_management/models/admin_book_item.dart';
@@ -460,8 +461,8 @@ class _SearchScreenState extends State<SearchScreen> {
                                   label: 'KERANJANG',
                                   textColor: AppColors.secondaryFixed,
                                   onPressed: () {
-                                    Navigator.push(
-                                      context,
+                                    AppNavigation.hideCurrentSnackBar();
+                                    AppNavigation.push(
                                       MaterialPageRoute(builder: (_) => const CartScreen()),
                                     );
                                   },

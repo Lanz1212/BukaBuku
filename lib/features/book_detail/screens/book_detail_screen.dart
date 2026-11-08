@@ -5,6 +5,7 @@ import '../../../core/services/cart_service.dart';
 import '../../../core/services/favorite_service.dart';
 import '../../../core/services/review_service.dart';
 import '../../../core/utils/auth_dialog_helper.dart';
+import '../../../core/utils/app_navigation.dart';
 import '../../admin/book_management/models/admin_book_item.dart';
 import '../../auth/services/auth_service.dart';
 import '../../cart/models/cart_item.dart';
@@ -139,8 +140,8 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
   }
 
   void _showNotification(String message, {bool isSuccess = true, SnackBarAction? action}) {
-    ScaffoldMessenger.of(context).hideCurrentSnackBar();
-    ScaffoldMessenger.of(context).showSnackBar(
+    AppNavigation.hideCurrentSnackBar();
+    AppNavigation.showSnackBar(
       SnackBar(
         content: Text(message),
         backgroundColor: isSuccess ? AppColors.primaryContainer : AppColors.error,
@@ -184,12 +185,12 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
                 label: 'LIHAT',
                 textColor: AppColors.secondaryFixed,
                 onPressed: () {
-                  Navigator.push(
-                    context,
+                  AppNavigation.hideCurrentSnackBar();
+                  AppNavigation.push(
                     MaterialPageRoute(
                       builder: (context) => const FavoriteScreen(),
                     ),
-                  ).then((_) => _checkFavoriteStatus());
+                  )?.then((_) => _checkFavoriteStatus());
                 },
               )
             : null,
@@ -221,8 +222,8 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
           label: 'KERANJANG',
           textColor: AppColors.secondaryFixed,
           onPressed: () {
-            Navigator.push(
-              context,
+            AppNavigation.hideCurrentSnackBar();
+            AppNavigation.push(
               MaterialPageRoute(
                 builder: (context) => const CartScreen(),
               ),

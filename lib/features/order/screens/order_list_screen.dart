@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/services/order_service.dart';
+import '../../../core/utils/app_navigation.dart';
 import '../../../shared/widgets/bookstore_app_bar.dart';
 import '../../../shared/widgets/bookstore_bottom_nav.dart';
 import '../../cart/screens/cart_screen.dart';
@@ -104,8 +105,8 @@ class _OrderListScreenState extends State<OrderListScreen> {
             label: 'Keranjang',
             textColor: AppColors.secondary,
             onPressed: () {
-              Navigator.push(
-                context,
+              AppNavigation.hideCurrentSnackBar();
+              AppNavigation.push(
                 MaterialPageRoute(builder: (_) => const CartScreen()),
               );
             },
