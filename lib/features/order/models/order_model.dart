@@ -3,6 +3,7 @@ import 'order_item_model.dart';
 enum OrderStatus {
   all,
   processing,
+  readyDelivery,
   shipping,
   readyPickup,
   completed,
@@ -16,6 +17,8 @@ extension OrderStatusExtension on OrderStatus {
         return 'Semua';
       case OrderStatus.processing:
         return 'Diproses';
+      case OrderStatus.readyDelivery:
+        return 'Siap Dikirim';
       case OrderStatus.shipping:
         return 'Dikirim';
       case OrderStatus.readyPickup:

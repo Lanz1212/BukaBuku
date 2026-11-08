@@ -69,6 +69,7 @@ class _OrderListScreenState extends State<OrderListScreen> {
     final counts = <OrderStatus, int>{
       OrderStatus.all: _allOrders.length,
       OrderStatus.processing: 0,
+      OrderStatus.readyDelivery: 0,
       OrderStatus.shipping: 0,
       OrderStatus.readyPickup: 0,
       OrderStatus.completed: 0,

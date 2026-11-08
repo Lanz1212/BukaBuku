@@ -74,11 +74,14 @@ class _OrderManagementScreenState extends State<OrderManagementScreen> {
   int get _countSiapDiambil =>
       _orders.where((o) => o.status == AdminOrderStatus.siapDiambil).length;
 
+  int get _countSiapDikirim =>
+      _orders.where((o) => o.status == AdminOrderStatus.siapDikirim).length;
+
   int get _countDikirim =>
       _orders.where((o) => o.status == AdminOrderStatus.dalamPengiriman).length;
 
   int get _totalNeedAction =>
-      _countBaru + _countDiproses + _countSiapDiambil;
+      _countBaru + _countDiproses + _countSiapDiambil + _countSiapDikirim;
 
   List<AdminOrderDetail> get _filteredOrders {
     final query = _searchController.text.trim().toLowerCase();
@@ -98,6 +101,10 @@ class _OrderManagementScreenState extends State<OrderManagementScreen> {
         return false;
       }
       if (_selectedFilterIndex == 4 &&
+          order.status != AdminOrderStatus.siapDikirim) {
+        return false;
+      }
+      if (_selectedFilterIndex == 5 &&
           order.status != AdminOrderStatus.dalamPengiriman) {
         return false;
       }
@@ -114,12 +121,14 @@ class _OrderManagementScreenState extends State<OrderManagementScreen> {
   }
 
   void _handleContextualAction(AdminOrderDetail order) {
+    final isDelivery = order.deliveryType.toLowerCase().contains('kurir');
+
     switch (order.status) {
       case AdminOrderStatus.baru:
         _updateOrderStatus(order.orderId, AdminOrderStatus.diproses);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Pesanan #${order.orderId} diproses oleh kasir'),
+            content: Text('Pesanan #${order.orderId} diproses oleh kasir/admin'),
             backgroundColor: AppColors.primaryContainer,
             behavior: SnackBarBehavior.floating,
           ),
@@ -127,14 +136,29 @@ class _OrderManagementScreenState extends State<OrderManagementScreen> {
         break;
 
       case AdminOrderStatus.diproses:
-        _updateOrderStatus(order.orderId, AdminOrderStatus.siapDiambil);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Pesanan #${order.orderId} siap diambil di toko!'),
-            backgroundColor: AppColors.success,
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
+        if (isDelivery) {
+          _updateOrderStatus(order.orderId, AdminOrderStatus.siapDikirim);
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Pesanan #${order.orderId} telah selesai disiapkan & siap diserahkan ke kurir toko!'),
+              backgroundColor: const Color(0xFF8E44AD),
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+        } else {
+          _updateOrderStatus(order.orderId, AdminOrderStatus.siapDiambil);
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Pesanan #${order.orderId} siap diambil di toko!'),
+              backgroundColor: AppColors.success,
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+        }
+        break;
+
+      case AdminOrderStatus.siapDikirim:
+        _showHandoverToCourierDialog(order);
         break;
 
       case AdminOrderStatus.siapDiambil:
@@ -203,18 +227,162 @@ class _OrderManagementScreenState extends State<OrderManagementScreen> {
     }
   }
 
+  void _showHandoverToCourierDialog(AdminOrderDetail order) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppColors.surfaceContainerLowest,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: AppColors.secondaryContainer,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: const Icon(
+                Icons.two_wheeler_rounded,
+                color: AppColors.secondary,
+                size: 24,
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                'Serahkan ke Kurir',
+                style: AppTypography.titleMd.copyWith(
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.onSurface,
+                ),
+              ),
+            ),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Pesanan #${order.orderId}',
+              style: AppTypography.bodyMd.copyWith(
+                fontWeight: FontWeight.w700,
+                color: AppColors.primary,
+              ),
+            ),
+            const SizedBox(height: 6),
+            Text('Nama Pembeli: ${order.customerName}',
+                style: const TextStyle(fontSize: 13)),
+            Text('No. Telepon: ${order.customerPhone}',
+                style: const TextStyle(fontSize: 13)),
+            const SizedBox(height: 6),
+            Text(
+              'Alamat Tujuan:',
+              style: AppTypography.caption.copyWith(
+                fontWeight: FontWeight.w700,
+                color: AppColors.onSurfaceVariant,
+              ),
+            ),
+            Text(
+              order.address ?? 'Alamat toko',
+              style: AppTypography.bodyMd.copyWith(
+                color: AppColors.onSurface,
+                fontSize: 12.5,
+              ),
+            ),
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: const Color(0xFFFAF7F2),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(
+                  color: AppColors.outlineVariant.withValues(alpha: 0.5),
+                ),
+              ),
+              child: const Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Icon(
+                    Icons.info_outline_rounded,
+                    color: AppColors.secondary,
+                    size: 18,
+                  ),
+                  SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Pastikan paket buku sudah rapi. Setelah diserahkan, kurir toko akan mengantar ke alamat dan pembeli dapat memantau status pesanan.',
+                      style: TextStyle(
+                        fontSize: 11.5,
+                        color: Color(0xFF6B655F),
+                        height: 1.3,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Batal'),
+          ),
+          ElevatedButton.icon(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.secondary,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+            onPressed: () async {
+              Navigator.pop(ctx);
+              await OrderService.markHandedOverToCourier(order.orderId);
+              _loadOrders();
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(
+                      'Paket #${order.orderId} telah diserahkan ke kurir toko & sedang dalam perjalanan!',
+                    ),
+                    backgroundColor: AppColors.secondary,
+                    behavior: SnackBarBehavior.floating,
+                  ),
+                );
+              }
+            },
+            icon: const Icon(Icons.two_wheeler_rounded, size: 18),
+            label: const Text('Serahkan ke Kurir'),
+          ),
+        ],
+      ),
+    );
+  }
+
   void _showCourierTrackingDialog(AdminOrderDetail order) {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: AppColors.surfaceContainerLowest,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Text(
-          'Lacak Pengantaran Kurir',
-          style: AppTypography.titleMd.copyWith(
-            fontWeight: FontWeight.w700,
-            color: AppColors.onSurface,
-          ),
+        title: Row(
+          children: [
+            const Icon(
+              Icons.two_wheeler_rounded,
+              color: AppColors.secondary,
+              size: 22,
+            ),
+            const SizedBox(width: 8),
+            Text(
+              'Status Kurir Toko',
+              style: AppTypography.titleMd.copyWith(
+                fontWeight: FontWeight.w700,
+                color: AppColors.onSurface,
+              ),
+            ),
+          ],
         ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
@@ -259,7 +427,7 @@ class _OrderManagementScreenState extends State<OrderManagementScreen> {
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      'Kurir Toko Budi (Pak Joko) sedang dalam perjalanan mengantar buku.',
+                      'Kurir toko sedang dalam perjalanan ke alamat pembeli. Menunggu pembeli menekan tombol "Pesanan Sudah Sampai" di aplikasinya.',
                       style: AppTypography.caption.copyWith(
                         color: AppColors.onSecondaryContainer,
                         fontWeight: FontWeight.w600,
@@ -272,6 +440,10 @@ class _OrderManagementScreenState extends State<OrderManagementScreen> {
           ],
         ),
         actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Tutup'),
+          ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.primaryContainer,
@@ -290,7 +462,7 @@ class _OrderManagementScreenState extends State<OrderManagementScreen> {
                 ),
               );
             },
-            child: const Text('Tandai Telah Diterima'),
+            child: const Text('Bantu Tandai Selesai'),
           ),
         ],
       ),
@@ -569,7 +741,7 @@ class _OrderManagementScreenState extends State<OrderManagementScreen> {
                 ),
                 const SizedBox(height: 12),
 
-                // Filter Tabs (Semua, Baru, Diproses, Siap Diambil, Dikirim)
+                // Filter Tabs (Semua, Baru, Diproses, Siap Diambil, Siap Dikirim, Dikirim)
                 SingleChildScrollView(
                   scrollDirection: Axis.horizontal,
                   child: Row(
@@ -596,6 +768,12 @@ class _OrderManagementScreenState extends State<OrderManagementScreen> {
                       const SizedBox(width: 8),
                       _buildFilterChip(
                         4,
+                        'Siap Dikirim ($_countSiapDikirim)',
+                        highlightColor: const Color(0xFF8E44AD),
+                      ),
+                      const SizedBox(width: 8),
+                      _buildFilterChip(
+                        5,
                         'Dikirim ($_countDikirim)',
                         highlightColor: AppColors.secondary,
                       ),

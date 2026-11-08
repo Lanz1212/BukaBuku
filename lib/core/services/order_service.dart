@@ -132,6 +132,8 @@ class OrderService {
     OrderStatus status = OrderStatus.processing;
     if (statusStr == 'siapDiambil') {
       status = OrderStatus.readyPickup;
+    } else if (statusStr == 'siapDikirim') {
+      status = OrderStatus.readyDelivery;
     } else if (statusStr == 'dalamPengiriman') {
       status = OrderStatus.shipping;
     } else if (statusStr == 'selesai') {
@@ -205,9 +207,10 @@ class OrderService {
 
     String? completionDate = orderMap['completion_date'] as String?;
     if (status == OrderStatus.completed) {
-      if (completionDate == null && orderMap['pickup_confirmed_at'] != null) {
+      final doneTimestamp = orderMap['completed_at'] ?? orderMap['pickup_confirmed_at'];
+      if (completionDate == null && doneTimestamp != null) {
         final confirmedDate =
-            DateTime.tryParse(orderMap['pickup_confirmed_at'].toString())?.toLocal();
+            DateTime.tryParse(doneTimestamp.toString())?.toLocal();
         if (confirmedDate != null) {
           final day = confirmedDate.day.toString().padLeft(2, '0');
           final month = monthNames[confirmedDate.month - 1];
@@ -220,126 +223,268 @@ class OrderService {
       completionDate ??= orderDateExact.isNotEmpty ? orderDateExact : dateTimeDisplay;
     }
 
+    String? deliveryConfirmedTime;
+    if (orderMap['delivery_confirmed_at'] != null) {
+      final delivDate =
+          DateTime.tryParse(orderMap['delivery_confirmed_at'].toString())?.toLocal();
+      if (delivDate != null) {
+        final hour = delivDate.hour.toString().padLeft(2, '0');
+        final minute = delivDate.minute.toString().padLeft(2, '0');
+        deliveryConfirmedTime = '$hour:$minute WIB';
+      }
+    }
+
     final List<OrderTimelineStepModel> timeline;
-    if (status == OrderStatus.completed) {
-      timeline = [
-        OrderTimelineStepModel(
-          title: 'Pesanan Dibuat',
-          time: dateTimeDisplay,
-          description: 'Pesanan berhasil tercatat di sistem Buka Buku.',
-          isDone: true,
-        ),
-        const OrderTimelineStepModel(
-          title: 'Pembayaran Lunas',
-          time: 'Terverifikasi',
-          description: 'Terverifikasi otomatis via QRIS.',
-          isDone: true,
-        ),
-        OrderTimelineStepModel(
-          title: isDelivery ? 'Buku Dikirimkan' : 'Siap Diambil di Toko',
-          time: 'Selesai',
-          description: isDelivery
-              ? 'Buku telah dikirimkan oleh kurir.'
-              : 'Buku disiapkan di kasir Toko Buka Buku.',
-          isDone: true,
-        ),
-        const OrderTimelineStepModel(
-          title: 'Pesanan Selesai',
-          time: 'Selesai',
-          description: 'Buku telah diterima oleh pembaca.',
-          isDone: true,
-        ),
-      ];
-    } else if (status == OrderStatus.readyPickup) {
-      timeline = [
-        OrderTimelineStepModel(
-          title: 'Pesanan Dibuat',
-          time: dateTimeDisplay,
-          description: 'Pesanan berhasil tercatat di sistem Buka Buku.',
-          isDone: true,
-        ),
-        const OrderTimelineStepModel(
-          title: 'Pembayaran Lunas',
-          time: 'Terverifikasi',
-          description: 'Terverifikasi otomatis via QRIS.',
-          isDone: true,
-        ),
-        const OrderTimelineStepModel(
-          title: 'Siap Diambil di Toko',
-          time: 'Sekarang',
-          description: 'Buku telah disiapkan dan dapat diambil di kasir.',
-          isActive: true,
-        ),
-        const OrderTimelineStepModel(
-          title: 'Selesai',
-          time: '',
-          description: 'Menunggu pengambilan buku oleh pembaca.',
-        ),
-      ];
-    } else if (status == OrderStatus.shipping) {
-      timeline = [
-        OrderTimelineStepModel(
-          title: 'Pesanan Dibuat',
-          time: dateTimeDisplay,
-          description: 'Pesanan berhasil tercatat di sistem Buka Buku.',
-          isDone: true,
-        ),
-        const OrderTimelineStepModel(
-          title: 'Pembayaran Lunas',
-          time: 'Terverifikasi',
-          description: 'Terverifikasi otomatis.',
-          isDone: true,
-        ),
-        const OrderTimelineStepModel(
-          title: 'Sedang Dikirim',
-          time: 'Dalam Perjalanan',
-          description: 'Buku sedang dibawa oleh kurir menuju alamat Anda.',
-          isActive: true,
-        ),
-        const OrderTimelineStepModel(
-          title: 'Pesanan Diterima',
-          time: '',
-          description: 'Menunggu konfirmasi penerimaan paket.',
-        ),
-      ];
-    } else if (status == OrderStatus.cancelled) {
-      timeline = [
-        OrderTimelineStepModel(
-          title: 'Pesanan Dibuat',
-          time: dateTimeDisplay,
-          description: 'Pesanan tercatat di sistem Buka Buku.',
-          isDone: true,
-        ),
-        const OrderTimelineStepModel(
-          title: 'Pembayaran Dibatalkan',
-          time: 'Dibatalkan',
-          description: 'Pembayaran tidak diselesaikan atau dibatalkan.',
-          isDone: true,
-          isActive: true,
-        ),
-      ];
+    if (isDelivery) {
+      // ─── Timeline untuk Pengantaran Kurir Toko ───
+      if (status == OrderStatus.completed) {
+        timeline = [
+          OrderTimelineStepModel(
+            title: 'Pesanan Dibuat',
+            time: dateTimeDisplay,
+            description: 'Pesanan tercatat di sistem Buka Buku.',
+            isDone: true,
+          ),
+          const OrderTimelineStepModel(
+            title: 'Pembayaran Lunas',
+            time: 'Terverifikasi',
+            description: 'Terverifikasi otomatis via QRIS/Midtrans.',
+            isDone: true,
+          ),
+          const OrderTimelineStepModel(
+            title: 'Paket Buku Selesai Dikemas',
+            time: 'Selesai',
+            description: 'Buku telah dikemas rapi dengan segel pengiriman.',
+            isDone: true,
+          ),
+          OrderTimelineStepModel(
+            title: 'Diantar Kurir Toko',
+            time: deliveryConfirmedTime ?? 'Terkirim',
+            description: 'Kurir toko membawa pesanan menuju alamat Anda.',
+            isDone: true,
+          ),
+          OrderTimelineStepModel(
+            title: 'Pesanan Telah Diterima',
+            time: completionDate ?? 'Selesai',
+            description: 'Buku telah diterima oleh pembeli. Pesanan selesai.',
+            isDone: true,
+          ),
+        ];
+      } else if (status == OrderStatus.shipping) {
+        timeline = [
+          OrderTimelineStepModel(
+            title: 'Pesanan Dibuat',
+            time: dateTimeDisplay,
+            description: 'Pesanan tercatat di sistem Buka Buku.',
+            isDone: true,
+          ),
+          const OrderTimelineStepModel(
+            title: 'Pembayaran Lunas',
+            time: 'Terverifikasi',
+            description: 'Terverifikasi otomatis.',
+            isDone: true,
+          ),
+          const OrderTimelineStepModel(
+            title: 'Paket Buku Selesai Dikemas',
+            time: 'Selesai',
+            description: 'Buku telah siap dan diserahkan kepada kurir toko.',
+            isDone: true,
+          ),
+          OrderTimelineStepModel(
+            title: 'Kurir Toko Menuju Alamat',
+            time: deliveryConfirmedTime ?? 'Dalam Perjalanan',
+            description: 'Kurir toko kami sedang menuju ke alamat pengantaran Anda.',
+            isActive: true,
+          ),
+          const OrderTimelineStepModel(
+            title: 'Pesanan Sampai',
+            time: '',
+            description: 'Klik tombol konfirmasi jika buku sudah tiba di tangan Anda.',
+          ),
+        ];
+      } else if (status == OrderStatus.readyDelivery) {
+        timeline = [
+          OrderTimelineStepModel(
+            title: 'Pesanan Dibuat',
+            time: dateTimeDisplay,
+            description: 'Pesanan tercatat di sistem Buka Buku.',
+            isDone: true,
+          ),
+          const OrderTimelineStepModel(
+            title: 'Pembayaran Lunas',
+            time: 'Terverifikasi',
+            description: 'Terverifikasi otomatis.',
+            isDone: true,
+          ),
+          const OrderTimelineStepModel(
+            title: 'Paket Siap Dikirim',
+            time: 'Siap',
+            description: 'Buku telah dikemas rapi. Menunggu kurir toko berangkat.',
+            isActive: true,
+          ),
+          const OrderTimelineStepModel(
+            title: 'Pengantaran Kurir Toko',
+            time: '',
+            description: 'Kurir toko akan segera berangkat ke alamat Anda.',
+          ),
+          const OrderTimelineStepModel(
+            title: 'Pesanan Sampai',
+            time: '',
+            description: 'Menunggu pengantaran buku sampai ke alamat Anda.',
+          ),
+        ];
+      } else if (status == OrderStatus.cancelled) {
+        timeline = [
+          OrderTimelineStepModel(
+            title: 'Pesanan Dibuat',
+            time: dateTimeDisplay,
+            description: 'Pesanan tercatat di sistem Buka Buku.',
+            isDone: true,
+          ),
+          const OrderTimelineStepModel(
+            title: 'Pembayaran Dibatalkan',
+            time: 'Dibatalkan',
+            description: 'Pembayaran tidak diselesaikan atau pesanan dibatalkan.',
+            isDone: true,
+            isActive: true,
+          ),
+        ];
+      } else {
+        // processing / baru
+        timeline = [
+          OrderTimelineStepModel(
+            title: 'Pesanan Dibuat',
+            time: dateTimeDisplay,
+            description: 'Pesanan berhasil tercatat di sistem Buka Buku.',
+            isDone: true,
+          ),
+          const OrderTimelineStepModel(
+            title: 'Sedang Disiapkan Admin',
+            time: 'Proses',
+            description: 'Staf toko sedang menyiapkan dan mengemas buku pesanan Anda.',
+            isActive: true,
+          ),
+          const OrderTimelineStepModel(
+            title: 'Pengantaran Kurir Toko',
+            time: '',
+            description: 'Menunggu paket selesai disiapkan untuk kurir toko.',
+          ),
+          const OrderTimelineStepModel(
+            title: 'Pesanan Sampai',
+            time: '',
+            description: 'Menunggu pengantaran ke alamat Anda.',
+          ),
+        ];
+      }
     } else {
-      timeline = [
-        OrderTimelineStepModel(
-          title: 'Pesanan Dibuat',
-          time: dateTimeDisplay,
-          description: 'Pesanan berhasil tercatat di sistem Buka Buku.',
-          isDone: true,
-        ),
-        const OrderTimelineStepModel(
-          title: 'Sedang Diproses',
-          time: 'Proses',
-          description: 'Kurator buku sedang menyiapkan pesanan Anda.',
-          isActive: true,
-        ),
-        OrderTimelineStepModel(
-          title: isDelivery ? 'Pengiriman' : 'Siap Diambil di Toko',
-          time: '',
-          description: isDelivery
-              ? 'Menunggu kurir mengambil paket.'
-              : 'Menunggu buku siap di kasir toko.',
-        ),
-      ];
+      // ─── Timeline untuk Ambil di Toko (Pickup) ───
+      if (status == OrderStatus.completed) {
+        timeline = [
+          OrderTimelineStepModel(
+            title: 'Pesanan Dibuat',
+            time: dateTimeDisplay,
+            description: 'Pesanan berhasil tercatat di sistem Buka Buku.',
+            isDone: true,
+          ),
+          const OrderTimelineStepModel(
+            title: 'Pembayaran Lunas',
+            time: 'Terverifikasi',
+            description: 'Terverifikasi otomatis via QRIS.',
+            isDone: true,
+          ),
+          const OrderTimelineStepModel(
+            title: 'Siap Diambil di Toko',
+            time: 'Selesai',
+            description: 'Buku disiapkan di kasir Toko Buka Buku.',
+            isDone: true,
+          ),
+          const OrderTimelineStepModel(
+            title: 'Pesanan Selesai',
+            time: 'Selesai',
+            description: 'Buku telah diambil dan diverifikasi dengan QR.',
+            isDone: true,
+          ),
+        ];
+      } else if (status == OrderStatus.readyPickup) {
+        timeline = [
+          OrderTimelineStepModel(
+            title: 'Pesanan Dibuat',
+            time: dateTimeDisplay,
+            description: 'Pesanan berhasil tercatat di sistem Buka Buku.',
+            isDone: true,
+          ),
+          const OrderTimelineStepModel(
+            title: 'Pembayaran Lunas',
+            time: 'Terverifikasi',
+            description: 'Terverifikasi otomatis via QRIS.',
+            isDone: true,
+          ),
+          const OrderTimelineStepModel(
+            title: 'Siap Diambil di Toko',
+            time: 'Sekarang',
+            description: 'Buku telah disiapkan dan dapat diambil di kasir.',
+            isActive: true,
+          ),
+          const OrderTimelineStepModel(
+            title: 'Selesai',
+            time: '',
+            description: 'Menunggu pengambilan buku oleh pembaca.',
+          ),
+        ];
+      } else if (status == OrderStatus.cancelled) {
+        timeline = [
+          OrderTimelineStepModel(
+            title: 'Pesanan Dibuat',
+            time: dateTimeDisplay,
+            description: 'Pesanan tercatat di sistem Buka Buku.',
+            isDone: true,
+          ),
+          const OrderTimelineStepModel(
+            title: 'Pembayaran Dibatalkan',
+            time: 'Dibatalkan',
+            description: 'Pembayaran tidak diselesaikan atau dibatalkan.',
+            isDone: true,
+            isActive: true,
+          ),
+        ];
+      } else {
+        timeline = [
+          OrderTimelineStepModel(
+            title: 'Pesanan Dibuat',
+            time: dateTimeDisplay,
+            description: 'Pesanan berhasil tercatat di sistem Buka Buku.',
+            isDone: true,
+          ),
+          const OrderTimelineStepModel(
+            title: 'Sedang Diproses',
+            time: 'Proses',
+            description: 'Kurator buku sedang menyiapkan pesanan Anda.',
+            isActive: true,
+          ),
+          const OrderTimelineStepModel(
+            title: 'Siap Diambil di Toko',
+            time: '',
+            description: 'Menunggu buku siap di kasir toko.',
+          ),
+        ];
+      }
+    }
+
+    String deliveryBadgeLabel;
+    if (isDelivery) {
+      if (status == OrderStatus.shipping) {
+        deliveryBadgeLabel = 'Sedang Dikirim Kurir';
+      } else if (status == OrderStatus.readyDelivery) {
+        deliveryBadgeLabel = 'Siap Dikirim';
+      } else if (status == OrderStatus.completed) {
+        deliveryBadgeLabel = 'Kurir Toko (Selesai)';
+      } else {
+        deliveryBadgeLabel = 'Kurir Toko (Delivery)';
+      }
+    } else {
+      deliveryBadgeLabel = status == OrderStatus.readyPickup
+          ? 'Siap Diambil di Toko'
+          : (status == OrderStatus.completed ? 'Selesai Diambil' : 'Ambil di Toko');
     }
 
     return OrderModel(
@@ -349,7 +494,14 @@ class OrderService {
       status: status,
       isPaid: orderMap['is_paid'] as bool? ?? false,
       deliveryType: isDelivery ? DeliveryType.delivery : DeliveryType.pickup,
-      deliveryBadgeLabel: isDelivery ? 'Kurir Antar' : 'Ambil di Toko',
+      deliveryBadgeLabel: deliveryBadgeLabel,
+      courierName: isDelivery ? 'Kurir Toko Buka Buku' : null,
+      courierEta: isDelivery
+          ? (status == OrderStatus.shipping
+              ? 'Dalam Perjalanan'
+              : (status == OrderStatus.completed ? 'Telah Tiba' : 'Menunggu Pengiriman'))
+          : null,
+      trackingNumber: isDelivery ? 'KRR-${orderMap['id']}' : null,
       pickupLocation: orderMap['pickup_point'] as String? ??
           orderMap['pickup_location'] as String? ??
           'Meja Kasir 1 • Gerai Utama Buka Buku',
@@ -360,7 +512,9 @@ class OrderService {
       branchSchedule: 'Buka Hari Ini: 08.00 – 21.00 WIB',
       completionNote: status == OrderStatus.completed
           ? (orderMap['completion_note'] as String? ??
-              'Buku telah diterima di Gerai Utama Buka Buku')
+              (isDelivery
+                  ? 'Buku telah sampai dan diterima di alamat pengantaran'
+                  : 'Buku telah diterima di Gerai Utama Buka Buku'))
           : null,
       completionDate: completionDate,
       summaryTitle: summaryTitle,
@@ -594,13 +748,20 @@ class OrderService {
   }) async {
     try {
       final cleanId = orderId.replaceAll('#', '').trim();
+      final nowStr = DateTime.now().toIso8601String();
       final updateData = <String, dynamic>{
         'status': AdminOrderDetail.statusToString(status),
-        'updated_at': DateTime.now().toIso8601String(),
+        'updated_at': nowStr,
       };
       if (setPickupConfirmed) {
-        updateData['pickup_confirmed_at'] = DateTime.now().toIso8601String();
+        updateData['pickup_confirmed_at'] = nowStr;
       }
+      if (status == AdminOrderStatus.selesai) {
+        updateData['completed_at'] = nowStr;
+      } else if (status == AdminOrderStatus.dalamPengiriman) {
+        updateData['delivery_confirmed_at'] = nowStr;
+      }
+
       await _client.from('orders').update(updateData).eq('id', cleanId);
     } catch (e) {
       debugPrint('Error updating order status: $e');
@@ -610,6 +771,42 @@ class OrderService {
       } catch (_) {
         return;
       }
+    }
+  }
+
+  // ─── UPDATE: Admin Menyerahkan Paket ke Kurir Toko (Delivery) ─────────────
+  static Future<void> markHandedOverToCourier(String orderId) async {
+    try {
+      final cleanId = orderId.replaceAll('#', '').trim();
+      final nowStr = DateTime.now().toIso8601String();
+      final updateData = <String, dynamic>{
+        'status': 'dalamPengiriman',
+        'delivery_confirmed_at': nowStr,
+        'updated_at': nowStr,
+      };
+      await _client.from('orders').update(updateData).eq('id', cleanId);
+      debugPrint('Order $cleanId handed over to courier successfully');
+    } catch (e) {
+      debugPrint('Error marking order handed over to courier: $e');
+      rethrow;
+    }
+  }
+
+  // ─── UPDATE: Customer Konfirmasi Pesanan Sudah Sampai (Delivery Selesai) ───
+  static Future<void> markDeliveryReceived(String orderId) async {
+    try {
+      final cleanId = orderId.replaceAll('#', '').trim();
+      final nowStr = DateTime.now().toIso8601String();
+      final updateData = <String, dynamic>{
+        'status': 'selesai',
+        'completed_at': nowStr,
+        'updated_at': nowStr,
+      };
+      await _client.from('orders').update(updateData).eq('id', cleanId);
+      debugPrint('Order $cleanId marked as completed/received by customer');
+    } catch (e) {
+      debugPrint('Error marking delivery received: $e');
+      rethrow;
     }
   }
 

@@ -355,10 +355,11 @@ class OrderCard extends StatelessWidget {
         );
 
       case AdminOrderStatus.diproses:
+        final isDelivery = order.deliveryType.toLowerCase().contains('kurir');
         return ElevatedButton.icon(
           onPressed: onActionTap,
           style: ElevatedButton.styleFrom(
-            backgroundColor: AppColors.primary,
+            backgroundColor: isDelivery ? const Color(0xFF8E44AD) : AppColors.primary,
             foregroundColor: AppColors.onPrimary,
             elevation: 0,
             padding: const EdgeInsets.symmetric(vertical: 10),
@@ -366,12 +367,35 @@ class OrderCard extends StatelessWidget {
               borderRadius: BorderRadius.circular(10),
             ),
           ),
-          icon: const Icon(Icons.task_alt_rounded, size: 16),
+          icon: Icon(isDelivery ? Icons.inventory_2_outlined : Icons.task_alt_rounded, size: 16),
           label: Text(
-            'Tandai Siap',
+            isDelivery ? 'Paket Siap Dikirim' : 'Tandai Siap',
             style: AppTypography.labelMd.copyWith(
               fontWeight: FontWeight.w700,
               color: AppColors.onPrimary,
+              fontSize: 12.5,
+            ),
+          ),
+        );
+
+      case AdminOrderStatus.siapDikirim:
+        return ElevatedButton.icon(
+          onPressed: onActionTap,
+          style: ElevatedButton.styleFrom(
+            backgroundColor: AppColors.secondary,
+            foregroundColor: Colors.white,
+            elevation: 0,
+            padding: const EdgeInsets.symmetric(vertical: 10),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
+          ),
+          icon: const Icon(Icons.two_wheeler_rounded, size: 16),
+          label: Text(
+            'Serahkan ke Kurir',
+            style: AppTypography.labelMd.copyWith(
+              fontWeight: FontWeight.w700,
+              color: Colors.white,
               fontSize: 12.5,
             ),
           ),
@@ -401,23 +425,22 @@ class OrderCard extends StatelessWidget {
         );
 
       case AdminOrderStatus.dalamPengiriman:
-        return ElevatedButton.icon(
+        return OutlinedButton.icon(
           onPressed: onActionTap,
-          style: ElevatedButton.styleFrom(
-            backgroundColor: AppColors.secondary,
-            foregroundColor: Colors.white,
-            elevation: 0,
+          style: OutlinedButton.styleFrom(
+            foregroundColor: AppColors.secondary,
+            side: const BorderSide(color: AppColors.secondary),
             padding: const EdgeInsets.symmetric(vertical: 10),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(10),
             ),
           ),
-          icon: const Icon(Icons.local_shipping_outlined, size: 16),
+          icon: const Icon(Icons.two_wheeler_rounded, size: 16),
           label: Text(
-            'Lacak Kurir',
+            'Kurir Mengantar',
             style: AppTypography.labelMd.copyWith(
               fontWeight: FontWeight.w700,
-              color: Colors.white,
+              color: AppColors.secondary,
               fontSize: 12.5,
             ),
           ),

@@ -7,6 +7,8 @@ class PickupActionBar extends StatelessWidget {
   final VoidCallback onScanQr;
   final VoidCallback onChatCustomer;
   final String? customScanLabel;
+  final IconData? customIcon;
+  final Color? buttonColor;
 
   const PickupActionBar({
     super.key,
@@ -14,6 +16,8 @@ class PickupActionBar extends StatelessWidget {
     required this.onScanQr,
     required this.onChatCustomer,
     this.customScanLabel,
+    this.customIcon,
+    this.buttonColor,
   });
 
   @override
@@ -77,7 +81,7 @@ class PickupActionBar extends StatelessWidget {
               height: 50,
               child: ElevatedButton(
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF382B21),
+                  backgroundColor: buttonColor ?? const Color(0xFF382B21),
                   foregroundColor: Colors.white,
                   elevation: 0,
                   shape: RoundedRectangleBorder(
@@ -89,8 +93,8 @@ class PickupActionBar extends StatelessWidget {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Icon(
-                      Icons.qr_code_scanner_rounded,
+                    Icon(
+                      customIcon ?? Icons.qr_code_scanner_rounded,
                       size: 20,
                       color: Colors.white,
                     ),

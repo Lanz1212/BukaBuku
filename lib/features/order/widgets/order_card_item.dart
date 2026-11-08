@@ -209,6 +209,12 @@ class OrderCardItem extends StatelessWidget {
         textColor = AppColors.onSecondaryContainer;
         icon = Icons.pin_drop_rounded;
         break;
+      case OrderStatus.readyDelivery:
+        bg = const Color(0xFF8E44AD).withValues(alpha: 0.14);
+        textColor = const Color(0xFF8E44AD);
+        icon = Icons.inventory_2_outlined;
+        label = 'Siap Dikirim';
+        break;
       case OrderStatus.shipping:
         bg = AppColors.surfaceContainerHigh;
         textColor = AppColors.onSurface;

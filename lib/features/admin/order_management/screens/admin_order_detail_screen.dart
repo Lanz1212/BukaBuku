@@ -344,17 +344,101 @@ class _AdminOrderDetailScreenState extends State<AdminOrderDetailScreen> {
             ],
           ),
         ),
-        bottomNavigationBar: PickupActionBar(
-          onPrintReceipt: _showPrintReceiptModal,
-          onScanQr: _navigateToScanQrPickup,
-          onChatCustomer: () {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(
-                  'Membuka chat dengan ${_currentOrder.customerName}...',
-                ),
-                behavior: SnackBarBehavior.floating,
-              ),
+        bottomNavigationBar: Builder(
+          builder: (context) {
+            final isDelivery = _currentOrder.deliveryType.toLowerCase().contains('kurir');
+            if (isDelivery) {
+              String label;
+              IconData icon;
+              Color color;
+              VoidCallback action;
+
+              switch (_currentOrder.status) {
+                case AdminOrderStatus.baru:
+                  label = 'Mulai Siapkan Buku';
+                  icon = Icons.check_circle_outline_rounded;
+                  color = AppColors.primaryContainer;
+                  action = () => _updateStatus(AdminOrderStatus.diproses);
+                  break;
+                case AdminOrderStatus.diproses:
+                  label = 'Paket Siap Dikirim';
+                  icon = Icons.inventory_2_outlined;
+                  color = const Color(0xFF8E44AD);
+                  action = () => _updateStatus(AdminOrderStatus.siapDikirim);
+                  break;
+                case AdminOrderStatus.siapDiambil:
+                  label = 'Siap Diambil di Toko';
+                  icon = Icons.storefront_rounded;
+                  color = AppColors.success;
+                  action = _navigateToScanQrPickup;
+                  break;
+                case AdminOrderStatus.siapDikirim:
+                  label = 'Serahkan ke Kurir';
+                  icon = Icons.two_wheeler_rounded;
+                  color = AppColors.secondary;
+                  action = () => _updateStatus(AdminOrderStatus.dalamPengiriman);
+                  break;
+                case AdminOrderStatus.dalamPengiriman:
+                  label = 'Kurir Sedang Mengantar';
+                  icon = Icons.two_wheeler_rounded;
+                  color = const Color(0xFF6B655F);
+                  action = () {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text(
+                          'Kurir toko sedang dalam perjalanan ke alamat pembeli. Menunggu pembeli menekan "Pesanan Sudah Sampai".',
+                        ),
+                        behavior: SnackBarBehavior.floating,
+                      ),
+                    );
+                  };
+                  break;
+                case AdminOrderStatus.selesai:
+                  label = 'Pesanan Selesai';
+                  icon = Icons.verified_rounded;
+                  color = AppColors.success;
+                  action = _showPrintReceiptModal;
+                  break;
+                case AdminOrderStatus.dibatalkan:
+                  label = 'Pesanan Dibatalkan';
+                  icon = Icons.cancel_outlined;
+                  color = AppColors.error;
+                  action = () {};
+                  break;
+              }
+
+              return PickupActionBar(
+                onPrintReceipt: _showPrintReceiptModal,
+                onScanQr: action,
+                customScanLabel: label,
+                customIcon: icon,
+                buttonColor: color,
+                onChatCustomer: () {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(
+                        'Membuka chat WhatsApp dengan ${_currentOrder.customerName}...',
+                      ),
+                      behavior: SnackBarBehavior.floating,
+                    ),
+                  );
+                },
+              );
+            }
+
+            return PickupActionBar(
+              onPrintReceipt: _showPrintReceiptModal,
+              onScanQr: _navigateToScanQrPickup,
+              onChatCustomer: () {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(
+                      'Membuka chat dengan ${_currentOrder.customerName}...',
+                    ),
+                    behavior: SnackBarBehavior.floating,
+                  ),
+                );
+              },
             );
           },
         ),

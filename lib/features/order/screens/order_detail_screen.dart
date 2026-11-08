@@ -232,6 +232,16 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
                 _buildStatusBanner(),
                 const SizedBox(height: 14),
               ],
+              if (order.deliveryType == DeliveryType.delivery &&
+                  order.status == OrderStatus.readyDelivery) ...[
+                _buildReadyDeliveryStatusBanner(),
+                const SizedBox(height: 14),
+              ],
+              if (order.deliveryType == DeliveryType.delivery &&
+                  order.status == OrderStatus.shipping) ...[
+                _buildShippingDeliveryStatusBanner(),
+                const SizedBox(height: 14),
+              ],
               if (order.status == OrderStatus.completed) ...[
                 _buildCompletedStatusBanner(),
                 const SizedBox(height: 14),
@@ -250,6 +260,13 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
               if (order.deliveryType == DeliveryType.pickup &&
                   order.status != OrderStatus.cancelled) ...[
                 _buildStorePickupCard(context),
+                const SizedBox(height: 16),
+              ],
+
+              // 3b. Featured Delivery Destination Card & "Pesanan Sampai" CTA (For Delivery Orders)
+              if (order.deliveryType == DeliveryType.delivery &&
+                  order.status != OrderStatus.cancelled) ...[
+                _buildDeliveryDestinationCard(context),
                 const SizedBox(height: 16),
               ],
 
@@ -325,6 +342,116 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
                 const SizedBox(height: 2),
                 Text(
                   'Paket buku telah dirapikan & siap di kasir toko.',
+                  style: AppTypography.caption.copyWith(
+                    color: AppColors.onSecondaryContainer.withValues(alpha: 0.9),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildReadyDeliveryStatusBanner() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: const Color(0xFFE8DAEF).withValues(alpha: 0.7),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(
+          color: const Color(0xFF8E44AD).withValues(alpha: 0.3),
+        ),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 38,
+            height: 38,
+            decoration: const BoxDecoration(
+              color: Color(0xFF8E44AD),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(
+              Icons.inventory_2_outlined,
+              size: 20,
+              color: Colors.white,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Paket Siap Dikirim Kurir Toko',
+                  style: AppTypography.labelLg.copyWith(
+                    color: const Color(0xFF5B2C6F),
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  'Buku telah selesai disiapkan & dikemas rapi. Menunggu kurir toko berangkat ke alamat Anda.',
+                  style: AppTypography.caption.copyWith(
+                    color: const Color(0xFF5B2C6F).withValues(alpha: 0.9),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildShippingDeliveryStatusBanner() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: AppColors.secondaryContainer,
+        borderRadius: BorderRadius.circular(14),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.secondary.withValues(alpha: 0.12),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 38,
+            height: 38,
+            decoration: const BoxDecoration(
+              color: AppColors.secondary,
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(
+              Icons.two_wheeler_rounded,
+              size: 20,
+              color: AppColors.onSecondary,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Kurir Sedang Menuju Alamat Anda',
+                  style: AppTypography.labelLg.copyWith(
+                    color: AppColors.onSecondaryContainer,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  'Kurir toko kami sedang dalam perjalanan mengantarkan paket buku Anda.',
                   style: AppTypography.caption.copyWith(
                     color: AppColors.onSecondaryContainer.withValues(alpha: 0.9),
                   ),
@@ -762,6 +889,299 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
                 ),
               ),
             ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDeliveryDestinationCard(BuildContext context) {
+    final isShipping = order.status == OrderStatus.shipping;
+    final isCompleted = order.status == OrderStatus.completed;
+
+    return Container(
+      width: double.infinity,
+      decoration: BoxDecoration(
+        color: AppColors.surfaceContainerLowest,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: isShipping
+              ? AppColors.secondary.withValues(alpha: 0.5)
+              : AppColors.outlineVariant.withValues(alpha: 0.5),
+          width: 1,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.primaryContainer.withValues(alpha: 0.05),
+            blurRadius: 14,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Header with Courier Icon
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  color: isShipping
+                      ? AppColors.secondaryContainer
+                      : AppColors.surfaceContainerHigh,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(
+                  Icons.two_wheeler_rounded,
+                  size: 24,
+                  color: isShipping ? AppColors.secondary : AppColors.primary,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          'Pengantaran Kurir Toko',
+                          style: AppTypography.titleMd.copyWith(
+                            color: AppColors.onSurface,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 3,
+                          ),
+                          decoration: BoxDecoration(
+                            color: isShipping
+                                ? AppColors.secondaryContainer
+                                : (isCompleted
+                                    ? AppColors.success.withValues(alpha: 0.12)
+                                    : const Color(0xFFE8DAEF)),
+                            borderRadius: BorderRadius.circular(9999),
+                          ),
+                          child: Text(
+                            isShipping
+                                ? 'Sedang Diantar'
+                                : (isCompleted ? 'Selesai' : 'Siap Kirim'),
+                            style: AppTypography.caption.copyWith(
+                              color: isShipping
+                                  ? AppColors.onSecondaryContainer
+                                  : (isCompleted
+                                      ? AppColors.success
+                                      : const Color(0xFF7D3C98)),
+                              fontWeight: FontWeight.w700,
+                              fontSize: 10.5,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Penerima: ${order.customerName}${order.customerPhone != null && order.customerPhone!.isNotEmpty ? " • ${order.customerPhone}" : ""}',
+                      style: AppTypography.caption.copyWith(
+                        color: AppColors.onSurface,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      order.customerAddress ?? 'Alamat pengantaran',
+                      style: AppTypography.bodyMd.copyWith(
+                        color: AppColors.onSurfaceVariant,
+                        fontSize: 13,
+                        height: 1.35,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 14),
+
+          // Status & Info Box
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            decoration: BoxDecoration(
+              color: isShipping
+                  ? const Color(0xFFFAF7F2)
+                  : AppColors.surfaceContainerLow,
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(
+                color: isShipping
+                    ? AppColors.secondary.withValues(alpha: 0.3)
+                    : AppColors.outlineVariant.withValues(alpha: 0.3),
+              ),
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Icon(
+                  isCompleted
+                      ? Icons.verified_rounded
+                      : (isShipping
+                          ? Icons.directions_bike_rounded
+                          : Icons.inventory_2_outlined),
+                  size: 18,
+                  color: isCompleted
+                      ? AppColors.success
+                      : (isShipping
+                          ? AppColors.secondary
+                          : const Color(0xFF7D3C98)),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    isCompleted
+                        ? 'Pesanan buku telah sampai dan diterima dengan baik. Terima kasih!'
+                        : (isShipping
+                            ? 'Kurir toko kami sedang menuju ke alamat Anda. Silakan tekan tombol "Pesanan Sudah Sampai" di bawah jika buku sudah diterima.'
+                            : 'Paket buku Anda telah dikemas dan segera diberangkatkan oleh kurir toko.'),
+                    style: AppTypography.caption.copyWith(
+                      color: AppColors.onSurfaceVariant,
+                      height: 1.35,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          // Action Button: "Pesanan Sudah Sampai" ONLY when status == shipping
+          if (isShipping) ...[
+            const SizedBox(height: 14),
+            SizedBox(
+              width: double.infinity,
+              height: 50,
+              child: ElevatedButton.icon(
+                onPressed: _showConfirmReceivedDialog,
+                icon: const Icon(
+                  Icons.check_circle_rounded,
+                  size: 20,
+                  color: Colors.white,
+                ),
+                label: Text(
+                  'Pesanan Sudah Sampai',
+                  style: AppTypography.labelLg.copyWith(
+                    fontWeight: FontWeight.w700,
+                    color: Colors.white,
+                    fontSize: 14,
+                  ),
+                ),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.success,
+                  foregroundColor: Colors.white,
+                  elevation: 0,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  void _showConfirmReceivedDialog() {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: Colors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: AppColors.success.withValues(alpha: 0.15),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.check_circle_rounded,
+                color: AppColors.success,
+                size: 24,
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                'Pesanan Sampai?',
+                style: AppTypography.titleMd.copyWith(
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.onSurface,
+                ),
+              ),
+            ),
+          ],
+        ),
+        content: Text(
+          'Pastikan Anda telah menerima paket buku dari kurir toko dengan kondisi baik. Tekan "Ya, Sudah Sampai" untuk menyelesaikan pesanan ini.',
+          style: AppTypography.bodyMd.copyWith(color: AppColors.onSurfaceVariant),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Belum'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              Navigator.pop(ctx);
+              try {
+                await OrderService.markDeliveryReceived(_currentOrder.id);
+                await _refreshOrder();
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Row(
+                        children: [
+                          Icon(Icons.check_circle_rounded, color: Colors.white, size: 20),
+                          SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              'Pesanan berhasil diselesaikan! Selamat membaca buku Anda.',
+                            ),
+                          ),
+                        ],
+                      ),
+                      backgroundColor: AppColors.success,
+                      behavior: SnackBarBehavior.floating,
+                    ),
+                  );
+                }
+              } catch (e) {
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Gagal mengonfirmasi pesanan: $e'),
+                      backgroundColor: AppColors.error,
+                    ),
+                  );
+                }
+              }
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.success,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+            child: const Text('Ya, Sudah Sampai'),
           ),
         ],
       ),

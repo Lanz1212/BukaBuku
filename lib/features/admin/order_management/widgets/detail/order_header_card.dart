@@ -21,6 +21,8 @@ class OrderHeaderCard extends StatelessWidget {
         return 'Pesanan baru masuk dari customer. Segera periksa dan siapkan buku fisik dari rak.';
       case AdminOrderStatus.diproses:
         return 'Buku sedang disiapkan dan dicek oleh staf kasir di meja persiapan.';
+      case AdminOrderStatus.siapDikirim:
+        return 'Paket buku telah selesai dikemas rapi dan siap diserahkan kepada kurir toko.';
       case AdminOrderStatus.dalamPengiriman:
         return 'Pesanan sedang diantar oleh kurir toko menuju alamat pengantaran customer.';
       case AdminOrderStatus.selesai:

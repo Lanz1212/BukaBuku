@@ -5,6 +5,7 @@ enum AdminOrderStatus {
   baru,
   diproses,
   siapDiambil,
+  siapDikirim,
   dalamPengiriman,
   selesai,
   dibatalkan,
@@ -151,6 +152,8 @@ class AdminOrderDetail {
         return 'Diproses';
       case AdminOrderStatus.siapDiambil:
         return 'Siap Diambil';
+      case AdminOrderStatus.siapDikirim:
+        return 'Siap Dikirim';
       case AdminOrderStatus.dalamPengiriman:
         return 'Dikirim';
       case AdminOrderStatus.selesai:
@@ -168,6 +171,8 @@ class AdminOrderDetail {
         return const Color(0xFF2E78B7);
       case AdminOrderStatus.siapDiambil:
         return AppColors.success;
+      case AdminOrderStatus.siapDikirim:
+        return const Color(0xFF8E44AD);
       case AdminOrderStatus.dalamPengiriman:
         return AppColors.secondary;
       case AdminOrderStatus.selesai:
@@ -185,6 +190,8 @@ class AdminOrderDetail {
         return const Color(0xFF2E78B7).withValues(alpha: 0.12);
       case AdminOrderStatus.siapDiambil:
         return AppColors.success.withValues(alpha: 0.14);
+      case AdminOrderStatus.siapDikirim:
+        return const Color(0xFF8E44AD).withValues(alpha: 0.14);
       case AdminOrderStatus.dalamPengiriman:
         return AppColors.secondary.withValues(alpha: 0.14);
       case AdminOrderStatus.selesai:
@@ -212,6 +219,8 @@ class AdminOrderDetail {
         return AdminOrderStatus.diproses;
       case 'siapdiambil':
         return AdminOrderStatus.siapDiambil;
+      case 'siapdikirim':
+        return AdminOrderStatus.siapDikirim;
       case 'dalampengiriman':
         return AdminOrderStatus.dalamPengiriman;
       case 'selesai':
@@ -231,6 +240,8 @@ class AdminOrderDetail {
         return 'diproses';
       case AdminOrderStatus.siapDiambil:
         return 'siapDiambil';
+      case AdminOrderStatus.siapDikirim:
+        return 'siapDikirim';
       case AdminOrderStatus.dalamPengiriman:
         return 'dalamPengiriman';
       case AdminOrderStatus.selesai:
