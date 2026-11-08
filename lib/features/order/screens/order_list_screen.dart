@@ -72,6 +72,7 @@ class _OrderListScreenState extends State<OrderListScreen> {
       OrderStatus.shipping: 0,
       OrderStatus.readyPickup: 0,
       OrderStatus.completed: 0,
+      OrderStatus.cancelled: 0,
     };
 
     for (final order in _allOrders) {

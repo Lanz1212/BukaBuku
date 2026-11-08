@@ -207,12 +207,20 @@ class _OrderSuccessScreenState extends State<OrderSuccessScreen> {
                     child: Container(
                       width: 48,
                       height: 48,
-                      decoration: const BoxDecoration(
-                        color: AppColors.success,
+                      decoration: BoxDecoration(
+                        color: order.isPaid
+                            ? AppColors.success
+                            : (order.paymentMethod.toLowerCase().contains('kasir')
+                                ? AppColors.primaryContainer
+                                : Colors.amber.shade700),
                         shape: BoxShape.circle,
                       ),
-                      child: const Icon(
-                        Icons.check_rounded,
+                      child: Icon(
+                        order.isPaid
+                            ? Icons.check_rounded
+                            : (order.paymentMethod.toLowerCase().contains('kasir')
+                                ? Icons.storefront_outlined
+                                : Icons.hourglass_top_rounded),
                         color: Colors.white,
                         size: 30,
                       ),
@@ -223,7 +231,9 @@ class _OrderSuccessScreenState extends State<OrderSuccessScreen> {
                 Text(
                   order.isPaid
                       ? 'Pembayaran & Pesanan Berhasil!'
-                      : 'Pesanan Berhasil Dibuat!',
+                      : (order.paymentMethod.toLowerCase().contains('kasir')
+                          ? 'Pesanan Dibuat (Bayar di Kasir)'
+                          : 'Menunggu Pembayaran'),
                   style: AppTypography.headlineLg.copyWith(
                     color: AppColors.primary,
                     fontWeight: FontWeight.w700,
@@ -237,7 +247,9 @@ class _OrderSuccessScreenState extends State<OrderSuccessScreen> {
                   child: Text(
                     order.isPaid
                         ? 'Terima kasih, pembayaran Anda telah diverifikasi oleh sistem.'
-                        : 'Nomor pesanan Anda telah tercatat dan tersimpan di database Toko Buku Budi.',
+                        : (order.paymentMethod.toLowerCase().contains('kasir')
+                            ? 'Pesanan tercatat. Silakan lakukan pembayaran di meja kasir saat mengambil buku.'
+                            : 'Silakan selesaikan pembayaran untuk memproses pesanan Anda.'),
                     style: AppTypography.bodyMd.copyWith(
                       color: AppColors.onSurfaceVariant,
                       height: 1.4,

@@ -81,6 +81,10 @@ class OrderDetailScreen extends StatelessWidget {
                 _buildCompletedStatusBanner(),
                 const SizedBox(height: 14),
               ],
+              if (order.status == OrderStatus.cancelled) ...[
+                _buildCancelledStatusBanner(),
+                const SizedBox(height: 14),
+              ],
 
               // 2. Order Meta Identifier Card
               _buildOrderMetaCard(context),
@@ -88,7 +92,8 @@ class OrderDetailScreen extends StatelessWidget {
               const SizedBox(height: 16),
 
               // 3. Featured Store Pickup Card & CTA (Priority for Pickup Orders)
-              if (order.deliveryType == DeliveryType.pickup) ...[
+              if (order.deliveryType == DeliveryType.pickup &&
+                  order.status != OrderStatus.cancelled) ...[
                 _buildStorePickupCard(context),
                 const SizedBox(height: 16),
               ],
@@ -167,6 +172,59 @@ class OrderDetailScreen extends StatelessWidget {
                   'Paket buku telah dirapikan & siap di kasir toko.',
                   style: AppTypography.caption.copyWith(
                     color: AppColors.onSecondaryContainer.withValues(alpha: 0.9),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCancelledStatusBanner() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: AppColors.error.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(
+          color: AppColors.error.withValues(alpha: 0.3),
+        ),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 38,
+            height: 38,
+            decoration: BoxDecoration(
+              color: AppColors.error.withValues(alpha: 0.15),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(
+              Icons.cancel_outlined,
+              size: 20,
+              color: AppColors.error,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Pesanan Dibatalkan',
+                  style: AppTypography.labelLg.copyWith(
+                    color: AppColors.error,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  'Pembayaran pesanan ini belum diselesaikan atau telah dibatalkan.',
+                  style: AppTypography.caption.copyWith(
+                    color: AppColors.onSurfaceVariant,
                   ),
                 ),
               ],

@@ -483,17 +483,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
         if (!mounted) return;
 
         if (paymentResult == MidtransPaymentResult.success) {
-          // Pembayaran berhasil! Update status pesanan di Supabase
-          await OrderService.updateMidtransPaymentData(
-            orderId: createdOrder.orderId,
-            isPaid: true,
-            snapToken: snapResponse.token,
-            transactionStatus: 'settlement',
-            newStatus: AdminOrderStatus.diproses,
-          );
-
-          if (!mounted) return;
-
+          // Pembayaran terverifikasi lunas di Midtrans!
           final successFlow = isDelivery
               ? OrderSimulationFlow.delivery
               : OrderSimulationFlow.pickupOnline;
@@ -538,13 +528,44 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
             ),
           );
         } else {
-          // Dibatalkan / ditutup oleh pembaca
+          // MidtransPaymentResult.cancelled / failed / ditutup oleh pembaca
+          // Cek terlebih dahulu apakah sudah tercatat lunas di DB (misal via webhook Midtrans)
+          final checkDb = await OrderService.fetchOrderById(createdOrder.orderId);
+          if (checkDb != null && checkDb.isPaid) {
+            if (!mounted) return;
+            final successFlow = isDelivery
+                ? OrderSimulationFlow.delivery
+                : OrderSimulationFlow.pickupOnline;
+            Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (context) => OrderSuccessScreen(
+                  orderId: '#${createdOrder.orderId}',
+                  initialFlow: successFlow,
+                ),
+              ),
+            );
+            return;
+          }
+
+          // Jika memang belum dibayar, batalkan pesanan
+          await OrderService.cancelOrder(createdOrder.orderId);
+
+          if (!mounted) return;
+
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text(
-                'Pembayaran belum diselesaikan. Anda dapat melihat pesanan #${createdOrder.orderId} di menu Pesanan Saya.',
+              content: Row(
+                children: [
+                  const Icon(Icons.cancel_outlined, color: Colors.white, size: 20),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Pembayaran dibatalkan. Pesanan #${createdOrder.orderId} telah otomatis dibatalkan.',
+                    ),
+                  ),
+                ],
               ),
-              backgroundColor: AppColors.primaryContainer,
+              backgroundColor: AppColors.error,
               behavior: SnackBarBehavior.floating,
               duration: const Duration(seconds: 4),
             ),
@@ -728,6 +749,12 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
             CheckoutBottomBar(
               totalAmount: _totalPayment,
               onSubmitOrder: _submitOrder,
+              buttonLabel: _selectedPayment.id == 'cash'
+                  ? 'Pesan (Bayar di Kasir)'
+                  : 'Bayar via Midtrans',
+              buttonIcon: _selectedPayment.id == 'cash'
+                  ? Icons.storefront_outlined
+                  : Icons.payment_rounded,
             ),
           ],
         ),

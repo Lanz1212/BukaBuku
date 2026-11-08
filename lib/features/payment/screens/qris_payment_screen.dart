@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/services/order_service.dart';
+import '../../../core/services/midtrans_service.dart';
 import '../../admin/order_management/models/admin_order_detail.dart';
 import '../models/payment_simulation_state.dart';
 import '../widgets/payment_app_bar.dart';
@@ -44,6 +45,7 @@ class QrisPaymentScreen extends StatefulWidget {
 
 class _QrisPaymentScreenState extends State<QrisPaymentScreen> {
   PaymentSimulationStatus _currentStatus = PaymentSimulationStatus.pending;
+  bool _isChecking = false;
 
   String _formatRupiah(int amount) {
     final str = amount.toString();
@@ -60,16 +62,92 @@ class _QrisPaymentScreenState extends State<QrisPaymentScreen> {
   }
 
   void _onConfirmPaid() async {
+    if (_isChecking) return;
+    setState(() => _isChecking = true);
+
     final cleanId = widget.orderId.replaceAll('#', '').trim();
+
     try {
-      await OrderService.updateOrderPaymentStatus(cleanId, true);
+      // 1. Cek status di database Supabase terlebih dahulu
+      final dbOrder = await OrderService.fetchOrderById(cleanId);
+      if (dbOrder != null && dbOrder.isPaid) {
+        if (mounted) {
+          setState(() {
+            _currentStatus = PaymentSimulationStatus.success;
+          });
+        }
+        return;
+      }
+
+      // 2. Cek status nyata langsung ke API Midtrans
+      final status = await MidtransService.checkTransactionStatus(cleanId);
+
+      if (status.isPaid) {
+        await OrderService.updateOrderPaymentStatus(cleanId, true);
+        if (mounted) {
+          setState(() {
+            _currentStatus = PaymentSimulationStatus.success;
+          });
+        }
+        return;
+      }
+
+      if (!mounted) return;
+
+      // Jika belum terbayar, jangan ubah status ke success! Tampilkan dialog informatif
+      showDialog(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          backgroundColor: Colors.white,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          title: Row(
+            children: [
+              Icon(
+                status.isPending ? Icons.hourglass_top_rounded : Icons.info_outline,
+                color: Colors.orange,
+              ),
+              const SizedBox(width: 8),
+              Text(
+                'Belum Terverifikasi',
+                style: AppTypography.titleMd.copyWith(fontWeight: FontWeight.w700),
+              ),
+            ],
+          ),
+          content: Text(
+            status.isPending
+                ? 'Pembayaran pesanan #${widget.orderId} belum tercatat lunas di Midtrans. Silakan selesaikan pembayaran di aplikasi bank / e-wallet Anda terlebih dahulu.'
+                : 'Status transaksi: ${status.transactionStatus}. Pembayaran belum dinyatakan berhasil.',
+            style: AppTypography.bodyMd.copyWith(
+              color: AppColors.onSurfaceVariant,
+              fontSize: 13,
+            ),
+          ),
+          actions: [
+            ElevatedButton(
+              onPressed: () => Navigator.of(ctx).pop(),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primaryContainer,
+                foregroundColor: Colors.white,
+              ),
+              child: const Text('Mengerti'),
+            ),
+          ],
+        ),
+      );
     } catch (e) {
-      debugPrint('Error updating order payment status in Supabase: $e');
-    }
-    if (mounted) {
-      setState(() {
-        _currentStatus = PaymentSimulationStatus.success;
-      });
+      debugPrint('Error verifying QRIS payment: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Kendala memeriksa status pembayaran: $e'),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isChecking = false);
+      }
     }
   }
 
@@ -190,14 +268,23 @@ class _QrisPaymentScreenState extends State<QrisPaymentScreen> {
                   width: double.infinity,
                   height: 50,
                   child: ElevatedButton.icon(
-                    onPressed: _onConfirmPaid,
-                    icon: const Icon(
-                      Icons.check_circle_outline,
-                      size: 20,
-                      color: Colors.white,
-                    ),
+                    onPressed: _isChecking ? null : _onConfirmPaid,
+                    icon: _isChecking
+                        ? const SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.white,
+                            ),
+                          )
+                        : const Icon(
+                            Icons.check_circle_outline,
+                            size: 20,
+                            color: Colors.white,
+                          ),
                     label: Text(
-                      'Saya Sudah Membayar',
+                      _isChecking ? 'Memeriksa Verifikasi...' : 'Saya Sudah Membayar',
                       style: AppTypography.labelLg.copyWith(
                         color: Colors.white,
                         fontWeight: FontWeight.w700,

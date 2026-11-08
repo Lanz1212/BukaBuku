@@ -136,6 +136,8 @@ class OrderService {
       status = OrderStatus.shipping;
     } else if (statusStr == 'selesai') {
       status = OrderStatus.completed;
+    } else if (statusStr == 'dibatalkan') {
+      status = OrderStatus.cancelled;
     }
 
     final isDelivery = (orderMap['delivery_type'] as String? ?? '')
@@ -298,6 +300,22 @@ class OrderService {
           title: 'Pesanan Diterima',
           time: '',
           description: 'Menunggu konfirmasi penerimaan paket.',
+        ),
+      ];
+    } else if (status == OrderStatus.cancelled) {
+      timeline = [
+        OrderTimelineStepModel(
+          title: 'Pesanan Dibuat',
+          time: dateTimeDisplay,
+          description: 'Pesanan tercatat di sistem Buka Buku.',
+          isDone: true,
+        ),
+        const OrderTimelineStepModel(
+          title: 'Pembayaran Dibatalkan',
+          time: 'Dibatalkan',
+          description: 'Pembayaran tidak diselesaikan atau dibatalkan.',
+          isDone: true,
+          isActive: true,
         ),
       ];
     } else {
@@ -670,6 +688,23 @@ class OrderService {
     }
   }
 
+  // ─── UPDATE: Batalkan Pesanan (Pembayaran Dibatalkan / Gagal) ──────────────
+  static Future<void> cancelOrder(String orderId) async {
+    try {
+      final cleanId = orderId.replaceAll('#', '').trim();
+      final updateData = <String, dynamic>{
+        'status': 'dibatalkan',
+        'is_paid': false,
+        'midtrans_transaction_status': 'cancel',
+        'updated_at': DateTime.now().toIso8601String(),
+      };
+      await _client.from('orders').update(updateData).eq('id', cleanId);
+      debugPrint('Order $cleanId successfully marked as dibatalkan');
+    } catch (e) {
+      debugPrint('Error cancelling order: $e');
+    }
+  }
+
   // ─── REALTIME: Langganan Perubahan Pesanan Global ───────────────────────────
   static RealtimeChannel? subscribeToOrders({
     required void Function() onData,
@@ -697,6 +732,7 @@ class OrderService {
   static RealtimeChannel? subscribeToOrderChanges({
     required String orderId,
     required void Function(String newStatus) onStatusChanged,
+    void Function(bool isPaid)? onPaymentStatusChanged,
   }) {
     try {
       final cleanId = orderId.replaceAll('#', '').trim();
@@ -704,7 +740,7 @@ class OrderService {
       final channel = _client.channel(channelName);
       channel
           .onPostgresChanges(
-            event: PostgresChangeEvent.all,
+            event: PostgresChangeEvent.update,
             schema: 'public',
             table: 'orders',
             callback: (payload) {
@@ -713,6 +749,10 @@ class OrderService {
                 final newStatus = record['status'] as String?;
                 if (newStatus != null) {
                   onStatusChanged(newStatus);
+                }
+                final isPaid = record['is_paid'] as bool?;
+                if (isPaid != null && onPaymentStatusChanged != null) {
+                  onPaymentStatusChanged(isPaid);
                 }
               }
             },

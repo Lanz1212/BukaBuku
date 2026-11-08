@@ -7,11 +7,15 @@ import '../../../core/theme/app_typography.dart';
 class CheckoutBottomBar extends StatelessWidget {
   final int totalAmount;
   final VoidCallback onSubmitOrder;
+  final String buttonLabel;
+  final IconData buttonIcon;
 
   const CheckoutBottomBar({
     super.key,
     required this.totalAmount,
     required this.onSubmitOrder,
+    this.buttonLabel = 'Buat Pesanan',
+    this.buttonIcon = Icons.arrow_forward,
   });
 
   String _formatRupiah(int amount) {
@@ -94,15 +98,15 @@ class CheckoutBottomBar extends StatelessWidget {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
-                      'Buat Pesanan',
+                      buttonLabel,
                       style: AppTypography.labelLg.copyWith(
                         color: Colors.white,
                         fontWeight: FontWeight.w700,
                       ),
                     ),
                     const SizedBox(width: 8),
-                    const Icon(
-                      Icons.arrow_forward,
+                    Icon(
+                      buttonIcon,
                       size: 18,
                       color: Colors.white,
                     ),

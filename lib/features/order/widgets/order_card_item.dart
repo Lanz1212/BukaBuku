@@ -220,6 +220,12 @@ class OrderCardItem extends StatelessWidget {
         icon = Icons.check_circle_outline;
         label = 'Selesai';
         break;
+      case OrderStatus.cancelled:
+        bg = AppColors.error.withValues(alpha: 0.12);
+        textColor = AppColors.error;
+        icon = Icons.cancel_outlined;
+        label = 'Dibatalkan';
+        break;
       case OrderStatus.processing:
       case OrderStatus.all:
         bg = AppColors.surfaceContainerHigh;

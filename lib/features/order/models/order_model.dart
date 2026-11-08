@@ -6,6 +6,7 @@ enum OrderStatus {
   shipping,
   readyPickup,
   completed,
+  cancelled,
 }
 
 extension OrderStatusExtension on OrderStatus {
@@ -21,6 +22,8 @@ extension OrderStatusExtension on OrderStatus {
         return 'Siap Diambil';
       case OrderStatus.completed:
         return 'Selesai';
+      case OrderStatus.cancelled:
+        return 'Dibatalkan';
     }
   }
 }

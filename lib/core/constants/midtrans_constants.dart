@@ -28,6 +28,10 @@ class MidtransConstants {
   static const String checkStatusFunctionUrl =
       'https://uemrnotnjwannfshzlph.supabase.co/functions/v1/check-midtrans-status';
 
+  /// Endpoint Edge Function Supabase untuk webhook notifikasi pembayaran dari Midtrans
+  static const String webhookNotificationUrl =
+      'https://uemrnotnjwannfshzlph.supabase.co/functions/v1/midtrans-webhook';
+
   /// Base URL Snap Redirection
   static String get snapRedirectionBaseUrl => isProduction
       ? 'https://app.midtrans.com/snap/v4/redirection/'

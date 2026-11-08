@@ -45,7 +45,16 @@ class MidtransTransactionStatus {
   /// Transaksi benar-benar sudah lunas di Midtrans
   bool get isPaid =>
       transactionStatus == 'settlement' ||
-      (transactionStatus == 'capture' && fraudStatus == 'accept');
+      transactionStatus == 'success' ||
+      (transactionStatus == 'capture' &&
+          (fraudStatus == null || fraudStatus == 'accept')) ||
+      (statusCode == '200' &&
+          transactionStatus != 'pending' &&
+          transactionStatus != 'deny' &&
+          transactionStatus != 'cancel' &&
+          transactionStatus != 'expire' &&
+          transactionStatus != 'not_found' &&
+          transactionStatus != 'unknown');
 
   /// Transaksi masih menunggu pembayaran
   bool get isPending => transactionStatus == 'pending';
