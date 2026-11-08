@@ -56,22 +56,17 @@ class PaymentMethodOption {
 
   static const List<PaymentMethodOption> allOptions = [
     PaymentMethodOption(
-      id: 'qris',
-      title: 'QRIS Instant',
-      badge: 'Bebas Biaya',
-      subtitle: 'GoPay, OVO, BCA, DANA, ShopeePay',
-      icon: Icons.qr_code_2,
-    ),
-    PaymentMethodOption(
-      id: 'va',
-      title: 'Transfer Virtual Account',
-      subtitle: 'BCA, Mandiri, BNI, BRI',
-      icon: Icons.account_balance_outlined,
+      id: 'midtrans',
+      title: 'Midtrans Payment Gateway',
+      badge: 'Instan & Lengkap',
+      subtitle: 'QRIS, GoPay, ShopeePay, VA BCA/Mandiri/BRI, & Kartu',
+      icon: Icons.payment_rounded,
     ),
     PaymentMethodOption(
       id: 'cash',
-      title: 'Bayar di Kasir (Cash / Kartu)',
-      subtitle: 'Bayar tunai di meja kasir Cikini saat pengambilan',
+      title: 'Bayar di Kasir',
+      badge: 'Ambil di Toko',
+      subtitle: 'Bayar tunai atau kartu di meja kasir saat pengambilan buku',
       icon: Icons.point_of_sale_outlined,
     ),
   ];

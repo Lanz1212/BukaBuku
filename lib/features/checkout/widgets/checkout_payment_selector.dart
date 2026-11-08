@@ -3,8 +3,8 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
 import '../models/checkout_order.dart';
 
-/// Payment method selector card with expandable alternative options.
-class CheckoutPaymentSelector extends StatefulWidget {
+/// Payment method selector card with 2 options: Midtrans & Bayar di Kasir.
+class CheckoutPaymentSelector extends StatelessWidget {
   final PaymentMethodOption selectedPayment;
   final FulfillmentMode fulfillmentMode;
   final ValueChanged<PaymentMethodOption> onPaymentChanged;
@@ -19,21 +19,9 @@ class CheckoutPaymentSelector extends StatefulWidget {
   });
 
   @override
-  State<CheckoutPaymentSelector> createState() => _CheckoutPaymentSelectorState();
-}
-
-class _CheckoutPaymentSelectorState extends State<CheckoutPaymentSelector> {
-  bool _isExpanded = false;
-
-  @override
   Widget build(BuildContext context) {
-    final availableOptions = PaymentMethodOption.allOptions.where((option) {
-      if (option.id == 'cash' &&
-          widget.fulfillmentMode != FulfillmentMode.pickup) {
-        return false;
-      }
-      return true;
-    }).toList();
+    final isPickup = fulfillmentMode == FulfillmentMode.pickup;
+    final options = PaymentMethodOption.allOptions;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -53,60 +41,81 @@ class _CheckoutPaymentSelectorState extends State<CheckoutPaymentSelector> {
                 overflow: TextOverflow.ellipsis,
               ),
             ),
-            const SizedBox(width: 8),
-            if (widget.onOpenPaymentMethods != null)
-              GestureDetector(
-                onTap: widget.onOpenPaymentMethods,
-                child: Text(
-                  'Lihat Semua',
+            Row(
+              children: [
+                const Icon(
+                  Icons.verified_user_outlined,
+                  size: 14,
+                  color: AppColors.secondary,
+                ),
+                const SizedBox(width: 4),
+                Text(
+                  'Aman & Terverifikasi',
                   style: AppTypography.caption.copyWith(
-                    color: AppColors.primary,
-                    fontWeight: FontWeight.w700,
-                    decoration: TextDecoration.underline,
+                    color: AppColors.secondary,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
-              )
-            else
-              Text(
-                'Aman & Terverifikasi',
-                style: AppTypography.caption.copyWith(
-                  color: AppColors.secondary,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
+              ],
+            ),
           ],
         ),
 
-        const SizedBox(height: 10),
+        const SizedBox(height: 12),
 
-        // Selected Payment Container (Expandable)
-        Container(
-          decoration: BoxDecoration(
-            color: AppColors.surfaceContainerLowest,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(
-              color: AppColors.outlineVariant.withValues(alpha: 0.35),
-              width: 1,
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: AppColors.primaryContainer.withValues(alpha: 0.04),
-                blurRadius: 12,
-                offset: const Offset(0, 3),
-              ),
-            ],
-          ),
-          padding: const EdgeInsets.all(14),
-          child: Column(
-            children: [
-              // Main Selected Tile
-              InkWell(
-                onTap: () {
-                  setState(() {
-                    _isExpanded = !_isExpanded;
-                  });
-                },
-                borderRadius: BorderRadius.circular(10),
+        // List of 2 Payment Methods
+        ...options.map((option) {
+          final isSelected = selectedPayment.id == option.id;
+          final isCashOption = option.id == 'cash';
+          final isDisabled = isCashOption && !isPickup;
+
+          return Padding(
+            padding: const EdgeInsets.only(bottom: 10),
+            child: InkWell(
+              onTap: isDisabled
+                  ? () {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: const Text(
+                            'Metode Bayar di Kasir hanya berlaku jika opsi "Ambil di Toko" dipilih.',
+                          ),
+                          backgroundColor: AppColors.primaryContainer,
+                          behavior: SnackBarBehavior.floating,
+                          duration: const Duration(seconds: 2),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                        ),
+                      );
+                    }
+                  : () => onPaymentChanged(option),
+              borderRadius: BorderRadius.circular(16),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                decoration: BoxDecoration(
+                  color: isDisabled
+                      ? AppColors.surfaceContainerLowest.withValues(alpha: 0.6)
+                      : (isSelected
+                          ? AppColors.surfaceContainerLow
+                          : AppColors.surfaceContainerLowest),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: isSelected
+                        ? AppColors.primary
+                        : AppColors.outlineVariant.withValues(alpha: 0.35),
+                    width: isSelected ? 1.5 : 1,
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColors.primaryContainer.withValues(
+                        alpha: isSelected ? 0.08 : 0.02,
+                      ),
+                      blurRadius: isSelected ? 10 : 6,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                padding: const EdgeInsets.all(14),
                 child: Row(
                   children: [
                     // Icon Box
@@ -114,171 +123,117 @@ class _CheckoutPaymentSelectorState extends State<CheckoutPaymentSelector> {
                       width: 42,
                       height: 42,
                       decoration: BoxDecoration(
-                        color: AppColors.surfaceContainer,
+                        color: isDisabled
+                            ? AppColors.surfaceContainer
+                            : (isSelected
+                                ? AppColors.primary.withValues(alpha: 0.12)
+                                : AppColors.surfaceContainer),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Icon(
-                        widget.selectedPayment.icon,
+                        option.icon,
                         size: 22,
-                        color: AppColors.primaryContainer,
+                        color: isDisabled
+                            ? AppColors.onSurfaceVariant.withValues(alpha: 0.4)
+                            : (isSelected
+                                ? AppColors.primary
+                                : AppColors.primaryContainer),
                       ),
                     ),
 
                     const SizedBox(width: 12),
 
-                    // Texts
+                    // Texts & Badges
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Row(
                             children: [
-                              Text(
-                                widget.selectedPayment.title,
-                                style: AppTypography.titleMd.copyWith(
-                                  color: AppColors.onSurface,
-                                  fontWeight: FontWeight.w700,
-                                  fontSize: 15,
+                              Flexible(
+                                child: Text(
+                                  option.title,
+                                  style: AppTypography.titleMd.copyWith(
+                                    color: isDisabled
+                                        ? AppColors.onSurfaceVariant
+                                            .withValues(alpha: 0.5)
+                                        : AppColors.onSurface,
+                                    fontWeight: isSelected
+                                        ? FontWeight.w700
+                                        : FontWeight.w600,
+                                    fontSize: 14.5,
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
                                 ),
                               ),
-                              if (widget.selectedPayment.badge != null) ...[
+                              if (option.badge != null) ...[
                                 const SizedBox(width: 6),
                                 Container(
                                   padding: const EdgeInsets.symmetric(
-                                    horizontal: 8,
+                                    horizontal: 7,
                                     vertical: 2,
                                   ),
                                   decoration: BoxDecoration(
-                                    color: AppColors.secondaryContainer
-                                        .withValues(alpha: 0.4),
+                                    color: isDisabled
+                                        ? AppColors.surfaceContainer
+                                        : AppColors.secondaryContainer
+                                            .withValues(alpha: 0.45),
                                     borderRadius: BorderRadius.circular(9999),
                                   ),
                                   child: Text(
-                                    widget.selectedPayment.badge!,
+                                    isDisabled
+                                        ? 'Khusus Ambil di Toko'
+                                        : option.badge!,
                                     style: AppTypography.caption.copyWith(
-                                      color: AppColors.onSecondaryContainer,
+                                      color: isDisabled
+                                          ? AppColors.onSurfaceVariant
+                                              .withValues(alpha: 0.6)
+                                          : AppColors.onSecondaryContainer,
                                       fontWeight: FontWeight.w600,
-                                      fontSize: 10.5,
+                                      fontSize: 10,
                                     ),
                                   ),
                                 ),
                               ],
                             ],
                           ),
-                          const SizedBox(height: 2),
+                          const SizedBox(height: 3),
                           Text(
-                            widget.selectedPayment.subtitle,
+                            isDisabled
+                                ? 'Ubah mode pengiriman ke "Ambil di Toko" untuk mengaktifkan metode ini.'
+                                : option.subtitle,
                             style: AppTypography.caption.copyWith(
-                              color: AppColors.onSurfaceVariant,
-                              fontSize: 12,
+                              color: isDisabled
+                                  ? AppColors.onSurfaceVariant
+                                      .withValues(alpha: 0.45)
+                                  : AppColors.onSurfaceVariant,
+                              fontSize: 11.5,
                             ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
                           ),
                         ],
                       ),
                     ),
 
-                    // Trailing Arrow
+                    const SizedBox(width: 8),
+
+                    // Selection Indicator
                     Icon(
-                      _isExpanded
-                          ? Icons.keyboard_arrow_up_rounded
-                          : Icons.chevron_right_rounded,
-                      size: 22,
-                      color: AppColors.onSurfaceVariant,
+                      isSelected
+                          ? Icons.check_circle_rounded
+                          : Icons.radio_button_unchecked,
+                      size: 20,
+                      color: isDisabled
+                          ? AppColors.outlineVariant.withValues(alpha: 0.3)
+                          : (isSelected
+                              ? AppColors.primary
+                              : AppColors.outlineVariant),
                     ),
                   ],
                 ),
               ),
-
-              // Expanded Options List
-              if (_isExpanded) ...[
-                Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 10),
-                  child: Divider(
-                    height: 1,
-                    thickness: 1,
-                    color: AppColors.surfaceContainer,
-                  ),
-                ),
-                Align(
-                  alignment: Alignment.centerLeft,
-                  child: Text(
-                    'Pilih metode pembayaran:',
-                    style: AppTypography.caption.copyWith(
-                      color: AppColors.onSurfaceVariant,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 8),
-                ...availableOptions.map((option) {
-                  final isCurrent = option.id == widget.selectedPayment.id;
-                  return Padding(
-                    padding: const EdgeInsets.only(bottom: 6),
-                    child: InkWell(
-                      onTap: () {
-                        widget.onPaymentChanged(option);
-                        setState(() {
-                          _isExpanded = false;
-                        });
-                      },
-                      borderRadius: BorderRadius.circular(10),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 10,
-                        ),
-                        decoration: BoxDecoration(
-                          color: isCurrent
-                              ? AppColors.surfaceContainerLow
-                              : Colors.transparent,
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Row(
-                              children: [
-                                Icon(
-                                  option.icon,
-                                  size: 19,
-                                  color: isCurrent
-                                      ? AppColors.primaryContainer
-                                      : AppColors.onSurfaceVariant,
-                                ),
-                                const SizedBox(width: 10),
-                                Text(
-                                  option.title,
-                                  style: AppTypography.bodyMd.copyWith(
-                                    color: AppColors.onSurface,
-                                    fontWeight: isCurrent
-                                        ? FontWeight.w700
-                                        : FontWeight.w500,
-                                    fontSize: 13.5,
-                                  ),
-                                ),
-                              ],
-                            ),
-                            Icon(
-                              isCurrent
-                                  ? Icons.check_circle_rounded
-                                  : Icons.radio_button_unchecked,
-                              size: 18,
-                              color: isCurrent
-                                  ? AppColors.primaryContainer
-                                  : AppColors.outlineVariant,
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  );
-                }),
-              ],
-            ],
-          ),
-        ),
+            ),
+          );
+        }),
       ],
     );
   }

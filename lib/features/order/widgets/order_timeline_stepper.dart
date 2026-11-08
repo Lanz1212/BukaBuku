@@ -1,22 +1,26 @@
 import 'package:flutter/material.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
-import '../models/order_simulation_flow.dart';
 
 /// Vertical timeline stepper displaying the bookstore preparation stages:
 /// 1. Pesanan Diterima (Finished)
 /// 2. Pengepakan Buku & Pembatas Kayu (In progress)
-/// 3. Siap Diambil / Dikirim (Upcoming based on flow)
+/// 3. Siap Diambil / Dikirim (Upcoming based on delivery mode)
 class OrderTimelineStepper extends StatelessWidget {
-  final OrderSimulationFlow flow;
+  final bool isDelivery;
 
   const OrderTimelineStepper({
     super.key,
-    required this.flow,
+    this.isDelivery = false,
   });
 
   @override
   Widget build(BuildContext context) {
+    final step3Title = isDelivery ? '3. Siap Dikirim Kurir' : '3. Siap Diambil di Rak Toko';
+    final step3Description = isDelivery
+        ? 'Paket diserahkan ke kurir untuk perjalanan menuju lokasimu.'
+        : 'Buku siap diambil langsung di meja kasir Toko Buku Budi Cikini.';
+
     return Container(
       decoration: BoxDecoration(
         color: AppColors.surfaceContainerLowest,
@@ -82,14 +86,14 @@ class OrderTimelineStepper extends StatelessWidget {
             isCurrentStep: true,
           ),
           _buildTimelineItem(
-            icon: flow == OrderSimulationFlow.delivery
+            icon: isDelivery
                 ? Icons.local_shipping_outlined
                 : Icons.storefront_outlined,
             iconColor: AppColors.onSurfaceVariant,
             badgeColor: AppColors.surfaceContainerHighest,
-            title: flow.step3Title,
+            title: step3Title,
             titleColor: AppColors.onSurfaceVariant,
-            description: flow.step3Description,
+            description: step3Description,
             showBottomLine: false,
           ),
         ],
@@ -107,67 +111,72 @@ class OrderTimelineStepper extends StatelessWidget {
     required bool showBottomLine,
     bool isCurrentStep = false,
   }) {
-    return IntrinsicHeight(
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Vertical Indicator Line & Dot
-          Column(
-            children: [
-              Container(
-                width: 22,
-                height: 22,
-                decoration: BoxDecoration(
-                  color: badgeColor,
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(
-                  icon,
-                  size: 13,
-                  color: iconColor,
-                ),
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Left Column: Dot/Icon + Connecting Line
+        Column(
+          children: [
+            Container(
+              width: 32,
+              height: 32,
+              decoration: BoxDecoration(
+                color: badgeColor,
+                shape: BoxShape.circle,
+                boxShadow: isCurrentStep
+                    ? [
+                        BoxShadow(
+                          color: badgeColor.withValues(alpha: 0.35),
+                          blurRadius: 8,
+                          offset: const Offset(0, 2),
+                        ),
+                      ]
+                    : null,
               ),
-              if (showBottomLine)
-                Expanded(
-                  child: Container(
-                    width: 2,
-                    color: AppColors.surfaceContainerHighest,
-                    margin: const EdgeInsets.symmetric(vertical: 4),
-                  ),
-                ),
-            ],
-          ),
-          const SizedBox(width: 14),
-
-          // Title & Description
-          Expanded(
-            child: Padding(
-              padding: EdgeInsets.only(bottom: showBottomLine ? 16 : 4),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: AppTypography.labelMd.copyWith(
-                      color: titleColor,
-                      fontWeight:
-                          isCurrentStep ? FontWeight.w700 : FontWeight.w600,
-                    ),
-                  ),
-                  const SizedBox(height: 3),
-                  Text(
-                    description,
-                    style: AppTypography.caption.copyWith(
-                      color: AppColors.onSurfaceVariant,
-                      height: 1.35,
-                    ),
-                  ),
-                ],
+              child: Icon(
+                icon,
+                size: 16,
+                color: iconColor,
               ),
             ),
+            if (showBottomLine)
+              Container(
+                width: 2,
+                height: 38,
+                color: AppColors.outlineVariant.withValues(alpha: 0.4),
+              ),
+          ],
+        ),
+
+        const SizedBox(width: 12),
+
+        // Right Column: Texts
+        Expanded(
+          child: Padding(
+            padding: const EdgeInsets.only(top: 4, bottom: 8),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: AppTypography.labelLg.copyWith(
+                    color: titleColor,
+                    fontWeight: isCurrentStep ? FontWeight.w700 : FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  description,
+                  style: AppTypography.caption.copyWith(
+                    color: AppColors.onSurfaceVariant,
+                    height: 1.35,
+                  ),
+                ),
+              ],
+            ),
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }

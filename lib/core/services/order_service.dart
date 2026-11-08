@@ -7,6 +7,14 @@ import '../../features/order/models/order_model.dart';
 import '../../features/order/models/order_item_model.dart';
 
 class OrderService {
+  static SupabaseClient? get _safeClient {
+    try {
+      return Supabase.instance.client;
+    } catch (_) {
+      return null;
+    }
+  }
+
   static SupabaseClient get _client => Supabase.instance.client;
 
   // ─── READ: Ambil Semua Pesanan Masuk (untuk Admin) ──────────────────────────
@@ -52,7 +60,10 @@ class OrderService {
   static Future<AdminOrderDetail?> fetchOrderById(String orderId) async {
     try {
       final cleanId = orderId.replaceAll('#', '').trim();
-      final response = await _client
+      final client = _safeClient;
+      if (client == null) return null;
+
+      final response = await client
           .from('orders')
           .select('*, order_items(*)')
           .eq('id', cleanId)
@@ -348,6 +359,9 @@ class OrderService {
       totalAmountValue: totalPrice,
       paymentMethod: orderMap['payment_method'] as String? ?? 'QRIS',
       customerName: orderMap['customer_name'] as String? ?? 'Pembaca',
+      customerAddress: orderMap['customer_address'] as String? ??
+          orderMap['account_address'] as String?,
+      customerPhone: orderMap['customer_phone'] as String?,
       qrCode: orderMap['qr_code'] as String? ??
           orderMap['pickup_code'] as String? ??
           orderMap['id'] as String? ??
@@ -399,7 +413,13 @@ class OrderService {
       final cleanId = rawOrderId.replaceAll('#', '').trim();
       if (cleanId.isEmpty) return null;
 
-      final response = await _client
+      final client = _safeClient;
+      if (client == null) {
+        final matches = mockOrders.where((o) => o.id.replaceAll('#', '').trim() == cleanId);
+        return matches.isNotEmpty ? matches.first : mockOrders.first;
+      }
+
+      final response = await client
           .from('orders')
           .select('*, order_items(*)')
           .eq('id', cleanId)
@@ -449,18 +469,23 @@ class OrderService {
     String? qrCode,
     String? pickupPoint,
     String? accountAddress,
+    String? midtransOrderId,
+    String? midtransSnapToken,
+    String? midtransPaymentType,
+    String? midtransTransactionStatus,
     required List<Map<String, dynamic>> items,
   }) async {
-    // 1. Generate Order ID jika belum ada (ORD-yyMMdd-XXXX atau sequential)
+    // 1. Generate Order ID jika belum ada (ORD-yyMMdd-XXXXX atau sequential yang unik)
     String finalOrderId = customOrderId ?? '';
     if (finalOrderId.isEmpty) {
       final now = DateTime.now();
       final dateCode =
           '${now.year.toString().substring(2)}${now.month.toString().padLeft(2, '0')}${now.day.toString().padLeft(2, '0')}';
-      final randomSuffix = (now.millisecondsSinceEpoch % 10000)
+      final randomSuffix = (now.millisecondsSinceEpoch % 100000)
           .toString()
-          .padLeft(4, '0');
-      finalOrderId = 'ORD$dateCode$randomSuffix';
+          .padLeft(5, '0');
+      final uniqueMicro = (now.microsecond % 1000).toString().padLeft(3, '0');
+      finalOrderId = 'ORD$dateCode$randomSuffix$uniqueMicro';
     }
 
     // 2. Fallback user_id jika null
@@ -504,6 +529,10 @@ class OrderService {
       'qr_code': effectiveQrCode,
       'pickup_point': pickupPoint,
       'account_address': accountAddress ?? customerAddress,
+      'midtrans_order_id': midtransOrderId,
+      'midtrans_snap_token': midtransSnapToken,
+      'midtrans_payment_type': midtransPaymentType,
+      'midtrans_transaction_status': midtransTransactionStatus,
       'is_verified_user': true,
       'created_at': DateTime.now().toIso8601String(),
       'updated_at': DateTime.now().toIso8601String(),
@@ -601,6 +630,43 @@ class OrderService {
       } catch (_) {
         return;
       }
+    }
+  }
+
+  // ─── UPDATE: Simpan & Update Hasil Pembayaran Midtrans ─────────────────────
+  static Future<void> updateMidtransPaymentData({
+    required String orderId,
+    required bool isPaid,
+    String? snapToken,
+    String? paymentType,
+    String? transactionStatus,
+    AdminOrderStatus? newStatus,
+  }) async {
+    try {
+      final cleanId = orderId.replaceAll('#', '').trim();
+      final updateData = <String, dynamic>{
+        'is_paid': isPaid,
+        'updated_at': DateTime.now().toIso8601String(),
+      };
+      if (snapToken != null) {
+        updateData['midtrans_snap_token'] = snapToken;
+      }
+      if (paymentType != null) {
+        updateData['midtrans_payment_type'] = paymentType;
+        updateData['payment_channel'] = paymentType;
+      }
+      if (transactionStatus != null) {
+        updateData['midtrans_transaction_status'] = transactionStatus;
+      }
+      if (newStatus != null) {
+        updateData['status'] = AdminOrderDetail.statusToString(newStatus);
+      } else if (isPaid) {
+        updateData['status'] = 'diproses';
+      }
+
+      await _client.from('orders').update(updateData).eq('id', cleanId);
+    } catch (e) {
+      debugPrint('Error updating midtrans payment data: $e');
     }
   }
 

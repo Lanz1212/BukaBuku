@@ -2,22 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
-import '../models/order_simulation_flow.dart';
+import '../models/order_model.dart';
 
-/// Card showing order number with copy button, purchase date, item quantity,
-/// itemized list, and total payment.
+/// Card showing real order number with copy button, purchase date, item quantity,
+/// itemized list from Supabase, and real total payment.
 class OrderSuccessSummaryCard extends StatefulWidget {
-  final String orderId;
-  final String purchaseDate;
-  final String itemCountLabel;
-  final OrderSimulationFlow flow;
+  final OrderModel order;
 
   const OrderSuccessSummaryCard({
     super.key,
-    this.orderId = '#ORD00125',
-    this.purchaseDate = '12 Mei 2024',
-    this.itemCountLabel = '2 Buku Fisik',
-    required this.flow,
+    required this.order,
   });
 
   @override
@@ -28,26 +22,12 @@ class OrderSuccessSummaryCard extends StatefulWidget {
 class _OrderSuccessSummaryCardState extends State<OrderSuccessSummaryCard> {
   bool _isCopied = false;
 
-  String _formatRupiah(int amount) {
-    final str = amount.toString();
-    final buffer = StringBuffer();
-    int count = 0;
-    for (int i = str.length - 1; i >= 0; i--) {
-      buffer.write(str[i]);
-      count++;
-      if (count % 3 == 0 && i > 0) {
-        buffer.write('.');
-      }
-    }
-    return 'Rp${buffer.toString().split('').reversed.join('')}';
-  }
-
   void _copyOrderId() {
-    Clipboard.setData(ClipboardData(text: widget.orderId));
+    Clipboard.setData(ClipboardData(text: widget.order.id));
     setState(() => _isCopied = true);
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('Nomor Pesanan ${widget.orderId} disalin ke clipboard!'),
+        content: Text('Nomor Pesanan ${widget.order.id} disalin ke clipboard!'),
         backgroundColor: AppColors.primaryContainer,
         behavior: SnackBarBehavior.floating,
         duration: const Duration(seconds: 2),
@@ -61,6 +41,11 @@ class _OrderSuccessSummaryCardState extends State<OrderSuccessSummaryCard> {
 
   @override
   Widget build(BuildContext context) {
+    final order = widget.order;
+    final purchaseDate = order.orderDateExact.isNotEmpty
+        ? order.orderDateExact
+        : order.dateTimeStr;
+
     return Container(
       decoration: BoxDecoration(
         color: AppColors.surfaceContainerLowest,
@@ -102,7 +87,7 @@ class _OrderSuccessSummaryCardState extends State<OrderSuccessSummaryCard> {
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      widget.orderId,
+                      order.id,
                       style: AppTypography.titleMd.copyWith(
                         color: AppColors.primary,
                         fontWeight: FontWeight.w700,
@@ -166,7 +151,7 @@ class _OrderSuccessSummaryCardState extends State<OrderSuccessSummaryCard> {
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      widget.purchaseDate,
+                      purchaseDate,
                       style: AppTypography.labelMd.copyWith(
                         color: AppColors.onSurface,
                         fontWeight: FontWeight.w600,
@@ -187,7 +172,7 @@ class _OrderSuccessSummaryCardState extends State<OrderSuccessSummaryCard> {
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      widget.itemCountLabel,
+                      order.summaryItemCountLabel,
                       style: AppTypography.labelMd.copyWith(
                         color: AppColors.onSurface,
                         fontWeight: FontWeight.w600,
@@ -203,17 +188,43 @@ class _OrderSuccessSummaryCardState extends State<OrderSuccessSummaryCard> {
           const Divider(height: 1, color: AppColors.surfaceContainer),
           const SizedBox(height: 12),
 
-          // Items List
-          _buildItemRow('1x Atomic Habits (James Clear)', 'Rp108.000'),
-          const SizedBox(height: 8),
-          _buildItemRow('1x Filosofi Teras (Henry M.)', 'Rp61.000'),
-
-          if (widget.flow.hasDeliveryFee) ...[
-            const SizedBox(height: 8),
-            _buildItemRow('Ongkos Kirim Kurir Toko', 'Rp12.000'),
+          // Real Items List from Database
+          if (order.items.isNotEmpty) ...[
+            ...order.items.map(
+              (item) => Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: _buildItemRow(
+                  '${item.quantity}x ${item.title}${item.author.isNotEmpty ? " (${item.author})" : ""}',
+                  item.subtotal,
+                ),
+              ),
+            ),
+          ] else ...[
+            Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: _buildItemRow(order.summaryTitle, order.subtotal),
+            ),
           ],
 
-          const SizedBox(height: 12),
+          if (order.deliveryType == DeliveryType.delivery) ...[
+            Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: _buildItemRow(
+                'Ongkos Kirim Kurir Toko',
+                order.shippingCost,
+              ),
+            ),
+          ],
+
+          Padding(
+            padding: const EdgeInsets.only(bottom: 8),
+            child: _buildItemRow(
+              'Biaya Layanan',
+              order.serviceFee,
+            ),
+          ),
+
+          const SizedBox(height: 4),
           const Divider(height: 1, color: AppColors.surfaceContainer),
           const SizedBox(height: 12),
 
@@ -228,18 +239,12 @@ class _OrderSuccessSummaryCardState extends State<OrderSuccessSummaryCard> {
                   fontWeight: FontWeight.w700,
                 ),
               ),
-              AnimatedSwitcher(
-                duration: const Duration(milliseconds: 250),
-                transitionBuilder: (child, animation) =>
-                    FadeTransition(opacity: animation, child: child),
-                child: Text(
-                  _formatRupiah(widget.flow.totalAmount),
-                  key: ValueKey(widget.flow.totalAmount),
-                  style: AppTypography.titleMd.copyWith(
-                    color: AppColors.primary,
-                    fontWeight: FontWeight.w800,
-                    fontSize: 17,
-                  ),
+              Text(
+                order.totalAmount,
+                style: AppTypography.titleMd.copyWith(
+                  color: AppColors.primary,
+                  fontWeight: FontWeight.w800,
+                  fontSize: 17,
                 ),
               ),
             ],

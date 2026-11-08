@@ -10,7 +10,6 @@ import '../widgets/qris_code_card.dart';
 import '../widgets/qris_countdown_banner.dart';
 import '../widgets/qris_guide_accordion.dart';
 import '../widgets/qris_order_header_card.dart';
-import '../widgets/qris_simulation_bar.dart';
 import '../widgets/qris_status_views.dart';
 import 'payment_success_screen.dart';
 import '../widgets/payment_success_bento_card.dart';
@@ -145,18 +144,6 @@ class _QrisPaymentScreenState extends State<QrisPaymentScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const SizedBox(height: 12),
-
-              // 1. Simulation Mode Switcher Bar
-              QrisSimulationBar(
-                currentStatus: _currentStatus,
-                onStatusChanged: (status) {
-                  setState(() {
-                    _currentStatus = status;
-                  });
-                },
-              ),
-
               const SizedBox(height: 12),
 
               // 2. Order Summary Header Card (#ORD00125 & Rp181.000)

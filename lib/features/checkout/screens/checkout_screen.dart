@@ -20,9 +20,8 @@ import '../widgets/checkout_payment_summary.dart';
 import '../widgets/checkout_store_pickup_card.dart';
 import '../../order/screens/order_success_screen.dart';
 import '../../order/models/order_simulation_flow.dart';
-import '../../payment/screens/payment_method_screen.dart';
-import '../../payment/screens/qris_payment_screen.dart';
-import '../../payment/models/payment_method_item.dart';
+import '../../payment/screens/midtrans_snap_screen.dart';
+import '../../../core/services/midtrans_service.dart';
 
 /// Checkout Screen for Toko Buku Budi
 /// Follows DESIGN.md, AppColors, AppTypography, and Stitch Toko Buku Budi Mobile UI.
@@ -44,6 +43,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   StoreInfo _storeInfo = const StoreInfo();
   PaymentMethodOption _selectedPayment = PaymentMethodOption.allOptions.first;
   String? _userId;
+  String? _userEmail;
   bool _isSubmitting = false;
 
   @override
@@ -79,6 +79,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       if (profile != null && mounted) {
         final fullName = (profile['full_name'] as String?)?.trim();
         final phone = (profile['phone'] as String?)?.trim();
+        final email = (profile['email'] as String?)?.trim();
         final rawAddresses = (profile['addresses'] as String?)?.trim();
 
         String resolvedAddress = _deliveryAddress.address;
@@ -103,6 +104,9 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
 
         setState(() {
           _userId = profile['id'] as String?;
+          _userEmail = (email != null && email.isNotEmpty)
+              ? email
+              : AuthService.currentUser?.email;
           _deliveryAddress = DeliveryAddress(
             recipientName: (fullName != null && fullName.isNotEmpty)
                 ? fullName
@@ -137,10 +141,14 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       if (defaultProfile != null && mounted) {
         final fullName = (defaultProfile['full_name'] as String?)?.trim();
         final phone = (defaultProfile['phone'] as String?)?.trim();
+        final email = (defaultProfile['email'] as String?)?.trim();
         final addresses = (defaultProfile['addresses'] as String?)?.trim();
 
         setState(() {
           _userId = defaultProfile['id'] as String?;
+          _userEmail = (email != null && email.isNotEmpty)
+              ? email
+              : AuthService.currentUser?.email;
           _deliveryAddress = DeliveryAddress(
             recipientName: fullName ?? 'Budi Santoso',
             phone: phone ?? '081234567890',
@@ -269,26 +277,72 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     );
   }
 
-  void _openPaymentMethodScreen() async {
-    final result = await Navigator.of(context).push<PaymentMethodItem>(
-      MaterialPageRoute(
-        builder: (context) => PaymentMethodScreen(
-          orderId: '#ORD00125',
-          totalAmount: _totalPayment,
-          bookCount: _totalBookCount,
-          initialSelectedId: _selectedPayment.id,
+  void _openPaymentMethodScreen() {
+    // Dengan 2 pilihan metode (Midtrans & Kasir), pemilihan langsung dilakukan di kartu checkout
+  }
+
+  void _showMidtransSetupHelpDialog(String errorMessage, String orderId) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: Colors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Row(
+          children: [
+            const Icon(Icons.error_outline, color: AppColors.error),
+            const SizedBox(width: 8),
+            Text(
+              'Gagal Membuka Midtrans',
+              style: AppTypography.titleMd.copyWith(fontWeight: FontWeight.w700),
+            ),
+          ],
         ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Pesanan #$orderId tercatat dengan status Menunggu Pembayaran, namun halaman Midtrans gagal dimuat.',
+              style: AppTypography.bodyMd.copyWith(fontSize: 13),
+            ),
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: AppColors.surfaceContainerLow,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Text(
+                'Detail kendala:\n$errorMessage',
+                style: AppTypography.caption.copyWith(
+                  color: AppColors.onSurfaceVariant,
+                  fontSize: 11.5,
+                ),
+                maxLines: 4,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: const Text('Tutup', style: TextStyle(color: AppColors.onSurfaceVariant)),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.of(ctx).pop();
+              _submitOrder();
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primaryContainer,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Coba Lagi'),
+          ),
+        ],
       ),
     );
-    if (result != null) {
-      final matching = PaymentMethodOption.allOptions.firstWhere(
-        (o) => o.id == result.id,
-        orElse: () => PaymentMethodOption.allOptions.first,
-      );
-      setState(() {
-        _selectedPayment = matching;
-      });
-    }
   }
 
   Future<void> _submitOrder() async {
@@ -311,15 +365,14 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       final isDelivery = _fulfillmentMode == FulfillmentMode.delivery;
       final deliveryType =
           isDelivery ? 'Kurir Toko (Delivery)' : 'Ambil di Toko (Pickup)';
-      final paymentMethod = _selectedPayment.title;
-      final isQris = _selectedPayment.id == 'qris';
       final isCash = _selectedPayment.id == 'cash';
+      final paymentMethod = isCash ? 'Bayar di Kasir' : 'Midtrans Payment Gateway';
 
       final pickupCode = isDelivery
           ? null
           : 'PU-${(DateTime.now().millisecondsSinceEpoch % 1000).toString().padLeft(3, '0')}-${(DateTime.now().second * 17 % 1000).toString().padLeft(3, '0')}';
 
-      // Simpan pesanan ke database Supabase
+      // 1. Simpan pesanan ke database Supabase
       final createdOrder = await OrderService.createOrder(
         userId: _userId,
         customerName: _deliveryAddress.recipientName,
@@ -341,7 +394,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
         items: itemsData,
       );
 
-      // Clean up checked out items from user's Supabase cart
+      // Bersihkan keranjang belanja
       try {
         final cartIds = widget.checkoutItems
             .map((i) => i.id)
@@ -354,36 +407,144 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
 
       if (!mounted) return;
 
-      if (isQris) {
+      // ─── KASUS 1: BAYAR DI KASIR ──────────────────────────────────
+      if (isCash) {
+        // Langsung berhasil dibuat dan menuju ke konfirmasi pesanan
         Navigator.of(context).push(
           MaterialPageRoute(
-            builder: (context) => QrisPaymentScreen(
+            builder: (context) => OrderSuccessScreen(
               orderId: '#${createdOrder.orderId}',
-              totalAmount: _totalPayment,
-              customerName: _deliveryAddress.recipientName,
-              customerPhone: _deliveryAddress.phone,
-              deliveryAddress: _deliveryAddress.address,
-              orderedBooks: createdOrder.books,
+              initialFlow: OrderSimulationFlow.pickupCash,
             ),
           ),
         );
         return;
       }
 
-      final initialFlow = isDelivery
-          ? OrderSimulationFlow.delivery
-          : (isCash
-              ? OrderSimulationFlow.pickupCash
-              : OrderSimulationFlow.pickupOnline);
+      // ─── KASUS 2: BAYAR VIA MIDTRANS ──────────────────────────────
+      try {
+        // Bangun item_details untuk Midtrans — gross_amount HARUS sama dengan sum(item_details)
+        final midtransItems = List<Map<String, dynamic>>.from(itemsData);
 
-      Navigator.of(context).push(
-        MaterialPageRoute(
-          builder: (context) => OrderSuccessScreen(
-            orderId: '#${createdOrder.orderId}',
-            initialFlow: initialFlow,
+        // Tambahkan ongkos kirim sebagai item jika ada
+        if (_shippingFee > 0) {
+          midtransItems.add({
+            'book_id': 'SHIPPING',
+            'title': 'Ongkos Kirim (Kurir Toko)',
+            'quantity': 1,
+            'price': _shippingFee,
+          });
+        }
+
+        // Tambahkan biaya layanan sebagai item jika ada
+        if (_serviceFee > 0) {
+          midtransItems.add({
+            'book_id': 'SERVICE_FEE',
+            'title': 'Biaya Layanan',
+            'quantity': 1,
+            'price': _serviceFee,
+          });
+        }
+
+        // Request Snap Token via Edge Function / Midtrans API
+        final snapResponse = await MidtransService.createSnapToken(
+          orderId: createdOrder.orderId,
+          amount: _totalPayment,
+          customerName: _deliveryAddress.recipientName,
+          customerEmail: _userEmail ?? AuthService.currentUser?.email,
+          customerPhone: _deliveryAddress.phone,
+          items: midtransItems,
+        );
+
+        if (!mounted) return;
+
+        // Buka WebView Snap Midtrans
+        final paymentResult = await Navigator.of(context).push<MidtransPaymentResult>(
+          MaterialPageRoute(
+            builder: (context) => MidtransSnapScreen(
+              snapToken: snapResponse.token,
+              redirectUrl: snapResponse.redirectUrl,
+              orderId: createdOrder.orderId,
+              totalAmount: _totalPayment,
+            ),
           ),
-        ),
-      );
+        );
+
+        if (!mounted) return;
+
+        if (paymentResult == MidtransPaymentResult.success) {
+          // Pembayaran berhasil! Update status pesanan di Supabase
+          await OrderService.updateMidtransPaymentData(
+            orderId: createdOrder.orderId,
+            isPaid: true,
+            snapToken: snapResponse.token,
+            transactionStatus: 'settlement',
+            newStatus: AdminOrderStatus.diproses,
+          );
+
+          if (!mounted) return;
+
+          final successFlow = isDelivery
+              ? OrderSimulationFlow.delivery
+              : OrderSimulationFlow.pickupOnline;
+
+          Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (context) => OrderSuccessScreen(
+                orderId: '#${createdOrder.orderId}',
+                initialFlow: successFlow,
+              ),
+            ),
+          );
+        } else if (paymentResult == MidtransPaymentResult.pending) {
+          // Pembayaran pending (misal menunggu transfer VA)
+          await OrderService.updateMidtransPaymentData(
+            orderId: createdOrder.orderId,
+            isPaid: false,
+            snapToken: snapResponse.token,
+            transactionStatus: 'pending',
+          );
+
+          if (!mounted) return;
+
+          final successFlow = isDelivery
+              ? OrderSimulationFlow.delivery
+              : OrderSimulationFlow.pickupOnline;
+
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Pesanan dibuat. Menunggu penyelesaian pembayaran Midtrans.'),
+              backgroundColor: AppColors.secondary,
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+
+          Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (context) => OrderSuccessScreen(
+                orderId: '#${createdOrder.orderId}',
+                initialFlow: successFlow,
+              ),
+            ),
+          );
+        } else {
+          // Dibatalkan / ditutup oleh pembaca
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                'Pembayaran belum diselesaikan. Anda dapat melihat pesanan #${createdOrder.orderId} di menu Pesanan Saya.',
+              ),
+              backgroundColor: AppColors.primaryContainer,
+              behavior: SnackBarBehavior.floating,
+              duration: const Duration(seconds: 4),
+            ),
+          );
+        }
+      } catch (midtransError) {
+        debugPrint('Midtrans Token Error: $midtransError');
+        if (!mounted) return;
+        _showMidtransSetupHelpDialog(midtransError.toString(), createdOrder.orderId);
+      }
     } catch (e) {
       debugPrint('Error creating order in Supabase: $e');
       if (mounted) {

@@ -1,55 +1,123 @@
 import 'package:flutter/material.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
+import '../../../core/services/order_service.dart';
+import '../../order/models/order_model.dart';
+import '../../order/screens/order_detail_screen.dart';
 import '../widgets/payment_success_bento_card.dart';
 import '../widgets/payment_success_hero.dart';
 import '../widgets/payment_success_wa_banner.dart';
 
 /// Halaman Pembayaran Berhasil (Status Transaksi)
-/// Follows DESIGN.md, AppColors, AppTypography, and Stitch screen e2f28554245c400da3bb9e5e1aea0ad0.
-class PaymentSuccessScreen extends StatelessWidget {
+/// Menampilkan data pesanan riil dari Supabase database, bebas dari data dummy.
+class PaymentSuccessScreen extends StatefulWidget {
   final String orderId;
-  final int totalAmount;
-  final String paymentTime;
-  final String paymentMethod;
-  final List<PaymentSuccessItem> books;
-  final String deliveryTitle;
-  final String deliveryAddress;
-  final String customerPhone;
+  final int? totalAmount;
+  final String? paymentTime;
+  final String? paymentMethod;
+  final List<PaymentSuccessItem>? books;
+  final String? deliveryTitle;
+  final String? deliveryAddress;
+  final String? customerPhone;
   final VoidCallback? onViewOrderPressed;
   final VoidCallback? onBackToHomePressed;
 
   const PaymentSuccessScreen({
     super.key,
-    this.orderId = '#ORD00125',
-    this.totalAmount = 181000,
-    this.paymentTime = '12 Mei 2024, 14:32 WIB',
-    this.paymentMethod = 'QRIS (GoPay/BCA)',
-    this.books = const [
-      PaymentSuccessItem(
-        title: 'Atomic Habits',
-        subtitle: 'James Clear • 1x Hardcover',
-        price: 'Rp108.000',
-        imageUrl:
-            'https://lh3.googleusercontent.com/aida-public/AB6AXuDuro3027OrnxnzHhMWNNhxlL6yQ7uRMP4gN56vlkj8gMZdzZ7-U7J-AiMpN9z6agF63Q5IceDcr-ELrDh46dR-dg4sNIRfuvNTfmG0GDGb1H-GjJyb3nBFfSVJREh0B_fT9xfanJsispJlPm4rdAP3oZObX-VkWht5KFxVjOdeqFAeGSlto5ORp0V83N93AtcA-drkc4EIiM7dyJbCUw7h8pSJesulR-EIhER1dmhq5uEeNEB6zrFljQ',
-      ),
-      PaymentSuccessItem(
-        title: 'Filosofi Teras',
-        subtitle: 'Henry Manampiring • 1x Softcover',
-        price: 'Rp73.000',
-        imageUrl:
-            'https://lh3.googleusercontent.com/aida-public/AB6AXuAgMcYIiXw_LcINzOt10Cy-DAbM_FwupVBFcX6ri784BXOkvN1IGR4WjYyuCIDZx6eMRPwmygUvprleq8iia-an8eMjCD6WrDBL9QT5YuUUU9OgzF9p67zeZod1FsUWNcrhXGTK1doxZMRyYpvf1fOgRUrY6D87HxD__vJq4kqCq9lAVY0tM-o9hb6QfgiguyYqQlNN0mvC6U8FQXV6Oy2AAo4-SsE7AQI8b8NMSsZjMpKn9ySqndC-QA',
-      ),
-    ],
-    this.deliveryTitle = 'Kurir Antar ke Rumah',
-    this.deliveryAddress = 'Jl. Cikini Raya No. 42, Menteng, Jakarta Pusat',
-    this.customerPhone = '0812-3456-7890',
+    required this.orderId,
+    this.totalAmount,
+    this.paymentTime,
+    this.paymentMethod,
+    this.books,
+    this.deliveryTitle,
+    this.deliveryAddress,
+    this.customerPhone,
     this.onViewOrderPressed,
     this.onBackToHomePressed,
   });
 
   @override
+  State<PaymentSuccessScreen> createState() => _PaymentSuccessScreenState();
+}
+
+class _PaymentSuccessScreenState extends State<PaymentSuccessScreen> {
+  OrderModel? _order;
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadRealOrder();
+  }
+
+  Future<void> _loadRealOrder() async {
+    try {
+      final cleanId = widget.orderId.replaceAll('#', '').trim();
+      final order = await OrderService.fetchOrderByIdForUser(cleanId);
+      if (mounted) {
+        setState(() {
+          _order = order;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      debugPrint('Error loading real order in PaymentSuccessScreen: $e');
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
+    if (_isLoading) {
+      return const Scaffold(
+        backgroundColor: AppColors.surface,
+        body: Center(
+          child: CircularProgressIndicator(color: AppColors.primaryContainer),
+        ),
+      );
+    }
+
+    final order = _order;
+    final isDelivery = order != null
+        ? (order.deliveryType == DeliveryType.delivery)
+        : (widget.deliveryTitle?.toLowerCase().contains('kurir') ?? false);
+
+    final resolvedAmount = order?.totalAmountValue ?? widget.totalAmount ?? 0;
+    final resolvedTime = order?.orderDateExact.isNotEmpty == true
+        ? order!.orderDateExact
+        : (widget.paymentTime ?? 'Hari ini');
+    final resolvedMethod = order?.paymentMethod ?? widget.paymentMethod ?? 'Midtrans Payment';
+    final resolvedAddress = order?.customerAddress ??
+        order?.branchAddress ??
+        widget.deliveryAddress ??
+        (isDelivery ? 'Alamat pengantaran pembaca' : 'Gerai Utama Buka Buku Cikini');
+    final resolvedPhone = order?.customerPhone ?? widget.customerPhone ?? '0812-3456-7890';
+
+    List<PaymentSuccessItem> displayBooks = [];
+    if (order != null && order.items.isNotEmpty) {
+      displayBooks = order.items.map((item) {
+        return PaymentSuccessItem(
+          title: item.title,
+          subtitle: '${item.author.isNotEmpty ? "${item.author} • " : ""}${item.quantity}x',
+          price: item.subtotal,
+          imageUrl: item.coverUrl,
+        );
+      }).toList();
+    } else if (widget.books != null && widget.books!.isNotEmpty) {
+      displayBooks = widget.books!;
+    } else if (order != null) {
+      displayBooks = [
+        PaymentSuccessItem(
+          title: order.summaryTitle,
+          subtitle: order.summarySubtitle,
+          price: order.totalAmount,
+          imageUrl: order.summaryCoverUrl,
+        ),
+      ];
+    }
+
     return Scaffold(
       backgroundColor: AppColors.surface,
       body: SafeArea(
@@ -83,8 +151,8 @@ class PaymentSuccessScreen extends StatelessWidget {
                   ),
                   InkWell(
                     onTap: () {
-                      if (onBackToHomePressed != null) {
-                        onBackToHomePressed!();
+                      if (widget.onBackToHomePressed != null) {
+                        widget.onBackToHomePressed!();
                       } else {
                         Navigator.of(context).popUntil((route) => route.isFirst);
                       }
@@ -122,21 +190,22 @@ class PaymentSuccessScreen extends StatelessWidget {
 
                     // Main Bento Transaction Summary Card
                     PaymentSuccessBentoCard(
-                      totalAmount: totalAmount,
-                      orderId: orderId,
-                      paymentTime: paymentTime,
-                      paymentMethod: paymentMethod,
-                      books: books,
-                      deliveryTitle: deliveryTitle,
-                      deliveryAddress: deliveryAddress,
+                      totalAmount: resolvedAmount,
+                      orderId: widget.orderId,
+                      paymentTime: resolvedTime,
+                      paymentMethod: resolvedMethod,
+                      books: displayBooks,
+                      deliveryTitle: isDelivery ? 'Kurir Antar ke Rumah' : 'Ambil di Toko',
+                      deliveryAddress: resolvedAddress,
                     ),
 
                     const SizedBox(height: 12),
 
                     // WhatsApp Delivery Notice Banner
-                    PaymentSuccessWaBanner(
-                      phoneNumber: customerPhone,
-                    ),
+                    if (resolvedPhone.isNotEmpty && resolvedPhone != '-')
+                      PaymentSuccessWaBanner(
+                        phoneNumber: resolvedPhone,
+                      ),
 
                     const SizedBox(height: 20),
 
@@ -146,20 +215,17 @@ class PaymentSuccessScreen extends StatelessWidget {
                       height: 50,
                       child: ElevatedButton(
                         onPressed: () {
-                          if (onViewOrderPressed != null) {
-                            onViewOrderPressed!();
-                          } else {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text(
-                                    'Membuka Detail Pesanan $orderId...'),
-                                backgroundColor: AppColors.primaryContainer,
-                                behavior: SnackBarBehavior.floating,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(10),
-                                ),
+                          if (widget.onViewOrderPressed != null) {
+                            widget.onViewOrderPressed!();
+                          } else if (order != null) {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => OrderDetailScreen(order: order),
                               ),
                             );
+                          } else {
+                            Navigator.of(context).popUntil((route) => route.isFirst);
                           }
                         },
                         style: ElevatedButton.styleFrom(
@@ -198,8 +264,8 @@ class PaymentSuccessScreen extends StatelessWidget {
                       height: 50,
                       child: ElevatedButton(
                         onPressed: () {
-                          if (onBackToHomePressed != null) {
-                            onBackToHomePressed!();
+                          if (widget.onBackToHomePressed != null) {
+                            widget.onBackToHomePressed!();
                           } else {
                             Navigator.of(context)
                                 .popUntil((route) => route.isFirst);

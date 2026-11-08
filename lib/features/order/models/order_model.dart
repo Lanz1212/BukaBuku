@@ -82,6 +82,8 @@ class OrderModel {
   final int totalAmountValue;
   final String paymentMethod;
   final String customerName;
+  final String? customerAddress;
+  final String? customerPhone;
   final String qrCode;
   final String qrCodeDetail;
   final String validUntil;
@@ -123,6 +125,8 @@ class OrderModel {
     required this.totalAmountValue,
     this.paymentMethod = 'QRIS BCA',
     this.customerName = 'Budi Darmawan',
+    this.customerAddress,
+    this.customerPhone,
     this.qrCode = 'PKP-880-CJK',
     this.qrCodeDetail = 'ORD-00125-CKN',
     this.validUntil = '19 Mei 2024, 21:00 WIB',

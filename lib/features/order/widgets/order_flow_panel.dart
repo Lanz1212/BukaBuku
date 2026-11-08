@@ -1,61 +1,58 @@
 import 'package:flutter/material.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
-import '../models/order_simulation_flow.dart';
+import '../models/order_model.dart';
 import 'order_cashier_qr_card.dart';
 
-/// Dynamic panel rendering the active simulation flow details
+/// Dynamic panel rendering the active real order fulfillment details
 /// (Antar Rumah, Ambil Online, or Bayar Kasir).
 class OrderFlowPanel extends StatelessWidget {
-  final OrderSimulationFlow flow;
-  final String orderId;
+  final OrderModel order;
 
   const OrderFlowPanel({
     super.key,
-    required this.flow,
-    this.orderId = '#ORD00125',
+    required this.order,
   });
 
   @override
   Widget build(BuildContext context) {
-    return AnimatedSwitcher(
-      duration: const Duration(milliseconds: 250),
-      child: Container(
-        key: ValueKey(flow),
-        decoration: BoxDecoration(
-          color: AppColors.surfaceContainerLowest,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: AppColors.outlineVariant.withValues(alpha: 0.35),
-            width: 1,
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: AppColors.primaryContainer.withValues(alpha: 0.05),
-              blurRadius: 16,
-              offset: const Offset(0, 4),
-            ),
-          ],
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.surfaceContainerLowest,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: AppColors.outlineVariant.withValues(alpha: 0.35),
+          width: 1,
         ),
-        padding: const EdgeInsets.all(16),
-        child: _buildFlowContent(),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.primaryContainer.withValues(alpha: 0.05),
+            blurRadius: 16,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
+      padding: const EdgeInsets.all(16),
+      child: _buildFlowContent(),
     );
   }
 
   Widget _buildFlowContent() {
-    switch (flow) {
-      case OrderSimulationFlow.delivery:
-        return _buildDeliveryFlow();
-      case OrderSimulationFlow.pickupOnline:
-        return _buildPickupOnlineFlow();
-      case OrderSimulationFlow.pickupCash:
-        return _buildPickupCashFlow();
+    if (order.deliveryType == DeliveryType.delivery) {
+      return _buildDeliveryFlow();
+    } else if (order.isPaid) {
+      return _buildPickupOnlineFlow();
+    } else {
+      return _buildPickupCashFlow();
     }
   }
 
   /// 1. Antar Rumah Flow
   Widget _buildDeliveryFlow() {
+    final address = order.customerAddress?.isNotEmpty == true
+        ? order.customerAddress!
+        : 'Alamat pengantaran pembaca';
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -81,19 +78,24 @@ class OrderFlowPanel extends StatelessWidget {
         const SizedBox(height: 8),
         _buildInfoBox(
           'Status Pembayaran',
-          'Lunas (QRIS)',
-          statusColor: AppColors.success,
-          statusIcon: Icons.check_circle,
+          order.isPaid ? 'Lunas (${order.paymentMethod})' : 'Menunggu Pembayaran',
+          statusColor: order.isPaid ? AppColors.success : AppColors.secondary,
+          statusIcon: order.isPaid ? Icons.check_circle : Icons.pending_outlined,
         ),
         const SizedBox(height: 8),
         _buildInfoBox(
-          'Alamat Penerima',
-          'Jl. Cikini Raya No. 42, Menteng, Jakarta Pusat',
+          'Penerima',
+          '${order.customerName}${order.customerPhone != null && order.customerPhone!.isNotEmpty ? " • ${order.customerPhone}" : ""}',
+        ),
+        const SizedBox(height: 8),
+        _buildInfoBox(
+          'Alamat Tujuan',
+          address,
         ),
         const SizedBox(height: 8),
         _buildInfoBox(
           'Estimasi Sampai',
-          'Besok, 13 Mei 2024',
+          'Besok (Kurir Toko Buka Buku)',
           valueColor: AppColors.primary,
           isBoldValue: true,
         ),
@@ -101,8 +103,14 @@ class OrderFlowPanel extends StatelessWidget {
     );
   }
 
-  /// 2. Ambil Online Flow
+  /// 2. Ambil di Toko - Pembayaran Online Sudah Lunas
   Widget _buildPickupOnlineFlow() {
+    final location = order.pickupLocation?.isNotEmpty == true
+        ? order.pickupLocation!
+        : (order.branchName?.isNotEmpty == true
+            ? order.branchName!
+            : 'Gerai Utama Buka Buku Cikini');
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -128,14 +136,14 @@ class OrderFlowPanel extends StatelessWidget {
         const SizedBox(height: 8),
         _buildInfoBox(
           'Status Bayar',
-          'Lunas (Transfer)',
+          'Lunas (${order.paymentMethod})',
           statusColor: AppColors.success,
           statusIcon: Icons.check_circle,
         ),
         const SizedBox(height: 8),
         _buildInfoBox(
           'Lokasi Toko',
-          'Gerai Utama Buka Buku\n(Pojok Baca & Rak Sastra)',
+          location,
         ),
         const SizedBox(height: 12),
         Container(
@@ -163,12 +171,11 @@ class OrderFlowPanel extends StatelessWidget {
                     children: [
                       const TextSpan(text: 'Tunjukkan QR Code atau ID '),
                       TextSpan(
-                        text: orderId,
+                        text: order.id,
                         style: const TextStyle(fontWeight: FontWeight.w700),
                       ),
                       const TextSpan(
-                        text:
-                            ' ke meja kasir untuk pengambilan buku Anda.',
+                        text: ' ke meja kasir untuk pengambilan buku Anda.',
                       ),
                     ],
                   ),
@@ -179,7 +186,7 @@ class OrderFlowPanel extends StatelessWidget {
         ),
         const SizedBox(height: 14),
         OrderCashierQrCard(
-          qrCodeText: orderId,
+          qrCodeText: order.qrCode.isNotEmpty ? order.qrCode : order.id,
           cashierInstructions:
               'Tunjukkan QR Code ini kepada kasir saat mengambil buku di toko',
         ),
@@ -187,8 +194,12 @@ class OrderFlowPanel extends StatelessWidget {
     );
   }
 
-  /// 3. Bayar Kasir Flow (Default active in screenshot)
+  /// 3. Ambil di Toko - Bayar di Kasir
   Widget _buildPickupCashFlow() {
+    final location = order.pickupLocation?.isNotEmpty == true
+        ? order.pickupLocation!
+        : 'Gerai Utama Buka Buku (Meja Kasir 1)';
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -221,11 +232,11 @@ class OrderFlowPanel extends StatelessWidget {
         const SizedBox(height: 8),
         _buildInfoBox(
           'Lokasi Kasir',
-          'Gerai Utama Buka Buku (Meja Kasir 1)',
+          location,
         ),
         const SizedBox(height: 12),
 
-        // Notice Box
+        // Notice Box with real amount
         Container(
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
@@ -246,7 +257,7 @@ class OrderFlowPanel extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Siapkan Uang Pas Rp169.000',
+                      'Siapkan Uang Pas ${order.totalAmount}',
                       style: AppTypography.labelMd.copyWith(
                         color: AppColors.onSecondaryFixed,
                         fontWeight: FontWeight.w700,
@@ -269,11 +280,9 @@ class OrderFlowPanel extends StatelessWidget {
 
         const SizedBox(height: 14),
 
-        // Cashier QR Code Box with actual orderId
+        // Cashier QR Code Box with actual orderId/qrCode
         OrderCashierQrCard(
-          qrCodeText: (orderId == '#ORD00125' || orderId == 'ORD00125')
-              ? 'ORD-00125-CKN'
-              : orderId,
+          qrCodeText: order.qrCode.isNotEmpty ? order.qrCode : order.id,
           cashierInstructions:
               'Tunjukkan QR Code ini kepada kasir saat mengambil pesanan & membayar',
         ),
