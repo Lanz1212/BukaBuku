@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/services/book_service.dart';
+import '../../../../core/services/cashier_log_service.dart';
 import '../models/admin_stock_item.dart';
 import '../widgets/stock_adjust_modal.dart';
 import '../widgets/stock_book_card.dart';
@@ -122,6 +123,18 @@ class _StockManagementScreenState extends State<StockManagementScreen> {
             newStock: updatedItem.currentStock,
             type: type,
             notes: notes,
+          );
+
+          final modeLabel = type == 'tambah'
+              ? 'Penambahan'
+              : (type == 'kurang' ? 'Pengurangan' : 'Koreksi Fisik');
+          final notesText =
+              notes.trim().isNotEmpty ? ' (Catatan: $notes)' : '';
+          CashierLogService.recordLog(
+            action: 'Penyesuaian Stok Buku',
+            details:
+                'Mengubah stok "${savedStockItem.title}" dari ${item.currentStock} ke ${savedStockItem.currentStock} eksemplar - $modeLabel$notesText',
+            tag: 'Inventaris',
           );
 
           if (!mounted) return;

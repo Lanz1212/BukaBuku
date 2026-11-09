@@ -386,7 +386,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Paket Siap Dikirim Kurir Toko',
+                  'Paket Siap Dikirim',
                   style: AppTypography.labelLg.copyWith(
                     color: const Color(0xFF5B2C6F),
                     fontWeight: FontWeight.w700,
@@ -394,7 +394,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  'Buku telah selesai disiapkan & dikemas rapi. Menunggu kurir toko berangkat ke alamat Anda.',
+                  'Buku telah selesai disiapkan & dikemas rapi. Pesanan akan segera dikirim ke alamat Anda.',
                   style: AppTypography.caption.copyWith(
                     color: const Color(0xFF5B2C6F).withValues(alpha: 0.9),
                   ),
@@ -432,7 +432,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
               shape: BoxShape.circle,
             ),
             child: const Icon(
-              Icons.two_wheeler_rounded,
+              Icons.local_shipping_rounded,
               size: 20,
               color: AppColors.onSecondary,
             ),
@@ -443,7 +443,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Kurir Sedang Menuju Alamat Anda',
+                  'Pesanan Dalam Pengiriman',
                   style: AppTypography.labelLg.copyWith(
                     color: AppColors.onSecondaryContainer,
                     fontWeight: FontWeight.w700,
@@ -451,7 +451,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  'Kurir toko kami sedang dalam perjalanan mengantarkan paket buku Anda.',
+                  'Paket buku Anda sedang dalam proses pengiriman menuju alamat tujuan.',
                   style: AppTypography.caption.copyWith(
                     color: AppColors.onSecondaryContainer.withValues(alpha: 0.9),
                   ),
@@ -922,7 +922,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header with Courier Icon
+          // Header with Delivery Destination Info
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -936,7 +936,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Icon(
-                  Icons.two_wheeler_rounded,
+                  Icons.local_shipping_rounded,
                   size: 24,
                   color: isShipping ? AppColors.secondary : AppColors.primary,
                 ),
@@ -946,45 +946,12 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          'Pengantaran Kurir Toko',
-                          style: AppTypography.titleMd.copyWith(
-                            color: AppColors.onSurface,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 8,
-                            vertical: 3,
-                          ),
-                          decoration: BoxDecoration(
-                            color: isShipping
-                                ? AppColors.secondaryContainer
-                                : (isCompleted
-                                    ? AppColors.success.withValues(alpha: 0.12)
-                                    : const Color(0xFFE8DAEF)),
-                            borderRadius: BorderRadius.circular(9999),
-                          ),
-                          child: Text(
-                            isShipping
-                                ? 'Sedang Diantar'
-                                : (isCompleted ? 'Selesai' : 'Siap Kirim'),
-                            style: AppTypography.caption.copyWith(
-                              color: isShipping
-                                  ? AppColors.onSecondaryContainer
-                                  : (isCompleted
-                                      ? AppColors.success
-                                      : const Color(0xFF7D3C98)),
-                              fontWeight: FontWeight.w700,
-                              fontSize: 10.5,
-                            ),
-                          ),
-                        ),
-                      ],
+                    Text(
+                      'Alamat Pengantaran',
+                      style: AppTypography.titleMd.copyWith(
+                        color: AppColors.onSurface,
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
                     const SizedBox(height: 4),
                     Text(
@@ -1033,7 +1000,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
                   isCompleted
                       ? Icons.verified_rounded
                       : (isShipping
-                          ? Icons.directions_bike_rounded
+                          ? Icons.local_shipping_outlined
                           : Icons.inventory_2_outlined),
                   size: 18,
                   color: isCompleted
@@ -1048,8 +1015,8 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
                     isCompleted
                         ? 'Pesanan buku telah sampai dan diterima dengan baik. Terima kasih!'
                         : (isShipping
-                            ? 'Kurir toko kami sedang menuju ke alamat Anda. Silakan tekan tombol "Pesanan Sudah Sampai" di bawah jika buku sudah diterima.'
-                            : 'Paket buku Anda telah dikemas dan segera diberangkatkan oleh kurir toko.'),
+                            ? 'Pesanan buku sedang dalam perjalanan ke alamat Anda. Silakan tekan tombol "Pesanan Sudah Sampai" di bawah jika buku sudah diterima.'
+                            : 'Paket buku Anda telah dikemas dan segera diberangkatkan ke alamat tujuan.'),
                     style: AppTypography.caption.copyWith(
                       color: AppColors.onSurfaceVariant,
                       height: 1.35,
@@ -1357,7 +1324,9 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                 decoration: BoxDecoration(
-                  color: AppColors.surfaceContainerHigh,
+                  color: order.isPaid
+                      ? const Color(0xFFE8F5E9)
+                      : AppColors.surfaceContainerHigh,
                   borderRadius: BorderRadius.circular(9999),
                 ),
                 child: Row(
@@ -1366,16 +1335,16 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
                     Container(
                       width: 6,
                       height: 6,
-                      decoration: const BoxDecoration(
-                        color: AppColors.secondary,
+                      decoration: BoxDecoration(
+                        color: order.isPaid ? const Color(0xFF2E7D32) : AppColors.secondary,
                         shape: BoxShape.circle,
                       ),
                     ),
                     const SizedBox(width: 5),
                     Text(
-                      'QRIS Lunas',
+                      order.isPaid ? 'Lunas' : 'Belum Lunas',
                       style: AppTypography.caption.copyWith(
-                        color: AppColors.onSurface,
+                        color: order.isPaid ? const Color(0xFF2E7D32) : AppColors.onSurface,
                         fontWeight: FontWeight.w600,
                         fontSize: 11,
                       ),

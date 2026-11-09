@@ -1,23 +1,57 @@
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
+import '../../../../core/services/cashier_log_service.dart';
+import '../../../profile/models/user_profile.dart';
+import '../../../profile/services/profile_service.dart';
+import '../../../profile/screens/edit_profile_screen.dart';
 import '../widgets/admin_profile_header.dart';
-import '../widgets/admin_shift_card.dart';
 import '../widgets/admin_info_tile.dart';
 import '../widgets/admin_section_header.dart';
+import 'staff_guide_screen.dart';
+import 'cashier_log_screen.dart';
 import '../../store_settings/screens/store_settings_screen.dart';
 import '../../../auth/login_screen.dart';
 import '../../../auth/services/auth_service.dart';
 
 /// Admin Profile & System Settings Screen (Tab 4 in Admin Panel)
 /// Matches design from Stitch Toko Buku Budi Mobile UI & DESIGN.md
-class AdminProfileScreen extends StatelessWidget {
+class AdminProfileScreen extends StatefulWidget {
   final VoidCallback? onExitAdmin;
 
   const AdminProfileScreen({
     super.key,
     this.onExitAdmin,
   });
+
+  @override
+  State<AdminProfileScreen> createState() => _AdminProfileScreenState();
+}
+
+class _AdminProfileScreenState extends State<AdminProfileScreen> {
+  UserProfile? _profile;
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadProfile();
+  }
+
+  Future<void> _loadProfile() async {
+    try {
+      final profile = await ProfileService.fetchCurrentUserProfile();
+      if (!mounted) return;
+      setState(() {
+        _profile = profile;
+        _isLoading = false;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _isLoading = false);
+    }
+  }
 
   void _showNotice(BuildContext context, String message) {
     ScaffoldMessenger.of(context).showSnackBar(
@@ -44,7 +78,7 @@ class AdminProfileScreen extends StatelessWidget {
           ),
         ),
         content: Text(
-          'Apakah Anda yakin ingin mengakhiri sesi admin Buka Buku dan kembali ke mode pembeli?',
+          'Apakah Anda yakin ingin mengakhiri sesi admin Buka Buku dan kembali ke halaman login?',
           style: AppTypography.bodyMd.copyWith(
             color: AppColors.onSurfaceVariant,
           ),
@@ -63,6 +97,13 @@ class AdminProfileScreen extends StatelessWidget {
           ElevatedButton(
             onPressed: () async {
               Navigator.of(ctx).pop();
+              final adminName = _profile?.name ?? await CashierLogService.getCurrentAdminName();
+              await CashierLogService.recordLog(
+                action: 'Tutup Sesi Admin',
+                details: 'Admin $adminName keluar dari sesi aplikasi',
+                tag: 'Shift',
+              );
+              CashierLogService.clearCachedAdminName();
               await AuthService.signOut();
               if (!context.mounted) return;
               Navigator.of(context).pushAndRemoveUntil(
@@ -92,116 +133,142 @@ class AdminProfileScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 14.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          // 1. Admin Identity Card
-          AdminProfileHeader(
-            onEditProfile: () => _showNotice(context, 'Edit profil admin'),
-          ),
-          const SizedBox(height: 14),
+    final profile = _profile;
+    final name = profile?.name ?? 'Admin Toko';
+    final email = profile?.email.isNotEmpty == true ? profile!.email : 'admin@bukabuku.id';
+    final phone = profile?.phone.isNotEmpty == true ? profile!.phone : '+62 812-3456-7890';
+    final adminId = profile != null && profile.id.isNotEmpty
+        ? 'ADM-${profile.id.substring(0, math.min(6, profile.id.length)).toUpperCase()}'
+        : 'BUDI-ADM-01';
 
-          // 2. Active Store Shift & Fast Cashier Card
-          AdminShiftCard(
-            onOpenCashier: () => _showNotice(
-              context,
-              'Membuka terminal Kasir Cepat Buka Buku',
-            ),
-          ),
-          const SizedBox(height: 18),
-
-          // 3. Section: Pengaturan & Bisnis
-          const AdminSectionHeader(title: 'Pengaturan & Bisnis'),
-          _buildCardGroup(
-            children: [
-              AdminInfoTile(
-                icon: Icons.badge_outlined,
-                title: 'Akun',
-                subtitle: 'Informasi personal admin, ganti sandi & PIN kasir',
-                showDivider: true,
-                onTap: () => _showNotice(context, 'Buka pengaturan akun admin'),
-              ),
-              AdminInfoTile(
-                icon: Icons.storefront_outlined,
-                title: 'Pengaturan Toko',
-                titleBadge: 'Buka Buku',
-                subtitle: 'Identitas toko, jam buka, kontak WhatsApp resmi',
-                showDivider: true,
-                onTap: () {
-                  Navigator.push(
+    return RefreshIndicator(
+      onRefresh: _loadProfile,
+      child: SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 14.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            if (_isLoading) ...[
+              const LinearProgressIndicator(minHeight: 2),
+              const SizedBox(height: 10),
+            ],
+            // 1. Admin Identity Card
+            AdminProfileHeader(
+              name: name,
+              email: email,
+              phone: phone,
+              adminId: adminId,
+              role: 'Staff Admin / Kasir Toko',
+              onEditProfile: () async {
+                if (profile != null) {
+                  await Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => const StoreSettingsScreen(),
+                      builder: (_) => EditProfileScreen(user: profile),
                     ),
                   );
-                },
-              ),
-              AdminInfoTile(
-                icon: Icons.notifications_none_rounded,
-                title: 'Notifikasi',
-                subtitle: 'Pesanan baru, stok menipis, peringatan kasir',
-                trailingBadge: '3 Baru',
-                trailingBadgeColor: AppColors.primaryContainer,
-                showDivider: false,
-                onTap: () => _showNotice(
-                  context,
-                  '3 notifikasi penting: 2 pesanan baru, 1 buku stok menipis',
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 18),
+                  CashierLogService.clearCachedAdminName();
+                  _loadProfile();
+                } else {
+                  _showNotice(context, 'Memuat data profil...');
+                }
+              },
+            ),
+            const SizedBox(height: 18),
 
-          // 4. Section: Sistem & Keamanan
-          const AdminSectionHeader(title: 'Sistem & Keamanan'),
-          _buildCardGroup(
-            children: [
-              AdminInfoTile(
-                icon: Icons.history_rounded,
-                title: 'Log Aktivitas Kasir',
-                subtitle: 'Riwayat login, perubahan stok, & pembukaan laci kas',
-                showDivider: true,
-                onTap: () => _showNotice(
-                  context,
-                  'Buka audit trail & log aktivitas kasir',
+            // 2. Section: Pengaturan & Bisnis
+            const AdminSectionHeader(title: 'Pengaturan & Bisnis'),
+            _buildCardGroup(
+              children: [
+                AdminInfoTile(
+                  icon: Icons.storefront_outlined,
+                  title: 'Pengaturan Toko',
+                  titleBadge: 'Buka Buku',
+                  subtitle: 'Identitas toko, jam buka, kontak WhatsApp resmi',
+                  showDivider: true,
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const StoreSettingsScreen(),
+                      ),
+                    );
+                  },
                 ),
-              ),
-              AdminInfoTile(
-                icon: Icons.menu_book_outlined,
-                title: 'Panduan Staf & Bantuan',
-                subtitle: 'SOP inventaris, panduan kurasi buku, & CS teknis',
-                showDivider: false,
-                onTap: () => _showNotice(
-                  context,
-                  'Buka modul panduan staf Buka Buku',
+                AdminInfoTile(
+                  icon: Icons.notifications_none_rounded,
+                  title: 'Notifikasi',
+                  subtitle: 'Pesanan baru, stok menipis, peringatan kasir',
+                  trailingBadge: '3 Baru',
+                  trailingBadgeColor: AppColors.primaryContainer,
+                  showDivider: false,
+                  onTap: () => _showNotice(
+                    context,
+                    '3 notifikasi penting: 2 pesanan baru, 1 buku stok menipis',
+                  ),
                 ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 18),
+              ],
+            ),
+            const SizedBox(height: 18),
 
-          // 5. Section: Sesi Akun
-          const AdminSectionHeader(title: 'Sesi Akun'),
-          _buildCardGroup(
-            children: [
-              AdminInfoTile(
-                icon: Icons.logout_rounded,
-                title: 'Keluar Akun',
-                subtitle: 'Akhiri sesi admin di perangkat ini dengan aman',
-                isDestructive: true,
-                showDivider: false,
-                onTap: () => _confirmLogout(context),
-              ),
-            ],
-          ),
-          const SizedBox(height: 22),
+            // 3. Section: Sistem & Keamanan
+            const AdminSectionHeader(title: 'Sistem & Keamanan'),
+            _buildCardGroup(
+              children: [
+                AdminInfoTile(
+                  icon: Icons.history_rounded,
+                  title: 'Log Aktivitas Kasir',
+                  subtitle: 'Riwayat login, perubahan stok, & pembukaan laci kas',
+                  showDivider: true,
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const CashierLogScreen(),
+                      ),
+                    );
+                  },
+                ),
+                AdminInfoTile(
+                  icon: Icons.menu_book_outlined,
+                  title: 'Panduan Staf & Bantuan',
+                  subtitle: 'SOP inventaris, panduan kurasi buku, & CS teknis',
+                  showDivider: false,
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const StaffGuideScreen(),
+                      ),
+                    );
+                  },
+                ),
+              ],
+            ),
+            const SizedBox(height: 18),
 
-          // 6. System Status Footer
-          _buildSystemFooter(),
-          const SizedBox(height: 20),
-        ],
+            // 4. Section: Sesi Akun
+            const AdminSectionHeader(title: 'Sesi Akun'),
+            _buildCardGroup(
+              children: [
+                AdminInfoTile(
+                  icon: Icons.logout_rounded,
+                  title: 'Keluar Akun',
+                  subtitle: 'Akhiri sesi admin di perangkat ini dengan aman',
+                  isDestructive: true,
+                  showDivider: false,
+                  onTap: () => _confirmLogout(context),
+                ),
+              ],
+            ),
+            const SizedBox(height: 22),
+
+            // 5. System Status Footer
+            _buildSystemFooter(),
+            const SizedBox(height: 20),
+          ],
+        ),
       ),
     );
   }

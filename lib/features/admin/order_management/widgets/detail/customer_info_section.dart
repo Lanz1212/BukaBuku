@@ -7,13 +7,11 @@ import 'detail_section_card.dart';
 class CustomerInfoSection extends StatelessWidget {
   final AdminOrderDetail order;
   final VoidCallback? onCallCustomer;
-  final VoidCallback? onChatCustomer;
 
   const CustomerInfoSection({
     super.key,
     required this.order,
     this.onCallCustomer,
-    this.onChatCustomer,
   });
 
   @override
@@ -115,36 +113,6 @@ class CustomerInfoSection extends StatelessWidget {
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
                             content: Text('Menghubungi ${order.customerPhone}...'),
-                            behavior: SnackBarBehavior.floating,
-                            duration: const Duration(seconds: 2),
-                          ),
-                        );
-                      },
-                ),
-              ),
-              const SizedBox(width: 8),
-              // Chat Button
-              Material(
-                color: const Color(0xFFFDECDA),
-                shape: const CircleBorder(),
-                clipBehavior: Clip.antiAlias,
-                child: IconButton(
-                  icon: const Icon(
-                    Icons.chat_bubble_outline_rounded,
-                    size: 18,
-                  ),
-                  color: const Color(0xFFB5702F),
-                  constraints: const BoxConstraints(
-                    minWidth: 38,
-                    minHeight: 38,
-                  ),
-                  padding: EdgeInsets.zero,
-                  onPressed: onChatCustomer ??
-                      () {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text(
-                                'Membuka chat dengan ${order.customerName}...'),
                             behavior: SnackBarBehavior.floating,
                             duration: const Duration(seconds: 2),
                           ),

@@ -11,6 +11,7 @@ import 'register_screen.dart';
 import 'forgot_password_screen.dart';
 import '../home/home_screen.dart';
 import 'services/auth_service.dart';
+import '../../core/services/cashier_log_service.dart';
 
 /// Login Page — Toko Buku Budi
 /// Design: DESIGN.md | AppColors | AppTypography
@@ -388,6 +389,12 @@ Widget _buildLogo() {
       if (!mounted) return;
 
       if (role == 'admin') {
+        CashierLogService.clearCachedAdminName();
+        CashierLogService.recordLog(
+          action: 'Buka Sesi Kasir / Admin',
+          details: 'Admin berhasil masuk ke panel kasir & toko',
+          tag: 'Shift',
+        );
         Navigator.pushAndRemoveUntil(
           context,
           MaterialPageRoute(builder: (context) => const AdminMainScreen()),

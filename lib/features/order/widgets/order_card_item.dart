@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
 import '../models/order_model.dart';
@@ -25,7 +24,6 @@ class OrderCardItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isReadyPickup = order.status == OrderStatus.readyPickup;
-    final isShipping = order.status == OrderStatus.shipping;
     final isCompleted = order.status == OrderStatus.completed;
 
     final cardContent = ClipRRect(
@@ -78,7 +76,6 @@ class OrderCardItem extends StatelessWidget {
 
                 // 4. Status specific context panel
                 if (isReadyPickup) _buildPickupLocationBox(),
-                if (isShipping) _buildShippingCourierBox(context),
                 if (isCompleted) _buildCompletionReceiptBox(),
 
                 const SizedBox(height: 14),
@@ -490,109 +487,6 @@ class OrderCardItem extends StatelessWidget {
     );
   }
 
-  Widget _buildShippingCourierBox(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: AppColors.surfaceContainerLow,
-        borderRadius: BorderRadius.circular(10),
-      ),
-      child: Column(
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Row(
-                children: [
-                  const Icon(
-                    Icons.two_wheeler_rounded,
-                    size: 18,
-                    color: AppColors.primary,
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    order.courierName ?? 'Kurir Buku Budi Express',
-                    style: AppTypography.labelMd.copyWith(
-                      color: AppColors.onSurface,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ],
-              ),
-              Text(
-                order.courierEta ?? 'Tiba Sore Ini',
-                style: AppTypography.caption.copyWith(
-                  color: AppColors.secondary,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 6),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              RichText(
-                text: TextSpan(
-                  style: AppTypography.caption.copyWith(
-                    color: AppColors.onSurfaceVariant,
-                  ),
-                  children: [
-                    const TextSpan(text: 'No. Resi: '),
-                    TextSpan(
-                      text: order.trackingNumber ?? '',
-                      style: const TextStyle(
-                        fontWeight: FontWeight.w700,
-                        color: AppColors.onSurface,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              InkWell(
-                onTap: () {
-                  if (order.trackingNumber != null) {
-                    Clipboard.setData(ClipboardData(text: order.trackingNumber!));
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text('Nomor resi ${order.trackingNumber} disalin!'),
-                        duration: const Duration(seconds: 1),
-                        behavior: SnackBarBehavior.floating,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                      ),
-                    );
-                  }
-                },
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      'Salin',
-                      style: AppTypography.labelMd.copyWith(
-                        color: AppColors.secondary,
-                        fontWeight: FontWeight.w600,
-                        fontSize: 12,
-                      ),
-                    ),
-                    const SizedBox(width: 3),
-                    const Icon(
-                      Icons.content_copy_rounded,
-                      size: 13,
-                      color: AppColors.secondary,
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
   Widget _buildCompletionReceiptBox() {
     return Container(
       width: double.infinity,
@@ -702,60 +596,24 @@ class OrderCardItem extends StatelessWidget {
     }
 
     if (order.status == OrderStatus.shipping) {
-      return Row(
-        children: [
-          Expanded(
-            child: SizedBox(
-              height: 48,
-              child: ElevatedButton.icon(
-                onPressed: onTrackShipping ??
-                    () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text(
-                            'Melacak pengiriman kurir untuk resi ${order.trackingNumber}...',
-                          ),
-                          behavior: SnackBarBehavior.floating,
-                        ),
-                      );
-                    },
-                icon: const Icon(Icons.alt_route_rounded, size: 18),
-                label: const Text('Lacak Pengiriman'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.surfaceContainerHigh,
-                  foregroundColor: AppColors.onSurface,
-                  elevation: 0,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(14),
-                  ),
-                  textStyle: AppTypography.labelLg.copyWith(
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
+      return SizedBox(
+        width: double.infinity,
+        height: 48,
+        child: ElevatedButton(
+          onPressed: onViewDetail,
+          style: ElevatedButton.styleFrom(
+            backgroundColor: AppColors.primaryContainer,
+            foregroundColor: AppColors.onPrimary,
+            elevation: 0,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(14),
+            ),
+            textStyle: AppTypography.labelLg.copyWith(
+              fontWeight: FontWeight.w600,
             ),
           ),
-          const SizedBox(width: 8),
-          SizedBox(
-            height: 48,
-            child: ElevatedButton(
-              onPressed: onViewDetail,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.surfaceContainer,
-                foregroundColor: AppColors.onSurface,
-                elevation: 0,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(14),
-                ),
-                padding: const EdgeInsets.symmetric(horizontal: 18),
-                textStyle: AppTypography.labelLg.copyWith(
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              child: const Text('Detail'),
-            ),
-          ),
-        ],
+          child: const Text('Lihat Detail Pesanan'),
+        ),
       );
     }
 

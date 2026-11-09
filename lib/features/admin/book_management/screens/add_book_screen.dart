@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/services/book_service.dart';
+import '../../../../core/services/cashier_log_service.dart';
 import '../models/admin_book_item.dart';
 import '../widgets/book_form_cover_upload.dart';
 
@@ -314,8 +315,20 @@ class _AddBookScreenState extends State<AddBookScreen> {
       AdminBookItem resultBook;
       if (widget.initialBook == null) {
         resultBook = await BookService.createBook(bookToSave);
+        CashierLogService.recordLog(
+          action: 'Tambah Buku Baru',
+          details:
+              'Menambahkan buku "${resultBook.title}" (Kategori: ${resultBook.category}, Stok: ${resultBook.stock}, Harga: Rp ${resultBook.price})',
+          tag: 'Inventaris',
+        );
       } else {
         resultBook = await BookService.updateBook(bookToSave);
+        CashierLogService.recordLog(
+          action: 'Perbarui Data Buku',
+          details:
+              'Memperbarui data buku "${resultBook.title}" (ID: ${resultBook.id})',
+          tag: 'Inventaris',
+        );
       }
 
       if (!mounted) return;

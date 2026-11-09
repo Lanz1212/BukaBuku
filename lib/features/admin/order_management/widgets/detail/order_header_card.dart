@@ -147,7 +147,7 @@ class OrderHeaderCard extends StatelessWidget {
                   borderRadius: BorderRadius.circular(6),
                 ),
                 child: Text(
-                  order.isPaid ? 'Lunas • QRIS' : 'Belum Lunas',
+                  order.isPaid ? 'Lunas' : 'Belum Lunas',
                   style: AppTypography.caption.copyWith(
                     color: const Color(0xFFB5702F),
                     fontWeight: FontWeight.w700,

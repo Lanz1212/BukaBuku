@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/services/book_service.dart';
+import '../../../../core/services/cashier_log_service.dart';
 import '../models/admin_category_item.dart';
 import '../widgets/category_floor_filter.dart';
 import '../widgets/category_form_modal.dart';
@@ -143,6 +144,12 @@ class _CategoryManagementScreenState extends State<CategoryManagementScreen> {
               Navigator.pop(ctx);
               try {
                 await BookService.deleteCategory(cat.id);
+                CashierLogService.recordLog(
+                  action: 'Hapus Kategori Buku',
+                  details:
+                      'Menghapus kategori "${cat.name}" dari sistem rak buku',
+                  tag: 'Inventaris',
+                );
                 _loadCategories();
                 if (!mounted) return;
                 ScaffoldMessenger.of(context).showSnackBar(

@@ -131,13 +131,14 @@ class _CartScreenState extends State<CartScreen> {
 
     bool isUndone = false;
 
-    ScaffoldMessenger.of(context).removeCurrentSnackBar();
+    ScaffoldMessenger.of(context).hideCurrentSnackBar();
     ScaffoldMessenger.of(context)
         .showSnackBar(
           SnackBar(
             content: Text('${removed.title} dihapus dari keranjang.'),
             backgroundColor: AppColors.primaryContainer,
             behavior: SnackBarBehavior.floating,
+            duration: const Duration(seconds: 3),
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
             action: SnackBarAction(
               label: 'BATAL',

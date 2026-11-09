@@ -3,6 +3,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/services/order_service.dart';
+import '../../../../core/services/cashier_log_service.dart';
 import '../models/admin_order_detail.dart';
 import '../widgets/order_card.dart';
 import '../widgets/order_status_chip.dart';
@@ -178,15 +179,24 @@ class _OrderManagementScreenState extends State<OrderManagementScreen> {
 
   Future<void> _updateOrderStatus(
       String orderId, AdminOrderStatus newStatus) async {
-    setState(() {
-      final index = _orders.indexWhere((o) => o.orderId == orderId);
-      if (index != -1) {
+    final index = _orders.indexWhere((o) => o.orderId == orderId);
+    if (index != -1) {
+      setState(() {
         _orders[index] = _orders[index].copyWith(status: newStatus);
-      }
-    });
+      });
+    }
 
     try {
       await OrderService.updateOrderStatus(orderId, newStatus);
+      final label = index != -1
+          ? _orders[index].statusLabel
+          : AdminOrderDetail.statusToString(newStatus);
+      CashierLogService.recordLog(
+        action: 'Pembaruan Status Pesanan',
+        details: 'Status pesanan #$orderId diubah menjadi "$label"',
+        orderId: orderId,
+        tag: 'Pesanan',
+      );
     } catch (e) {
       debugPrint('Error updating order status in Supabase: $e');
       _loadOrders();

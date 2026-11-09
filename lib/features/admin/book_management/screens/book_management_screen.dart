@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/services/book_service.dart';
+import '../../../../core/services/cashier_log_service.dart';
 import '../models/admin_book_item.dart';
 import '../widgets/book_management_card.dart';
 import '../widgets/book_management_filter.dart';
@@ -116,6 +117,12 @@ class _BookManagementScreenState extends State<BookManagementScreen> {
     final newStatus = !book.isActive;
     try {
       await BookService.toggleBookStatus(book.id, newStatus);
+      CashierLogService.recordLog(
+        action: 'Ubah Status Katalog Buku',
+        details:
+            'Mengubah status buku "${book.title}" menjadi ${newStatus ? "Aktif" : "Nonaktif"}',
+        tag: 'Inventaris',
+      );
       setState(() {
         final actualIndex = _books.indexWhere((b) => b.id == book.id);
         if (actualIndex != -1) {
@@ -174,6 +181,12 @@ class _BookManagementScreenState extends State<BookManagementScreen> {
               Navigator.pop(ctx);
               try {
                 await BookService.deleteBook(book.id);
+                CashierLogService.recordLog(
+                  action: 'Hapus Buku',
+                  details:
+                      'Menghapus buku "${book.title}" (ID: ${book.id}) dari database inventaris',
+                  tag: 'Inventaris',
+                );
                 setState(() {
                   _books.removeWhere((b) => b.id == book.id);
                   _rebuildCategories(_books);

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/services/book_service.dart';
+import '../../../../core/services/cashier_log_service.dart';
 import '../models/admin_category_item.dart';
 
 class CategoryFormModal extends StatefulWidget {
@@ -99,6 +100,14 @@ class _CategoryFormModalState extends State<CategoryFormModal> {
       final savedCat = isEdit
           ? await BookService.updateCategory(item)
           : await BookService.createCategory(item);
+
+      CashierLogService.recordLog(
+        action: isEdit ? 'Perbarui Kategori Buku' : 'Tambah Kategori Buku',
+        details: isEdit
+            ? 'Memperbarui informasi kategori "${savedCat.name}"'
+            : 'Menambahkan kategori baru "${savedCat.name}" (Kode: ${savedCat.code})',
+        tag: 'Inventaris',
+      );
 
       if (!mounted) return;
       widget.onSaved(savedCat);

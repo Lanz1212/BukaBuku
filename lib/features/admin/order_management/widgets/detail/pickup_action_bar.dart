@@ -3,25 +3,25 @@ import '../../../../../core/theme/app_colors.dart';
 import '../../../../../core/theme/app_typography.dart';
 
 class PickupActionBar extends StatelessWidget {
-  final VoidCallback onPrintReceipt;
   final VoidCallback onScanQr;
-  final VoidCallback onChatCustomer;
   final String? customScanLabel;
   final IconData? customIcon;
   final Color? buttonColor;
+  final bool isDisabled;
 
   const PickupActionBar({
     super.key,
-    required this.onPrintReceipt,
     required this.onScanQr,
-    required this.onChatCustomer,
     this.customScanLabel,
     this.customIcon,
     this.buttonColor,
+    this.isDisabled = false,
   });
 
   @override
   Widget build(BuildContext context) {
+    final effectiveColor = buttonColor ?? const Color(0xFF382B21);
+
     return Container(
       decoration: BoxDecoration(
         color: AppColors.surfaceContainerLowest,
@@ -45,103 +45,49 @@ class PickupActionBar extends StatelessWidget {
         16,
         12 + MediaQuery.of(context).padding.bottom,
       ),
-      child: Row(
-        children: [
-          // Print Receipt Button
-          Container(
-            width: 50,
-            height: 50,
-            decoration: BoxDecoration(
-              color: AppColors.surfaceContainerHigh,
+      child: SizedBox(
+        width: double.infinity,
+        height: 50,
+        child: ElevatedButton(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: effectiveColor,
+            foregroundColor: Colors.white,
+            disabledBackgroundColor: const Color(0xFFE8F5E9),
+            disabledForegroundColor: const Color(0xFF2E7D32),
+            elevation: 0,
+            shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: AppColors.outlineVariant.withValues(alpha: 0.4),
-              ),
+              side: isDisabled
+                  ? const BorderSide(color: Color(0xFFA5D6A7), width: 1)
+                  : BorderSide.none,
             ),
-            child: Material(
-              color: Colors.transparent,
-              child: InkWell(
-                borderRadius: BorderRadius.circular(12),
-                onTap: onPrintReceipt,
-                child: const Center(
-                  child: Icon(
-                    Icons.print_outlined,
-                    color: Color(0xFF5B4636),
-                    size: 22,
+            padding: const EdgeInsets.symmetric(horizontal: 14),
+          ),
+          onPressed: isDisabled ? null : onScanQr,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                customIcon ?? Icons.qr_code_scanner_rounded,
+                size: 20,
+                color: isDisabled ? const Color(0xFF2E7D32) : Colors.white,
+              ),
+              const SizedBox(width: 8),
+              Flexible(
+                child: Text(
+                  customScanLabel ?? 'Scan QR Pickup Customer',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: AppTypography.labelLg.copyWith(
+                    color: isDisabled ? const Color(0xFF2E7D32) : Colors.white,
+                    fontWeight: FontWeight.w700,
+                    fontSize: 14,
                   ),
                 ),
               ),
-            ),
+            ],
           ),
-          const SizedBox(width: 10),
-
-          // Main Scan QR Pickup Button
-          Expanded(
-            child: SizedBox(
-              height: 50,
-              child: ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: buttonColor ?? const Color(0xFF382B21),
-                  foregroundColor: Colors.white,
-                  elevation: 0,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  padding: const EdgeInsets.symmetric(horizontal: 14),
-                ),
-                onPressed: onScanQr,
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(
-                      customIcon ?? Icons.qr_code_scanner_rounded,
-                      size: 20,
-                      color: Colors.white,
-                    ),
-                    const SizedBox(width: 8),
-                    Flexible(
-                      child: Text(
-                        customScanLabel ?? 'Scan QR Pickup Customer',
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: AppTypography.labelLg.copyWith(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w700,
-                          fontSize: 13.5,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-          const SizedBox(width: 10),
-
-          // Chat / Message Button
-          Container(
-            width: 50,
-            height: 50,
-            decoration: BoxDecoration(
-              color: const Color(0xFFFDECDA),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Material(
-              color: Colors.transparent,
-              child: InkWell(
-                borderRadius: BorderRadius.circular(12),
-                onTap: onChatCustomer,
-                child: const Center(
-                  child: Icon(
-                    Icons.chat_bubble_outline_rounded,
-                    color: Color(0xFFB5702F),
-                    size: 22,
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../../core/services/order_service.dart';
+import '../../../../core/services/cashier_log_service.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../order_management/models/admin_order_detail.dart';
@@ -398,6 +399,14 @@ class _QrScanResultScreenState extends State<QrScanResultScreen> {
                         cleanId,
                         AdminOrderStatus.selesai,
                         setPickupConfirmed: true,
+                      );
+
+                      // Catat ke log aktivitas kasir Supabase
+                      CashierLogService.recordLog(
+                        action: 'Validasi QR Pickup & Serah Terima',
+                        details: 'Pesanan #${_order.orderId} selesai diserahkan kepada ${_order.customerName}',
+                        orderId: _order.orderId,
+                        tag: 'Pickup',
                       );
 
                       // 2. Jika bayar tunai di kasir, tandai is_paid = true

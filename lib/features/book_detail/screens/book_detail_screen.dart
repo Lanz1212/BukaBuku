@@ -24,7 +24,6 @@ import '../widgets/book_price_header.dart';
 import '../widgets/book_specs_grid.dart';
 import '../widgets/guarantee_badge.dart';
 import '../widgets/reader_reviews_section.dart';
-import '../widgets/stock_simulator_banner.dart';
 
 /// Screen for displaying full book details in Toko Buku Budi
 /// Connected with real Supabase database for Cart and Favorites.
@@ -111,32 +110,6 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
         });
       }
     } catch (_) {}
-  }
-
-  void _onStockStatusChanged(StockStatus newStatus) {
-    setState(() {
-      String label;
-      int stock;
-      switch (newStatus) {
-        case StockStatus.inStock:
-          label = 'Stok Tersedia';
-          stock = 14;
-          break;
-        case StockStatus.limited:
-          label = 'Sisa 2 Buku';
-          stock = 2;
-          break;
-        case StockStatus.outOfStock:
-          label = 'Stok Habis';
-          stock = 0;
-          break;
-      }
-      _book = _book.copyWith(
-        stockStatus: newStatus,
-        stockLabel: label,
-        remainingStock: stock,
-      );
-    });
   }
 
   void _showNotification(String message, {bool isSuccess = true, SnackBarAction? action}) {
@@ -297,12 +270,6 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // Top Stock Simulator Banner for easy preview
-            StockSimulatorBanner(
-              currentStatus: _book.stockStatus,
-              onStatusChanged: _onStockStatusChanged,
-            ),
-
             // Book Cover Hero
             BookCoverSection(book: _book),
 

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/services/order_service.dart';
+import '../../../../core/services/cashier_log_service.dart';
 import '../../scan_qr_pickup/screens/scan_qr_pickup_screen.dart';
 import '../models/admin_order_detail.dart';
 import '../widgets/detail/book_list_section.dart';
@@ -40,6 +41,12 @@ class _AdminOrderDetailScreenState extends State<AdminOrderDetailScreen> {
 
     try {
       await OrderService.updateOrderStatus(_currentOrder.orderId, newStatus);
+      CashierLogService.recordLog(
+        action: 'Pembaruan Status Pesanan',
+        details: 'Status pesanan #${_currentOrder.orderId} diubah menjadi: ${_currentOrder.statusLabel}',
+        orderId: _currentOrder.orderId,
+        tag: 'Pesanan',
+      );
     } catch (e) {
       debugPrint('Error updating order status in Supabase: $e');
     }
@@ -61,133 +68,6 @@ class _AdminOrderDetailScreenState extends State<AdminOrderDetailScreen> {
     } else if (result == true) {
       _updateStatus(AdminOrderStatus.selesai);
     }
-  }
-
-  void _showPrintReceiptModal() {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: AppColors.surfaceContainerLowest,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      builder: (ctx) => Padding(
-        padding: const EdgeInsets.all(24.0),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Row(
-              children: [
-                const Icon(
-                  Icons.local_printshop_outlined,
-                  color: AppColors.primaryContainer,
-                  size: 24,
-                ),
-                const SizedBox(width: 10),
-                Text(
-                  'Cetak Struk & Nota Kasir',
-                  style: AppTypography.titleMd.copyWith(
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.onSurface,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            Container(
-              padding: const EdgeInsets.all(14),
-              decoration: BoxDecoration(
-                color: const Color(0xFFFAF7F2),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                  color: AppColors.outlineVariant.withValues(alpha: 0.4),
-                ),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Center(
-                    child: Text(
-                      'BUKA BUKU',
-                      style: AppTypography.titleMd.copyWith(
-                        fontWeight: FontWeight.w800,
-                        color: AppColors.primary,
-                        letterSpacing: 1.2,
-                      ),
-                    ),
-                  ),
-                  const Center(
-                    child: Text(
-                      'Gerai Utama Buka Buku • Meja Kasir 1',
-                      style: TextStyle(fontSize: 11, color: Colors.grey),
-                    ),
-                  ),
-                  const Divider(height: 20),
-                  Text('Pesanan: #${_currentOrder.orderId}',
-                      style: const TextStyle(
-                          fontSize: 12, fontWeight: FontWeight.bold)),
-                  Text('Pelanggan: ${_currentOrder.customerName}',
-                      style: const TextStyle(fontSize: 12)),
-                  Text('Tanggal: ${_currentOrder.orderDate ?? _currentOrder.orderTime}',
-                      style: const TextStyle(fontSize: 12)),
-                  const Divider(height: 16),
-                  ..._currentOrder.books.map(
-                    (b) => Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 2.0),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text('${b.qty}x ${b.title}',
-                              style: const TextStyle(fontSize: 12)),
-                          Text('Rp ${b.price * b.qty}',
-                              style: const TextStyle(
-                                  fontSize: 12, fontWeight: FontWeight.w600)),
-                        ],
-                      ),
-                    ),
-                  ),
-                  const Divider(height: 16),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text('Total:',
-                          style: TextStyle(
-                              fontSize: 13, fontWeight: FontWeight.bold)),
-                      Text('Rp ${_currentOrder.totalPrice}',
-                          style: const TextStyle(
-                              fontSize: 13, fontWeight: FontWeight.bold)),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 20),
-            ElevatedButton.icon(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primaryContainer,
-                foregroundColor: Colors.white,
-                minimumSize: const Size.fromHeight(48),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-              onPressed: () {
-                Navigator.pop(ctx);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Mengirim perintah cetak ke Printer Kasir 58mm...'),
-                    behavior: SnackBarBehavior.floating,
-                  ),
-                );
-              },
-              icon: const Icon(Icons.print_rounded, size: 18),
-              label: const Text('Cetak ke Printer Bluetooth/Thermal'),
-            ),
-          ],
-        ),
-      ),
-    );
   }
 
   @override
@@ -313,16 +193,6 @@ class _AdminOrderDetailScreenState extends State<AdminOrderDetailScreen> {
                     ),
                   );
                 },
-                onChatCustomer: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(
-                        'Membuka chat WhatsApp dengan ${_currentOrder.customerName}...',
-                      ),
-                      behavior: SnackBarBehavior.floating,
-                    ),
-                  );
-                },
               ),
               const SizedBox(height: 14),
 
@@ -352,6 +222,7 @@ class _AdminOrderDetailScreenState extends State<AdminOrderDetailScreen> {
               IconData icon;
               Color color;
               VoidCallback action;
+              bool isDisabled = false;
 
               switch (_currentOrder.status) {
                 case AdminOrderStatus.baru:
@@ -394,51 +265,36 @@ class _AdminOrderDetailScreenState extends State<AdminOrderDetailScreen> {
                   };
                   break;
                 case AdminOrderStatus.selesai:
-                  label = 'Pesanan Selesai';
-                  icon = Icons.verified_rounded;
-                  color = AppColors.success;
-                  action = _showPrintReceiptModal;
+                  label = 'Telah Diterima Pembeli';
+                  icon = Icons.check_circle_rounded;
+                  color = const Color(0xFF2E7D32);
+                  action = () {};
+                  isDisabled = true;
                   break;
                 case AdminOrderStatus.dibatalkan:
                   label = 'Pesanan Dibatalkan';
                   icon = Icons.cancel_outlined;
                   color = AppColors.error;
                   action = () {};
+                  isDisabled = true;
                   break;
               }
 
               return PickupActionBar(
-                onPrintReceipt: _showPrintReceiptModal,
                 onScanQr: action,
                 customScanLabel: label,
                 customIcon: icon,
                 buttonColor: color,
-                onChatCustomer: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(
-                        'Membuka chat WhatsApp dengan ${_currentOrder.customerName}...',
-                      ),
-                      behavior: SnackBarBehavior.floating,
-                    ),
-                  );
-                },
+                isDisabled: isDisabled,
               );
             }
 
+            final isCompleted = _currentOrder.status == AdminOrderStatus.selesai;
             return PickupActionBar(
-              onPrintReceipt: _showPrintReceiptModal,
-              onScanQr: _navigateToScanQrPickup,
-              onChatCustomer: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(
-                      'Membuka chat dengan ${_currentOrder.customerName}...',
-                    ),
-                    behavior: SnackBarBehavior.floating,
-                  ),
-                );
-              },
+              onScanQr: isCompleted ? () {} : _navigateToScanQrPickup,
+              customScanLabel: isCompleted ? 'Pesanan Telah Selesai' : null,
+              customIcon: isCompleted ? Icons.check_circle_rounded : null,
+              isDisabled: isCompleted,
             );
           },
         ),

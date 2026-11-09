@@ -3,6 +3,7 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../models/store_settings_model.dart';
 import '../services/store_settings_service.dart';
+import '../../../../core/services/cashier_log_service.dart';
 import '../widgets/store_logo_card.dart';
 import '../widgets/store_name_card.dart';
 import '../widgets/store_location_card.dart';
@@ -131,6 +132,11 @@ class _StoreSettingsScreenState extends State<StoreSettingsScreen> {
     );
 
     await StoreSettingsService.updateStoreSettings(updated);
+    CashierLogService.recordLog(
+      action: 'Perbarui Pengaturan Toko',
+      details: 'Memperbarui profil & operasional gerai "${updated.storeName}"',
+      tag: 'Shift',
+    );
 
     if (mounted) {
       setState(() {
