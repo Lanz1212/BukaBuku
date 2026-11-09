@@ -7,11 +7,15 @@ import '../../../../core/theme/app_typography.dart';
 class AdminBottomNav extends StatelessWidget {
   final int currentIndex;
   final ValueChanged<int> onTabSelected;
+  final int? lowStockBadgeCount;
+  final int? orderBadgeCount;
 
   const AdminBottomNav({
     super.key,
     required this.currentIndex,
     required this.onTabSelected,
+    this.lowStockBadgeCount,
+    this.orderBadgeCount,
   });
 
   @override
@@ -57,14 +61,14 @@ class AdminBottomNav extends StatelessWidget {
                 icon: Icons.inventory_2_outlined,
                 activeIcon: Icons.inventory_2_rounded,
                 label: 'Stok',
-                badgeCount: 2,
+                badgeCount: lowStockBadgeCount,
               ),
               _buildNavItem(
                 index: 3,
                 icon: Icons.receipt_long_outlined,
                 activeIcon: Icons.receipt_long_rounded,
                 label: 'Pesanan',
-                badgeCount: 5,
+                badgeCount: orderBadgeCount,
               ),
               _buildNavItem(
                 index: 4,

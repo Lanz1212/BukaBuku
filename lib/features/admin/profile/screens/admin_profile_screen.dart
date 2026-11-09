@@ -1,8 +1,10 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
+import '../../../../core/services/admin_notification_service.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/services/cashier_log_service.dart';
+import '../../notifications/screens/admin_notification_screen.dart';
 import '../../../profile/models/user_profile.dart';
 import '../../../profile/services/profile_service.dart';
 import '../../../profile/screens/edit_profile_screen.dart';
@@ -196,17 +198,26 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
                     );
                   },
                 ),
-                AdminInfoTile(
-                  icon: Icons.notifications_none_rounded,
-                  title: 'Notifikasi',
-                  subtitle: 'Pesanan baru, stok menipis, peringatan kasir',
-                  trailingBadge: '3 Baru',
-                  trailingBadgeColor: AppColors.primaryContainer,
-                  showDivider: false,
-                  onTap: () => _showNotice(
-                    context,
-                    '3 notifikasi penting: 2 pesanan baru, 1 buku stok menipis',
-                  ),
+                ValueListenableBuilder<int>(
+                  valueListenable: AdminNotificationService.unreadCountNotifier,
+                  builder: (context, unreadCount, _) {
+                    return AdminInfoTile(
+                      icon: Icons.notifications_none_rounded,
+                      title: 'Notifikasi Admin',
+                      subtitle: 'Pesanan baru, stok menipis, verifikasi QR pickup',
+                      trailingBadge: unreadCount > 0 ? '$unreadCount Baru' : null,
+                      trailingBadgeColor: AppColors.secondary,
+                      showDivider: false,
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const AdminNotificationScreen(),
+                          ),
+                        );
+                      },
+                    );
+                  },
                 ),
               ],
             ),

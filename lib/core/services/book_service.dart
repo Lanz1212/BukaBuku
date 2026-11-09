@@ -1,4 +1,6 @@
+import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'admin_notification_service.dart';
 import '../../features/admin/book_management/models/admin_book_item.dart';
 import '../../features/admin/stock_management/models/admin_stock_item.dart';
 import '../../features/admin/category_management/models/admin_category_item.dart';
@@ -116,7 +118,21 @@ class BookService {
         .select()
         .single();
 
-    return AdminBookItem.fromMap(response);
+    final createdBook = AdminBookItem.fromMap(response);
+
+    try {
+      await AdminNotificationService.broadcastToAdmins(
+        type: 'bookAdded',
+        category: 'inventory',
+        title: 'Buku Baru Ditambahkan 📚',
+        body: 'Buku "${createdBook.title}" oleh ${createdBook.author} (Stok: ${createdBook.stock}) telah berhasil didaftarkan ke katalog.',
+        refId: createdBook.id,
+      );
+    } catch (e) {
+      debugPrint('Error broadcasting admin notification for new book: $e');
+    }
+
+    return createdBook;
   }
 
   // ─── UPDATE: Update Book Data ──────────────────────────────────────────────
@@ -129,7 +145,21 @@ class BookService {
         .select()
         .single();
 
-    return AdminBookItem.fromMap(response);
+    final updated = AdminBookItem.fromMap(response);
+
+    try {
+      await AdminNotificationService.broadcastToAdmins(
+        type: 'bookUpdated',
+        category: 'inventory',
+        title: 'Data Buku Diperbarui 📝',
+        body: 'Informasi buku "${updated.title}" (ID: ${updated.id}) telah diperbarui.',
+        refId: updated.id,
+      );
+    } catch (e) {
+      debugPrint('Error broadcasting admin notification for updated book: $e');
+    }
+
+    return updated;
   }
 
   // ─── DELETE: Delete Book ───────────────────────────────────────────────────
@@ -181,6 +211,42 @@ class BookService {
       });
     } catch (_) {
       // Continue even if logging fails
+    }
+
+    // 3. Broadcast notifikasi stok ke seluruh admin
+    try {
+      final bookTitle = updatedBookData['title'] as String? ?? 'Buku';
+      final minStock = (updatedBookData['min_stock'] as num?)?.toInt() ?? 5;
+      final rack = updatedBookData['rack_location'] as String? ?? '';
+
+      if (newStock <= 0) {
+        await AdminNotificationService.broadcastToAdmins(
+          type: 'outOfStock',
+          category: 'stock',
+          title: 'Stok Buku Habis! 🚨',
+          body: 'Buku "$bookTitle" kini telah habis (0 eksemplar). Segera lakukan restock ke supplier.',
+          refId: bookId,
+        );
+      } else if (newStock <= minStock) {
+        await AdminNotificationService.broadcastToAdmins(
+          type: 'lowStock',
+          category: 'stock',
+          title: 'Stok Buku Menipis ⚠️',
+          body: 'Buku "$bookTitle" tersisa $newStock eksemplar (batas minimum: $minStock). Lokasi rak: $rack.',
+          refId: bookId,
+        );
+      } else {
+        final changeSign = (newStock >= previousStock) ? '+$changeAmount' : '-$changeAmount';
+        await AdminNotificationService.broadcastToAdmins(
+          type: 'stockAdjusted',
+          category: 'stock',
+          title: 'Penyesuaian Stok Buku 📦',
+          body: 'Stok "$bookTitle" disesuaikan dari $previousStock menjadi $newStock eksemplar ($changeSign).',
+          refId: bookId,
+        );
+      }
+    } catch (e) {
+      debugPrint('Error broadcasting admin notification for stock adjust: $e');
     }
 
     return AdminStockItem.fromMap(updatedBookData, lastSyncTime: 'Baru saja');
@@ -310,7 +376,21 @@ class BookService {
         .select()
         .single();
 
-    return AdminCategoryItem.fromMap(response, bookCount: 0);
+    final createdCat = AdminCategoryItem.fromMap(response, bookCount: 0);
+
+    try {
+      await AdminNotificationService.broadcastToAdmins(
+        type: 'categoryAdded',
+        category: 'inventory',
+        title: 'Kategori Baru Ditambahkan 🏷️',
+        body: 'Kategori "${createdCat.name}" (Kode: ${createdCat.code}) telah ditambahkan di Lantai ${createdCat.floor}.',
+        refId: createdCat.id,
+      );
+    } catch (e) {
+      debugPrint('Error broadcasting admin notification for category added: $e');
+    }
+
+    return createdCat;
   }
 
   static Future<AdminCategoryItem> updateCategory(AdminCategoryItem cat) async {
@@ -325,7 +405,21 @@ class BookService {
       response = await query.eq('id', cat.id).select().single();
     }
 
-    return AdminCategoryItem.fromMap(response, bookCount: cat.bookCount);
+    final updatedCat = AdminCategoryItem.fromMap(response, bookCount: cat.bookCount);
+
+    try {
+      await AdminNotificationService.broadcastToAdmins(
+        type: 'categoryUpdated',
+        category: 'inventory',
+        title: 'Kategori Diperbarui 🏷️',
+        body: 'Kategori "${updatedCat.name}" (Kode: ${updatedCat.code}) telah diperbarui.',
+        refId: updatedCat.id,
+      );
+    } catch (e) {
+      debugPrint('Error broadcasting admin notification for category updated: $e');
+    }
+
+    return updatedCat;
   }
 
   static Future<void> deleteCategory(String id) async {

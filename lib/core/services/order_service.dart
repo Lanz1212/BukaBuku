@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'admin_notification_service.dart';
 import 'cart_service.dart';
 import '../../features/admin/order_management/models/admin_order_detail.dart';
 import '../../features/order/models/order_model.dart';
@@ -731,7 +732,26 @@ class OrderService {
       await _client.from('order_items').insert(itemsToInsert);
     }
 
-    // 5. Kembalikan data lengkap pesanan yang baru dibuat
+    // 5. Broadcast notifikasi pesanan baru ke seluruh admin panel
+    try {
+      final totalBooks = items.fold<int>(
+        0,
+        (sum, i) => sum + ((i['quantity'] as num?)?.toInt() ?? 1),
+      );
+      final methodStr = paymentMethod;
+      final typeLabel = isPickup ? 'Ambil di Toko' : 'Kurir Toko (Delivery)';
+      await AdminNotificationService.broadcastToAdmins(
+        type: 'newOrder',
+        category: 'order',
+        title: 'Pesanan Baru Masuk! 🛒',
+        body: 'Pesanan #$finalOrderId dari $customerName ($totalBooks buku) senilai ${_formatRupiah(totalPrice)} via $methodStr ($typeLabel).',
+        orderId: finalOrderId,
+      );
+    } catch (e) {
+      debugPrint('Error broadcasting admin notification for new order: $e');
+    }
+
+    // 6. Kembalikan data lengkap pesanan yang baru dibuat
     final created = await fetchOrderById(finalOrderId);
     return created ??
         AdminOrderDetail.fromMap(
@@ -804,6 +824,16 @@ class OrderService {
       };
       await _client.from('orders').update(updateData).eq('id', cleanId);
       debugPrint('Order $cleanId marked as completed/received by customer');
+
+      try {
+        await AdminNotificationService.broadcastToAdmins(
+          type: 'orderCompleted',
+          category: 'order',
+          title: 'Pesanan Selesai Diterima 📦',
+          body: 'Pesanan #$cleanId telah diterima oleh pelanggan dan statusnya kini selesai.',
+          orderId: cleanId,
+        );
+      } catch (_) {}
     } catch (e) {
       debugPrint('Error marking delivery received: $e');
       rethrow;
@@ -837,6 +867,18 @@ class OrderService {
       }
 
       await _client.from('orders').update(updateData).eq('id', cleanId);
+
+      if (isPaid) {
+        try {
+          await AdminNotificationService.broadcastToAdmins(
+            type: 'orderPaid',
+            category: 'order',
+            title: 'Pembayaran Diterima 💳',
+            body: 'Pembayaran untuk pesanan #$cleanId telah berhasil diverifikasi (${paymentMethod ?? "Lunas"}).',
+            orderId: cleanId,
+          );
+        } catch (_) {}
+      }
     } catch (e) {
       debugPrint('Error updating order payment status: $e');
       try {

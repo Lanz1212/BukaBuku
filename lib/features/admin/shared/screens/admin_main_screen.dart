@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import '../../../../core/services/admin_notification_service.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../book_management/screens/book_management_screen.dart';
 import '../../dashboard/screens/admin_dashboard_screen.dart';
+import '../../notifications/screens/admin_notification_screen.dart';
 import '../../order_management/screens/order_management_screen.dart';
 import '../../stock_management/screens/stock_management_screen.dart';
 import '../../profile/screens/admin_profile_screen.dart';
@@ -27,6 +29,7 @@ class _AdminMainScreenState extends State<AdminMainScreen> {
   void initState() {
     super.initState();
     _currentIndex = widget.initialTabIndex;
+    AdminNotificationService.countUnread();
   }
 
   String _getTitle() {
@@ -59,6 +62,16 @@ class _AdminMainScreenState extends State<AdminMainScreen> {
       appBar: AdminAppBar(
         title: _getTitle(),
         onExitAdmin: () => Navigator.of(context).pop(),
+        onNotificationsTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const AdminNotificationScreen(),
+            ),
+          ).then((_) {
+            AdminNotificationService.countUnread();
+          });
+        },
       ),
       body: SafeArea(
         child: IndexedStack(

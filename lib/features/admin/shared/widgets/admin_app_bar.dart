@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import '../../../../core/services/admin_notification_service.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
+import '../../notifications/screens/admin_notification_screen.dart';
 
 /// Admin App Bar for Toko Buku Budi
 /// Conforms to Stitch Toko Buku Budi Mobile UI & DESIGN.md
@@ -130,38 +132,60 @@ class AdminAppBar extends StatelessWidget implements PreferredSizeWidget {
                     onPressed: onExitAdmin ?? () => Navigator.of(context).pop(),
                   ),
 
-                  // Notifications
-                  IconButton(
-                    tooltip: 'Notifikasi Admin',
-                    icon: Stack(
-                      clipBehavior: Clip.none,
-                      children: [
-                        const Icon(Icons.notifications_none_rounded, size: 22),
-                        Positioned(
-                          top: 1,
-                          right: 1,
-                          child: Container(
-                            width: 7,
-                            height: 7,
-                            decoration: const BoxDecoration(
-                              color: AppColors.warning,
-                              shape: BoxShape.circle,
-                            ),
-                          ),
+                  // Notifications with Realtime Dynamic Badge
+                  ValueListenableBuilder<int>(
+                    valueListenable: AdminNotificationService.unreadCountNotifier,
+                    builder: (context, unreadCount, child) {
+                      return IconButton(
+                        tooltip: 'Notifikasi Admin',
+                        icon: Stack(
+                          clipBehavior: Clip.none,
+                          children: [
+                            const Icon(Icons.notifications_none_rounded, size: 22),
+                            if (unreadCount > 0)
+                              Positioned(
+                                top: -2,
+                                right: -4,
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 4,
+                                    vertical: 1,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: AppColors.secondary,
+                                    borderRadius: BorderRadius.circular(9999),
+                                  ),
+                                  constraints: const BoxConstraints(
+                                    minWidth: 16,
+                                    minHeight: 16,
+                                  ),
+                                  child: Text(
+                                    unreadCount > 99 ? '99+' : '$unreadCount',
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 9.5,
+                                      fontWeight: FontWeight.w700,
+                                      height: 1.2,
+                                    ),
+                                    textAlign: TextAlign.center,
+                                  ),
+                                ),
+                              ),
+                          ],
                         ),
-                      ],
-                    ),
-                    color: AppColors.onSurfaceVariant,
-                    onPressed: onNotificationsTap ??
-                        () {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('5 pesanan baru perlu diproses'),
-                              behavior: SnackBarBehavior.floating,
-                              duration: Duration(seconds: 2),
-                            ),
-                          );
-                        },
+                        color: AppColors.onSurfaceVariant,
+                        onPressed: onNotificationsTap ??
+                            () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) =>
+                                      const AdminNotificationScreen(),
+                                ),
+                              );
+                            },
+                      );
+                    },
                   ),
 
                   const SizedBox(width: 2),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../core/services/admin_notification_service.dart';
 import '../../../../core/services/order_service.dart';
 import '../../../../core/services/cashier_log_service.dart';
 import '../../../../core/theme/app_colors.dart';
@@ -408,6 +409,19 @@ class _QrScanResultScreenState extends State<QrScanResultScreen> {
                         orderId: _order.orderId,
                         tag: 'Pickup',
                       );
+
+                      // 2. Broadcast notifikasi verifikasi scan QR berhasil ke admin
+                      try {
+                        await AdminNotificationService.broadcastToAdmins(
+                          type: 'qrScanSuccess',
+                          category: 'order',
+                          title: 'Scan QR Pickup Berhasil ✅',
+                          body: 'Pesanan #${_order.orderId} (${_order.customerName}) telah selesai diverifikasi QR dan diserahkan di kasir.',
+                          orderId: cleanId,
+                        );
+                      } catch (e) {
+                        debugPrint('Error broadcasting QR scan success notification: $e');
+                      }
 
                       // 2. Jika bayar tunai di kasir, tandai is_paid = true
                       if (!_order.isPaid || _scenario == ScanScenario.validCash) {
