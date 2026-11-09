@@ -120,8 +120,8 @@ class _FavoriteScreenState extends State<FavoriteScreen> {
       await CartService.addToCart(item.bookId.isNotEmpty ? item.bookId : item.id, quantity: 1);
 
       if (!mounted) return;
-      ScaffoldMessenger.of(context).removeCurrentSnackBar();
-      ScaffoldMessenger.of(context).showSnackBar(
+      AppNavigation.hideCurrentSnackBar();
+      AppNavigation.showSnackBar(
         SnackBar(
           content: Row(
             children: [

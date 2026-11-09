@@ -1,5 +1,3 @@
-import 'dart:math' as math;
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -98,14 +96,8 @@ class _LoginScreenState extends State<LoginScreen> {
               _buildRememberMe(),
               const SizedBox(height: 24),
               _buildLoginButton(),
-              const SizedBox(height: 20),
-              _buildOrDivider(),
-              const SizedBox(height: 20),
-              _buildGoogleButton(),
               const SizedBox(height: 28),
               _buildSignUpPrompt(),
-              const SizedBox(height: 20),
-              _buildTrustBadge(),
             ],
           ),
         ),
@@ -461,69 +453,6 @@ Widget _buildLogo() {
     );
   }
 
-  // ─── Or Divider ───────────────────────────────────────────────────────────────
-
-  Widget _buildOrDivider() {
-    return Row(
-      children: [
-        const Expanded(
-          child: Divider(color: AppColors.outlineVariant, thickness: 1),
-        ),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 12),
-          child: Text(
-            'atau masuk lebih cepat',
-            style: AppTypography.caption.copyWith(color: AppColors.outline),
-          ),
-        ),
-        const Expanded(
-          child: Divider(color: AppColors.outlineVariant, thickness: 1),
-        ),
-      ],
-    );
-  }
-
-  // ─── Google Button ────────────────────────────────────────────────────────────
-
-  Widget _buildGoogleButton() {
-    return SizedBox(
-      height: 50,
-      child: OutlinedButton(
-        onPressed: () {
-          // Handle Google sign-in
-        },
-        style: OutlinedButton.styleFrom(
-          side: const BorderSide(color: AppColors.outlineVariant),
-          backgroundColor: Colors.white,
-          elevation: 0,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-          ),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Image.asset(
-              'assets/images/Google_Logo.png',
-              width: 20,
-              height: 20,
-              errorBuilder: (context, error, stackTrace) {
-                return const _GoogleLogoWidget();
-              },
-            ),
-            const SizedBox(width: 10),
-            Text(
-              'Masuk dengan Google',
-              style: AppTypography.labelLg.copyWith(
-                color: AppColors.onSurface,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
   // ─── Sign-up Prompt ───────────────────────────────────────────────────────────
 
   Widget _buildSignUpPrompt() {
@@ -552,37 +481,6 @@ Widget _buildLogo() {
     );
   }
 
-  // ─── Trust Badge ──────────────────────────────────────────────────────────────
-
-  Widget _buildTrustBadge() {
-    return Center(
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-        decoration: BoxDecoration(
-          color: AppColors.surfaceContainerLow,
-          borderRadius: BorderRadius.circular(9999),
-          border: Border.all(color: AppColors.outlineVariant),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(
-              Icons.verified,
-              size: 14,
-              color: AppColors.primary,
-            ),
-            const SizedBox(width: 6),
-            Text(
-              'Toko Buku Budi • 100% Buku Asli & Bergaransi',
-              style: AppTypography.caption.copyWith(
-                color: AppColors.onSurfaceVariant,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 }
 
 // ─── Animated Click Text Widget ─────────────────────────────────────────────────
@@ -695,62 +593,3 @@ class _AnimatedClickTextState extends State<_AnimatedClickText>
   }
 }
 
-// ─── Google "G" Logo ──────────────────────────────────────────────────────────
-
-class _GoogleLogoWidget extends StatelessWidget {
-  const _GoogleLogoWidget();
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      width: 20,
-      height: 20,
-      child: CustomPaint(painter: _GoogleGPainter()),
-    );
-  }
-}
-
-class _GoogleGPainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final c = Offset(size.width / 2, size.height / 2);
-    final r = size.width * 0.44;
-    final sw = size.width * 0.165;
-    final rect = Rect.fromCircle(center: c, radius: r);
-
-    Paint mkArc(Color color) => Paint()
-      ..color = color
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = sw
-      ..strokeCap = StrokeCap.butt;
-
-    const rad = math.pi / 180.0;
-
-    // Segments drawn clockwise; gap is ~-22° to +22° on the right side.
-    // Yellow — lower-right
-    canvas.drawArc(rect, 22 * rad, 45 * rad, false,
-        mkArc(const Color(0xFFFBBC05)));
-    // Green — bottom
-    canvas.drawArc(rect, 67 * rad, 113 * rad, false,
-        mkArc(const Color(0xFF34A853)));
-    // Blue — left + top
-    canvas.drawArc(rect, 180 * rad, 112 * rad, false,
-        mkArc(const Color(0xFF4285F4)));
-    // Red — upper-right
-    canvas.drawArc(rect, 292 * rad, 46 * rad, false,
-        mkArc(const Color(0xFFEA4335)));
-
-    // Horizontal crossbar of the G
-    canvas.drawLine(
-      c,
-      Offset(c.dx + r + sw * 0.3, c.dy),
-      Paint()
-        ..color = const Color(0xFF4285F4)
-        ..strokeWidth = sw
-        ..strokeCap = StrokeCap.square,
-    );
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
-}

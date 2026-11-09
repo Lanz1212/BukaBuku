@@ -284,11 +284,6 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
               // 6. Payment Summary Card (Ringkasan Pembayaran)
               _buildPaymentSummaryCard(),
 
-              const SizedBox(height: 16),
-
-              // 7. Store Assistance / Support Card
-              _buildSupportCard(context),
-
               const SizedBox(height: 24),
             ],
           ),
@@ -1487,87 +1482,6 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
           ),
         ),
       ],
-    );
-  }
-
-  Widget _buildSupportCard(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: AppColors.surfaceContainer,
-        borderRadius: BorderRadius.circular(14),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Row(
-            children: [
-              Container(
-                width: 38,
-                height: 38,
-                decoration: const BoxDecoration(
-                  color: AppColors.surfaceContainerHighest,
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(
-                  Icons.support_agent_rounded,
-                  size: 20,
-                  color: AppColors.primary,
-                ),
-              ),
-              const SizedBox(width: 10),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Butuh bantuan pesanan?',
-                    style: AppTypography.labelMd.copyWith(
-                      color: AppColors.onSurface,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  const SizedBox(height: 1),
-                  Text(
-                    'Pustakawan kami siap membantu',
-                    style: AppTypography.caption.copyWith(
-                      color: AppColors.onSurfaceVariant,
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-          ElevatedButton.icon(
-            onPressed: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(
-                    'Menghubungi Pustakawan Buka Buku terkait pesanan ${order.id}...',
-                  ),
-                  behavior: SnackBarBehavior.floating,
-                ),
-              );
-            },
-            icon: const Icon(Icons.chat_bubble_outline_rounded, size: 15),
-            label: const Text('WhatsApp'),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primaryContainer,
-              foregroundColor: AppColors.onPrimary,
-              elevation: 0,
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              minimumSize: const Size(0, 36),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10),
-              ),
-              textStyle: AppTypography.labelMd.copyWith(
-                fontWeight: FontWeight.w600,
-                fontSize: 12,
-              ),
-            ),
-          ),
-        ],
-      ),
     );
   }
 }

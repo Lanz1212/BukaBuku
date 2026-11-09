@@ -449,8 +449,8 @@ class _SearchScreenState extends State<SearchScreen> {
                           try {
                             await CartService.addToCart(book.id, quantity: 1);
                             if (!context.mounted) return;
-                            ScaffoldMessenger.of(context).removeCurrentSnackBar();
-                            ScaffoldMessenger.of(context).showSnackBar(
+                            AppNavigation.hideCurrentSnackBar();
+                            AppNavigation.showSnackBar(
                               SnackBar(
                                 content: Text('${book.title} ditambahkan ke keranjang belanja'),
                                 backgroundColor: AppColors.primaryContainer,
@@ -471,7 +471,7 @@ class _SearchScreenState extends State<SearchScreen> {
                             );
                           } catch (e) {
                             if (!context.mounted) return;
-                            ScaffoldMessenger.of(context).showSnackBar(
+                            AppNavigation.showSnackBar(
                               SnackBar(
                                 content: Text('Gagal menambahkan ke keranjang: $e'),
                                 backgroundColor: AppColors.error,

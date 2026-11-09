@@ -5,6 +5,34 @@ import '../models/notification_model.dart';
 class NotificationService {
   static SupabaseClient get _client => Supabase.instance.client;
 
+  /// Global notifier for whether the user has unread notifications
+  static final ValueNotifier<bool> hasUnreadNotifier = ValueNotifier<bool>(false);
+
+  /// Check whether current user has any unread notifications
+  static Future<bool> checkHasUnreadNotifications() async {
+    try {
+      final user = _client.auth.currentUser;
+      if (user == null) {
+        hasUnreadNotifier.value = false;
+        return false;
+      }
+
+      final response = await _client
+          .from('notifications')
+          .select('id')
+          .eq('user_id', user.id)
+          .eq('is_unread', true)
+          .limit(1);
+
+      final hasUnread = (response as List<dynamic>).isNotEmpty;
+      hasUnreadNotifier.value = hasUnread;
+      return hasUnread;
+    } catch (e) {
+      debugPrint('Error checking unread notifications: $e');
+      return hasUnreadNotifier.value;
+    }
+  }
+
   /// Fetch notifications for the current authenticated user from Supabase.
   static Future<List<NotificationModel>> fetchNotifications({
     NotificationCategory? category,
@@ -12,6 +40,7 @@ class NotificationService {
     try {
       final user = _client.auth.currentUser;
       if (user == null) {
+        hasUnreadNotifier.value = false;
         return [];
       }
 
@@ -28,9 +57,15 @@ class NotificationService {
       final response = await query.order('created_at', ascending: false);
       final list = response as List<dynamic>;
 
-      return list
+      final models = list
           .map((row) => NotificationModel.fromSupabase(row as Map<String, dynamic>))
           .toList();
+
+      if (category == null || category == NotificationCategory.all) {
+        hasUnreadNotifier.value = models.any((n) => n.isUnread);
+      }
+
+      return models;
     } catch (e) {
       debugPrint('Error fetching notifications from Supabase: $e');
       return [];
@@ -48,6 +83,8 @@ class NotificationService {
           .update({'is_unread': false})
           .eq('id', notificationId)
           .eq('user_id', user.id);
+
+      await checkHasUnreadNotifications();
     } catch (e) {
       debugPrint('Error marking notification as read: $e');
     }
@@ -64,6 +101,8 @@ class NotificationService {
           .update({'is_unread': false})
           .eq('user_id', user.id)
           .eq('is_unread', true);
+
+      hasUnreadNotifier.value = false;
     } catch (e) {
       debugPrint('Error marking all notifications as read: $e');
     }

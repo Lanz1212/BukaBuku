@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_typography.dart';
 import '../category/screens/category_screen.dart';
@@ -6,11 +7,13 @@ import '../search/screens/search_screen.dart';
 import '../book_detail/screens/book_detail_screen.dart';
 import '../book_detail/models/book_detail.dart';
 import '../../core/services/book_service.dart';
+import '../../core/services/cart_service.dart';
 import '../admin/book_management/models/admin_book_item.dart';
 import '../cart/screens/cart_screen.dart';
 import '../favorite/screens/favorite_screen.dart';
 import '../order/screens/order_list_screen.dart';
 import '../notification/screens/notification_screen.dart';
+import '../notification/services/notification_service.dart';
 import '../profile/screens/profile_screen.dart';
 import '../../shared/widgets/bookstore_bottom_nav.dart';
 
@@ -29,11 +32,41 @@ class _HomeScreenState extends State<HomeScreen> {
   List<AdminBookItem> _topRatedBooks = [];
   List<String> _categories = ['Semua'];
   bool _isLoading = true;
+  RealtimeChannel? _notificationChannel;
 
   @override
   void initState() {
     super.initState();
     _loadData();
+    _loadBadgeData();
+    _subscribeNotifications();
+  }
+
+  @override
+  void dispose() {
+    _notificationChannel?.unsubscribe();
+    super.dispose();
+  }
+
+  void _subscribeNotifications() {
+    final userId = Supabase.instance.client.auth.currentUser?.id;
+    if (userId != null) {
+      _notificationChannel = NotificationService.subscribeToNotifications(
+        userId: userId,
+        onData: () {
+          NotificationService.checkHasUnreadNotifications();
+        },
+      );
+    }
+  }
+
+  Future<void> _loadBadgeData() async {
+    try {
+      await Future.wait([
+        CartService.getCartItemCount(),
+        NotificationService.checkHasUnreadNotifications(),
+      ]);
+    } catch (_) {}
   }
 
   Future<void> _loadData() async {
@@ -81,7 +114,12 @@ class _HomeScreenState extends State<HomeScreen> {
             // Content
             Expanded(
               child: RefreshIndicator(
-                onRefresh: _loadData,
+                onRefresh: () async {
+                  await Future.wait([
+                    _loadData(),
+                    _loadBadgeData(),
+                  ]);
+                },
                 color: AppColors.primaryContainer,
                 child: SingleChildScrollView(
                   physics: const AlwaysScrollableScrollPhysics(),
@@ -386,36 +424,44 @@ class _HomeScreenState extends State<HomeScreen> {
                     MaterialPageRoute(
                       builder: (_) => const NotificationScreen(),
                     ),
-                  );
+                  ).then((_) {
+                    _loadBadgeData();
+                  });
                 },
-                child: Stack(
-                  children: [
-                    Container(
-                      width: 40,
-                      height: 40,
-                      decoration: const BoxDecoration(
-                        color: AppColors.surfaceContainer,
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Icon(
-                        Icons.notifications_outlined,
-                        size: 20,
-                        color: AppColors.onSurfaceVariant,
-                      ),
-                    ),
-                    Positioned(
-                      top: 2,
-                      right: 2,
-                      child: Container(
-                        width: 10,
-                        height: 10,
-                        decoration: const BoxDecoration(
-                          color: AppColors.error,
-                          shape: BoxShape.circle,
+                child: ValueListenableBuilder<bool>(
+                  valueListenable: NotificationService.hasUnreadNotifier,
+                  builder: (context, hasUnread, _) {
+                    return Stack(
+                      children: [
+                        Container(
+                          width: 40,
+                          height: 40,
+                          decoration: const BoxDecoration(
+                            color: AppColors.surfaceContainer,
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(
+                            Icons.notifications_outlined,
+                            size: 20,
+                            color: AppColors.onSurfaceVariant,
+                          ),
                         ),
-                      ),
-                    ),
-                  ],
+                        if (hasUnread)
+                          Positioned(
+                            top: 2,
+                            right: 2,
+                            child: Container(
+                              width: 10,
+                              height: 10,
+                              decoration: const BoxDecoration(
+                                color: AppColors.error,
+                                shape: BoxShape.circle,
+                              ),
+                            ),
+                          ),
+                      ],
+                    );
+                  },
                 ),
               ),
             ],
@@ -622,7 +668,9 @@ class _HomeScreenState extends State<HomeScreen> {
               bookDetail: BookDetail.fromAdminBookItem(book),
             ),
           ),
-        );
+        ).then((_) {
+          _loadBadgeData();
+        });
       },
       child: Container(
         width: 140,
@@ -749,28 +797,36 @@ class _HomeScreenState extends State<HomeScreen> {
             MaterialPageRoute(
               builder: (context) => const CategoryScreen(),
             ),
-          );
+          ).then((_) {
+            _loadBadgeData();
+          });
         } else if (index == 2) {
           Navigator.push(
             context,
             MaterialPageRoute(
               builder: (context) => const CartScreen(),
             ),
-          );
+          ).then((_) {
+            _loadBadgeData();
+          });
         } else if (index == 3) {
           Navigator.push(
             context,
             MaterialPageRoute(
               builder: (context) => const OrderListScreen(),
             ),
-          );
+          ).then((_) {
+            _loadBadgeData();
+          });
         } else if (index == 4) {
           Navigator.push(
             context,
             MaterialPageRoute(
               builder: (context) => const ProfileScreen(),
             ),
-          );
+          ).then((_) {
+            _loadBadgeData();
+          });
         }
       },
     );

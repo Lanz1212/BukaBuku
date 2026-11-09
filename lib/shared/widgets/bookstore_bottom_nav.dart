@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../core/services/cart_service.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_typography.dart';
 
@@ -7,11 +8,13 @@ import '../../core/theme/app_typography.dart';
 class BookstoreBottomNav extends StatelessWidget {
   final int currentIndex;
   final ValueChanged<int> onTabSelected;
+  final int? cartItemCount;
 
   const BookstoreBottomNav({
     super.key,
     required this.currentIndex,
     required this.onTabSelected,
+    this.cartItemCount,
   });
 
   @override
@@ -52,12 +55,18 @@ class BookstoreBottomNav extends StatelessWidget {
                 activeIcon: Icons.grid_view_rounded,
                 label: 'Kategori',
               ),
-              _buildNavItem(
-                index: 2,
-                icon: Icons.shopping_bag_outlined,
-                activeIcon: Icons.shopping_bag_rounded,
-                label: 'Keranjang',
-                badgeCount: 2,
+              ValueListenableBuilder<int>(
+                valueListenable: CartService.cartCountNotifier,
+                builder: (context, globalCount, _) {
+                  final effectiveCount = cartItemCount ?? globalCount;
+                  return _buildNavItem(
+                    index: 2,
+                    icon: Icons.shopping_bag_outlined,
+                    activeIcon: Icons.shopping_bag_rounded,
+                    label: 'Keranjang',
+                    badgeCount: effectiveCount,
+                  );
+                },
               ),
               _buildNavItem(
                 index: 3,

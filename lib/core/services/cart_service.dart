@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../features/cart/models/cart_item.dart';
 
@@ -5,10 +6,16 @@ class CartService {
   static SupabaseClient get _client => Supabase.instance.client;
   static String? get currentUserId => _client.auth.currentUser?.id;
 
+  /// Global notifier for total items in user's cart
+  static final ValueNotifier<int> cartCountNotifier = ValueNotifier<int>(0);
+
   /// Fetch all cart items for the logged-in user with joined book details
   static Future<List<CartItem>> fetchCartItems() async {
     final userId = currentUserId;
-    if (userId == null) return [];
+    if (userId == null) {
+      cartCountNotifier.value = 0;
+      return [];
+    }
 
     try {
       final response = await _client
@@ -18,9 +25,11 @@ class CartService {
           .order('created_at', ascending: true);
 
       final list = response as List<dynamic>;
-      return list
+      final items = list
           .map((e) => CartItem.fromSupabase(e as Map<String, dynamic>))
           .toList();
+      cartCountNotifier.value = items.length;
+      return items;
     } catch (e) {
       // Return empty list on failure or rethrow if needed
       return [];
@@ -60,6 +69,8 @@ class CartService {
         'is_selected': true,
       });
     }
+
+    await getCartItemCount();
   }
 
   /// Update item quantity directly
@@ -102,12 +113,14 @@ class CartService {
   /// Remove single cart item by cart record ID
   static Future<void> removeCartItem(String cartItemId) async {
     await _client.from('cart_items').delete().eq('id', cartItemId);
+    await getCartItemCount();
   }
 
   /// Remove multiple cart items by their record IDs
   static Future<void> removeCartItems(List<String> cartItemIds) async {
     if (cartItemIds.isEmpty) return;
     await _client.from('cart_items').delete().filter('id', 'in', cartItemIds);
+    await getCartItemCount();
   }
 
   /// Remove cart item by bookId for current user
@@ -119,6 +132,7 @@ class CartService {
         .delete()
         .eq('user_id', userId)
         .eq('book_id', bookId);
+    await getCartItemCount();
   }
 
   /// Clear all cart items for current user
@@ -126,6 +140,7 @@ class CartService {
     final userId = currentUserId;
     if (userId == null) return;
     await _client.from('cart_items').delete().eq('user_id', userId);
+    cartCountNotifier.value = 0;
   }
 
   /// Check whether a book is already in current user's cart
@@ -146,14 +161,23 @@ class CartService {
   /// Get total item count in user's cart
   static Future<int> getCartItemCount() async {
     final userId = currentUserId;
-    if (userId == null) return 0;
+    if (userId == null) {
+      cartCountNotifier.value = 0;
+      return 0;
+    }
 
-    final response = await _client
-        .from('cart_items')
-        .select('id')
-        .eq('user_id', userId);
+    try {
+      final response = await _client
+          .from('cart_items')
+          .select('id')
+          .eq('user_id', userId);
 
-    return (response as List<dynamic>).length;
+      final count = (response as List<dynamic>).length;
+      cartCountNotifier.value = count;
+      return count;
+    } catch (_) {
+      return cartCountNotifier.value;
+    }
   }
 }
 
