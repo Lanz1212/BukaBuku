@@ -112,7 +112,8 @@ class QrisGuideAccordion extends StatelessWidget {
           _buildStepRow(
             stepNumber: 3,
             textSpan: const TextSpan(
-              text: 'Arahkan kamera ke layar atau unggah gambar QR yang tersimpan.',
+              text:
+                  'Arahkan kamera ke layar atau unggah gambar QR yang tersimpan.',
             ),
           ),
 

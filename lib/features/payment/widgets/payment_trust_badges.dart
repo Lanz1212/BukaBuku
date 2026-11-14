@@ -93,11 +93,7 @@ class PaymentBookstoreNoteBanner extends StatelessWidget {
         children: [
           Row(
             children: [
-              const Icon(
-                Icons.menu_book,
-                size: 18,
-                color: AppColors.secondary,
-              ),
+              const Icon(Icons.menu_book, size: 18, color: AppColors.secondary),
               const SizedBox(width: 8),
               Text(
                 'Tiap buku dibungkus kertas daur ulang hangat',
@@ -108,11 +104,7 @@ class PaymentBookstoreNoteBanner extends StatelessWidget {
               ),
             ],
           ),
-          const Icon(
-            Icons.eco_outlined,
-            size: 16,
-            color: AppColors.outline,
-          ),
+          const Icon(Icons.eco_outlined, size: 16, color: AppColors.outline),
         ],
       ),
     );

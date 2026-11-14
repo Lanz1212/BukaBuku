@@ -130,12 +130,15 @@ class ProfileService {
           final decoded = jsonDecode(trimmed);
           if (decoded is List) {
             return decoded
-                .map((item) => ShippingAddress.fromMap(
-                    Map<String, dynamic>.from(item as Map)))
+                .map(
+                  (item) => ShippingAddress.fromMap(
+                    Map<String, dynamic>.from(item as Map),
+                  ),
+                )
                 .toList();
           } else if (decoded is Map) {
             return [
-              ShippingAddress.fromMap(Map<String, dynamic>.from(decoded))
+              ShippingAddress.fromMap(Map<String, dynamic>.from(decoded)),
             ];
           }
         } catch (e) {
@@ -149,8 +152,7 @@ class ProfileService {
       return [
         ShippingAddress(
           id: 'addr_default',
-          recipientName:
-              (name != null && name.isNotEmpty) ? name : 'Penerima',
+          recipientName: (name != null && name.isNotEmpty) ? name : 'Penerima',
           phoneNumber: phone ?? '',
           label: 'Rumah',
           fullAddress: trimmed,

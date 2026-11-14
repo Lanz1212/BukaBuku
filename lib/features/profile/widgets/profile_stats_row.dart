@@ -84,11 +84,7 @@ class ProfileStatsRow extends StatelessWidget {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(
-                      icon,
-                      size: 16,
-                      color: AppColors.secondary,
-                    ),
+                    Icon(icon, size: 16, color: AppColors.secondary),
                     const SizedBox(width: 6),
                     Text(
                       value,

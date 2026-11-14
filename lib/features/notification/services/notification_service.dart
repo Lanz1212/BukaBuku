@@ -6,7 +6,9 @@ class NotificationService {
   static SupabaseClient get _client => Supabase.instance.client;
 
   /// Global notifier for whether the user has unread notifications
-  static final ValueNotifier<bool> hasUnreadNotifier = ValueNotifier<bool>(false);
+  static final ValueNotifier<bool> hasUnreadNotifier = ValueNotifier<bool>(
+    false,
+  );
 
   /// Check whether current user has any unread notifications
   static Future<bool> checkHasUnreadNotifications() async {
@@ -44,13 +46,12 @@ class NotificationService {
         return [];
       }
 
-      var query = _client
-          .from('notifications')
-          .select()
-          .eq('user_id', user.id);
+      var query = _client.from('notifications').select().eq('user_id', user.id);
 
       if (category != null && category != NotificationCategory.all) {
-        final catStr = category == NotificationCategory.promo ? 'promo' : 'order';
+        final catStr = category == NotificationCategory.promo
+            ? 'promo'
+            : 'order';
         query = query.eq('category', catStr);
       }
 
@@ -58,7 +59,10 @@ class NotificationService {
       final list = response as List<dynamic>;
 
       final models = list
-          .map((row) => NotificationModel.fromSupabase(row as Map<String, dynamic>))
+          .map(
+            (row) =>
+                NotificationModel.fromSupabase(row as Map<String, dynamic>),
+          )
           .toList();
 
       if (category == null || category == NotificationCategory.all) {
@@ -114,7 +118,8 @@ class NotificationService {
     required void Function() onData,
   }) {
     try {
-      final channelName = 'user_notifications_${userId}_${DateTime.now().millisecondsSinceEpoch}';
+      final channelName =
+          'user_notifications_${userId}_${DateTime.now().millisecondsSinceEpoch}';
       final channel = _client.channel(channelName);
 
       channel
@@ -140,4 +145,3 @@ class NotificationService {
     }
   }
 }
-
