@@ -6,7 +6,7 @@ import 'payment_confirm_cash_sheet.dart';
 
 class PaymentTransactionCard extends StatelessWidget {
   final PaymentTransaction transaction;
-  final VoidCallback onCashConfirmed;
+  final void Function(int receivedAmount, int changeAmount) onCashConfirmed;
   final ValueChanged<PaymentTransaction> onShowInvoice;
   final ValueChanged<PaymentTransaction> onCheckStatus;
 

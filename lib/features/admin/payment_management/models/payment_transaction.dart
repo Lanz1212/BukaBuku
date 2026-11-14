@@ -17,10 +17,13 @@ enum PaymentMethod {
 
 class PaymentTransaction {
   final String orderId;
+  final String rawOrderId;
   final String time;
+  final DateTime? createdAt;
   final String customerName;
   final String customerPhone;
   final PaymentStatus status;
+  final bool isPaid;
   final PaymentMethod method;
   final String methodLabel;
   final int total;
@@ -30,10 +33,13 @@ class PaymentTransaction {
 
   const PaymentTransaction({
     required this.orderId,
+    required this.rawOrderId,
     required this.time,
+    this.createdAt,
     required this.customerName,
     required this.customerPhone,
     required this.status,
+    required this.isPaid,
     required this.method,
     required this.methodLabel,
     required this.total,
@@ -65,7 +71,7 @@ class PaymentTransaction {
       case PaymentStatus.pending:
         return 'Menunggu Pembayaran';
       case PaymentStatus.failed:
-        return 'Kedaluwarsa';
+        return 'Gagal / Batal';
     }
   }
 
@@ -82,80 +88,135 @@ class PaymentTransaction {
     }
   }
 
-  static List<PaymentTransaction> get mockTransactions => [
-        const PaymentTransaction(
-          orderId: '#ORD00127',
-          time: 'Hari ini, 10:48 WIB',
-          customerName: 'Ahmad Fikri',
-          customerPhone: '0857-1234-9087',
-          status: PaymentStatus.needsConfirmation,
-          method: PaymentMethod.cashPickup,
-          methodLabel: 'Cash Kasir (Pickup)',
-          total: 310000,
-          deliveryType: 'Ambil di Toko',
-          bookTitles: [
-            'Psychology of Money (x1)',
-            'Sapiens: Riwayat Singkat (x1)',
-            'Filosofi Teras (x1)',
-          ],
-        ),
-        const PaymentTransaction(
-          orderId: '#ORD00125',
-          time: 'Hari ini, 10:42 WIB',
-          customerName: 'Budi Santoso',
-          customerPhone: '0812-3456-7890',
-          status: PaymentStatus.paid,
-          method: PaymentMethod.qrisOnline,
-          methodLabel: 'QRIS BCA Instan',
-          total: 150000,
-          deliveryType: 'Ambil di Toko',
-          bookTitles: [
-            'Atomic Habits (x1)',
-            'Filosofi Teras (x1)',
-          ],
-        ),
-        const PaymentTransaction(
-          orderId: '#ORD00126',
-          time: 'Hari ini, 10:15 WIB',
-          customerName: 'Siti Rahma',
-          customerPhone: '0813-8899-2341',
-          status: PaymentStatus.paid,
-          method: PaymentMethod.transferVA,
-          methodLabel: 'Transfer VA BCA',
-          total: 85000,
-          deliveryType: 'Kurir Reguler (Delivery)',
-          bookTitles: [
-            'Laut Bercerita (x1)',
-          ],
-        ),
-        const PaymentTransaction(
-          orderId: '#ORD00128',
-          time: 'Hari ini, 09:50 WIB',
-          customerName: 'Rian Pratama',
-          customerPhone: '0819-4455-6677',
-          status: PaymentStatus.pending,
-          method: PaymentMethod.qrisOnline,
-          methodLabel: 'QRIS GoPay Instan',
-          total: 120000,
-          deliveryType: 'Ambil di Toko',
-          bookTitles: [
-            'Bumi Manusia (x1)',
-          ],
-        ),
-        const PaymentTransaction(
-          orderId: '#ORD00123',
-          time: 'Hari ini, 08:30 WIB',
-          customerName: 'Dewi Lestari',
-          customerPhone: '0878-9988-7766',
-          status: PaymentStatus.failed,
-          method: PaymentMethod.eWallet,
-          methodLabel: 'E-Wallet ShopeePay',
-          total: 95000,
-          deliveryType: 'Kurir Reguler (Delivery)',
-          failureReason: 'Batas waktu pembayaran 15 menit terlewati',
-          bookTitles: [
-            'Cantik Itu Luka (x1)',
-          ],
-        ),
-      ];
+  factory PaymentTransaction.fromOrderMap(
+    Map<String, dynamic> order, [
+    List<dynamic>? items,
+  ]) {
+    final rawId = (order['id'] ?? '').toString();
+    final orderIdFormatted = rawId.startsWith('#') ? rawId : '#$rawId';
+
+    // Parse items
+    final rawItems = items ?? (order['order_items'] as List<dynamic>? ?? []);
+    final bookTitles = <String>[];
+    for (final item in rawItems) {
+      if (item is Map<String, dynamic>) {
+        final title = item['title'] as String? ?? 'Buku';
+        final qty = (item['quantity'] as num?)?.toInt() ?? 1;
+        bookTitles.add('$title (x$qty)');
+      }
+    }
+
+    final pMethod = (order['payment_method'] as String? ?? '').toLowerCase();
+    final pChannel = (order['payment_channel'] as String? ?? '').trim();
+    final isPaid = order['is_paid'] as bool? ?? false;
+    final statusStr = (order['status'] as String? ?? '').toLowerCase();
+    final midtransStatus =
+        (order['midtrans_transaction_status'] as String? ?? '').toLowerCase();
+
+    // Check cash vs midtrans
+    final isCash = pMethod.contains('kasir') || pMethod.contains('tunai');
+
+    PaymentMethod method;
+    String methodLabel;
+
+    if (isCash) {
+      method = PaymentMethod.cashPickup;
+      methodLabel = 'Tunai Kasir';
+    } else {
+      // Semua non-kasir adalah Midtrans sesuai permintaan user
+      final chLower = pChannel.toLowerCase();
+      if (chLower.contains('qris') ||
+          chLower.contains('gopay') ||
+          chLower.contains('dana') ||
+          chLower.contains('shopee')) {
+        method = PaymentMethod.qrisOnline;
+        methodLabel = pChannel.isNotEmpty ? 'Midtrans ($pChannel)' : 'Midtrans (QRIS/E-Wallet)';
+      } else if (chLower.contains('va') ||
+          chLower.contains('virtual') ||
+          chLower.contains('bca') ||
+          chLower.contains('mandiri') ||
+          chLower.contains('bri') ||
+          chLower.contains('bni')) {
+        method = PaymentMethod.transferVA;
+        methodLabel = pChannel.isNotEmpty ? 'Midtrans ($pChannel)' : 'Midtrans (VA)';
+      } else {
+        method = PaymentMethod.eWallet;
+        methodLabel = pChannel.isNotEmpty ? 'Midtrans ($pChannel)' : 'Midtrans Gateway';
+      }
+    }
+
+    // Determine Status
+    PaymentStatus txStatus;
+    if (statusStr == 'dibatalkan' ||
+        midtransStatus == 'expire' ||
+        midtransStatus == 'cancel' ||
+        midtransStatus == 'deny' ||
+        midtransStatus == 'failure') {
+      txStatus = PaymentStatus.failed;
+    } else if (isPaid) {
+      txStatus = PaymentStatus.paid;
+    } else if (isCash) {
+      txStatus = PaymentStatus.needsConfirmation;
+    } else {
+      txStatus = PaymentStatus.pending;
+    }
+
+    // Parse DateTime
+    DateTime? createdAt;
+    if (order['created_at'] != null) {
+      createdAt = DateTime.tryParse(order['created_at'].toString())?.toLocal();
+    }
+
+    final timeStr = _formatTimestamp(createdAt);
+
+    return PaymentTransaction(
+      orderId: orderIdFormatted,
+      rawOrderId: rawId,
+      time: timeStr,
+      createdAt: createdAt,
+      customerName: order['customer_name'] as String? ?? 'Pelanggan',
+      customerPhone: order['customer_phone'] as String? ?? '-',
+      status: txStatus,
+      isPaid: isPaid,
+      method: method,
+      methodLabel: methodLabel,
+      total: (order['total_price'] as num?)?.toInt() ?? 0,
+      bookTitles: bookTitles,
+      deliveryType: order['delivery_type'] as String?,
+      failureReason: txStatus == PaymentStatus.failed
+          ? (order['special_note'] as String? ?? 'Pesanan dibatalkan / kedaluwarsa')
+          : null,
+    );
+  }
+
+  static String _formatTimestamp(DateTime? dt) {
+    if (dt == null) return '-';
+    final now = DateTime.now();
+    final isToday =
+        now.year == dt.year && now.month == dt.month && now.day == dt.day;
+
+    final hour = dt.hour.toString().padLeft(2, '0');
+    final minute = dt.minute.toString().padLeft(2, '0');
+
+    if (isToday) {
+      return 'Hari ini, $hour:$minute WIB';
+    }
+
+    const months = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'Mei',
+      'Jun',
+      'Jul',
+      'Agu',
+      'Sep',
+      'Okt',
+      'Nov',
+      'Des'
+    ];
+    final mName = (dt.month >= 1 && dt.month <= 12) ? months[dt.month - 1] : '';
+    return '${dt.day} $mName ${dt.year}, $hour:$minute WIB';
+  }
 }

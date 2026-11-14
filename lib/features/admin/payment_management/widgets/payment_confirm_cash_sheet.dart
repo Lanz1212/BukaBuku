@@ -5,7 +5,7 @@ import '../models/payment_transaction.dart';
 
 class PaymentConfirmCashSheet extends StatefulWidget {
   final PaymentTransaction transaction;
-  final VoidCallback onConfirmed;
+  final void Function(int receivedAmount, int changeAmount) onConfirmed;
 
   const PaymentConfirmCashSheet({
     super.key,
@@ -169,16 +169,12 @@ class _PaymentConfirmCashSheetState extends State<PaymentConfirmCashSheet> {
                   amount: widget.transaction.total,
                 ),
                 _buildQuickButton(
-                  label: _formatPrice(widget.transaction.total + 40000),
-                  amount: widget.transaction.total + 40000,
+                  label: _formatPrice(widget.transaction.total + 50000),
+                  amount: widget.transaction.total + 50000,
                 ),
                 _buildQuickButton(
-                  label: _formatPrice(widget.transaction.total + 90000),
-                  amount: widget.transaction.total + 90000,
-                ),
-                _buildQuickButton(
-                  label: 'Rp500.000',
-                  amount: 500000,
+                  label: _formatPrice(widget.transaction.total + 100000),
+                  amount: widget.transaction.total + 100000,
                 ),
               ],
             ),
@@ -265,11 +261,11 @@ class _PaymentConfirmCashSheetState extends State<PaymentConfirmCashSheet> {
               onPressed: isValid
                   ? () {
                       Navigator.pop(context);
-                      widget.onConfirmed();
+                      widget.onConfirmed(_receivedAmount, change);
                     }
                   : null,
               child: Text(
-                'Konfirmasi & Terima Pembayaran',
+                'Konfirmasi & Simpan Pembayaran',
                 style: AppTypography.labelLg.copyWith(
                   color: Colors.white,
                   fontWeight: FontWeight.w700,
