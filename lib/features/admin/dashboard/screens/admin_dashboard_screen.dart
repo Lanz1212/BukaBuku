@@ -19,7 +19,7 @@ import '../../scan_qr_pickup/screens/scan_qr_pickup_screen.dart';
 
 class AdminDashboardScreen extends StatefulWidget {
   final VoidCallback? onNavigateToBooks;
-  final VoidCallback? onNavigateToOrders;
+  final void Function({int filterIndex})? onNavigateToOrders;
   final VoidCallback? onNavigateToStock;
   final void Function(String bookId)? onNavigateToStockWithBook;
 
@@ -36,7 +36,7 @@ class AdminDashboardScreen extends StatefulWidget {
 }
 
 class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
-  List<AdminStatItem> _stats = AdminStatItem.mockStats;
+  List<AdminStatItem> _stats = AdminStatItem.initialEmptyStats;
   List<AdminRecentOrder> _orders = [];
   List<AdminLowStockItem> _lowStock = [];
   int _totalOrdersCount = 0;
@@ -263,8 +263,13 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
             AdminRecentOrders(
               orders: _orders,
               totalCount: _totalOrdersCount,
-              onViewAll: widget.onNavigateToOrders ??
-                  () => _showNotice('Membuka seluruh daftar pesanan'),
+              onViewAll: () {
+                if (widget.onNavigateToOrders != null) {
+                  widget.onNavigateToOrders!(filterIndex: 0);
+                } else {
+                  _showNotice('Membuka seluruh daftar pesanan');
+                }
+              },
               onOrderAction: (order) {
                 _navigateToOrderDetail(order.rawOrderId);
               },
@@ -403,7 +408,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
             Expanded(
               child: AdminStatCard(
                 item: _stats[1],
-                onTap: widget.onNavigateToOrders,
+                onTap: () => widget.onNavigateToOrders?.call(filterIndex: 0),
               ),
             ),
           ],
@@ -414,7 +419,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
             Expanded(
               child: AdminStatCard(
                 item: _stats[2],
-                onTap: widget.onNavigateToOrders,
+                onTap: () => widget.onNavigateToOrders?.call(filterIndex: 1),
               ),
             ),
             const SizedBox(width: 10),

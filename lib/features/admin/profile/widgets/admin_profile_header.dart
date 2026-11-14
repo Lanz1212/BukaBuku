@@ -16,14 +16,14 @@ class AdminProfileHeader extends StatelessWidget {
 
   const AdminProfileHeader({
     super.key,
-    this.name = 'Budi Pratama',
-    this.role = 'Owner / Super Admin',
+    this.name = 'Admin',
+    this.role = 'Staff Admin / Kasir Toko',
     this.storeLocation = 'Gerai Buka Buku',
-    this.adminId = 'BUDI-ADM-01',
-    this.email = 'admin@bukabuku.id',
-    this.phone = '+62 812-3456-7890',
-    this.joinedDate = 'Mei 2021',
-    this.accessLevel = 'Penuh (Full)',
+    this.adminId = '-',
+    this.email = '-',
+    this.phone = '-',
+    this.joinedDate = '-',
+    this.accessLevel = 'Penuh (Admin)',
     this.onEditProfile,
   });
 
@@ -142,7 +142,7 @@ class AdminProfileHeader extends StatelessWidget {
 
                     // Gerai & ID
                     Text(
-                      'Gerai Utama Cikini • ID: $adminId',
+                      '$storeLocation • ID: $adminId',
                       style: AppTypography.caption.copyWith(
                         color: AppColors.onSurfaceVariant,
                         fontSize: 11.5,

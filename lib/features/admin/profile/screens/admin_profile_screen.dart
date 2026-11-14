@@ -14,6 +14,8 @@ import '../widgets/admin_section_header.dart';
 import 'staff_guide_screen.dart';
 import 'cashier_log_screen.dart';
 import '../../store_settings/screens/store_settings_screen.dart';
+import '../../store_settings/services/store_settings_service.dart';
+import '../../store_settings/models/store_settings_model.dart';
 import '../../../auth/login_screen.dart';
 import '../../../auth/services/auth_service.dart';
 
@@ -33,6 +35,7 @@ class AdminProfileScreen extends StatefulWidget {
 
 class _AdminProfileScreenState extends State<AdminProfileScreen> {
   UserProfile? _profile;
+  StoreSettingsModel? _storeSettings;
   bool _isLoading = true;
 
   @override
@@ -43,10 +46,14 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
 
   Future<void> _loadProfile() async {
     try {
-      final profile = await ProfileService.fetchCurrentUserProfile();
+      final results = await Future.wait([
+        ProfileService.fetchCurrentUserProfile(),
+        StoreSettingsService.fetchStoreSettings(),
+      ]);
       if (!mounted) return;
       setState(() {
-        _profile = profile;
+        _profile = results[0] as UserProfile;
+        _storeSettings = results[1] as StoreSettingsModel;
         _isLoading = false;
       });
     } catch (_) {
@@ -137,11 +144,14 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
   Widget build(BuildContext context) {
     final profile = _profile;
     final name = profile?.name ?? 'Admin Toko';
-    final email = profile?.email.isNotEmpty == true ? profile!.email : 'admin@bukabuku.id';
-    final phone = profile?.phone.isNotEmpty == true ? profile!.phone : '+62 812-3456-7890';
+    final email = profile?.email.isNotEmpty == true ? profile!.email : '-';
+    final phone = profile?.phone.isNotEmpty == true ? profile!.phone : '-';
     final adminId = profile != null && profile.id.isNotEmpty
         ? 'ADM-${profile.id.substring(0, math.min(6, profile.id.length)).toUpperCase()}'
-        : 'BUDI-ADM-01';
+        : '-';
+    final role = profile?.role == 'admin' ? 'Staff Admin / Kasir Toko' : 'Staff Admin Toko';
+    final storeLocation = _storeSettings?.branchName ?? 'Gerai Buka Buku';
+    final joinedDate = profile?.joinedDateFormatted ?? '-';
 
     return RefreshIndicator(
       onRefresh: _loadProfile,
@@ -161,7 +171,10 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
               email: email,
               phone: phone,
               adminId: adminId,
-              role: 'Staff Admin / Kasir Toko',
+              role: role,
+              storeLocation: storeLocation,
+              joinedDate: joinedDate,
+              accessLevel: 'Penuh (Admin)',
               onEditProfile: () async {
                 if (profile != null) {
                   await Navigator.push(

@@ -19,7 +19,8 @@ class AdminStatItem {
     this.badgeText,
   });
 
-  static List<AdminStatItem> get mockStats => const [
+  /// Nilai awal kosong sementara sebelum data riil database termuat
+  static List<AdminStatItem> get initialEmptyStats => const [
         AdminStatItem(
           title: 'Total Buku',
           value: '0',
@@ -40,8 +41,8 @@ class AdminStatItem {
           unit: 'pesanan',
           subtitle: 'Prioritas pemrosesan',
           icon: Icons.pending_actions_rounded,
-          isHighlight: true,
-          badgeText: 'Perlu Proses',
+          isHighlight: false,
+          badgeText: null,
         ),
         AdminStatItem(
           title: 'Total Transaksi',
@@ -51,4 +52,7 @@ class AdminStatItem {
           icon: Icons.trending_up_rounded,
         ),
       ];
+
+  @Deprecated('Gunakan initialEmptyStats')
+  static List<AdminStatItem> get mockStats => initialEmptyStats;
 }

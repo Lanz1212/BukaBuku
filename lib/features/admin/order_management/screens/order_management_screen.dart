@@ -7,12 +7,16 @@ import '../../../../core/services/cashier_log_service.dart';
 import '../models/admin_order_detail.dart';
 import '../widgets/order_card.dart';
 import '../widgets/order_status_chip.dart';
-import '../widgets/order_summary_bar.dart';
 import 'admin_order_detail_screen.dart';
 import '../../scan_qr_pickup/screens/scan_qr_pickup_screen.dart';
 
 class OrderManagementScreen extends StatefulWidget {
-  const OrderManagementScreen({super.key});
+  final int initialFilterIndex;
+
+  const OrderManagementScreen({
+    super.key,
+    this.initialFilterIndex = 0,
+  });
 
   @override
   State<OrderManagementScreen> createState() => _OrderManagementScreenState();
@@ -23,14 +27,25 @@ class _OrderManagementScreenState extends State<OrderManagementScreen> {
   bool _isLoading = true;
   RealtimeChannel? _realtimeChannel;
   final TextEditingController _searchController = TextEditingController();
-  int _selectedFilterIndex = 0; // 0: Semua, 1: Baru, 2: Diproses, 3: Siap Diambil, 4: Dikirim
+  late int _selectedFilterIndex;
 
   @override
   void initState() {
     super.initState();
+    _selectedFilterIndex = widget.initialFilterIndex;
     _orders = [];
     _loadOrders();
     _setupRealtimeSubscription();
+  }
+
+  @override
+  void didUpdateWidget(covariant OrderManagementScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.initialFilterIndex != widget.initialFilterIndex) {
+      setState(() {
+        _selectedFilterIndex = widget.initialFilterIndex;
+      });
+    }
   }
 
   @override
@@ -816,20 +831,6 @@ class _OrderManagementScreenState extends State<OrderManagementScreen> {
           ),
         ),
       ),
-
-        // Bottom Sticky Summary Bar
-        OrderSummaryBar(
-          completedToday: 28,
-          cancelledToday: 1,
-          onReportTap: () {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Mengunduh Laporan Pesanan Harian (PDF/Excel)...'),
-                behavior: SnackBarBehavior.floating,
-              ),
-            );
-          },
-        ),
       ],
     );
   }

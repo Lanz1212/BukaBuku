@@ -6,6 +6,8 @@ class UserProfile {
   final int orderCount;
   final int favoriteCount;
   final String? avatarUrl;
+  final String role;
+  final DateTime? createdAt;
 
   const UserProfile({
     required this.id,
@@ -15,7 +17,20 @@ class UserProfile {
     this.orderCount = 0,
     this.favoriteCount = 0,
     this.avatarUrl,
+    this.role = 'user',
+    this.createdAt,
   });
+
+  /// Format tanggal bergabung dengan kalender lokal Indonesia (contoh: "Oktober 2026")
+  String get joinedDateFormatted {
+    if (createdAt == null) return '-';
+    const months = [
+      'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+      'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
+    ];
+    final local = createdAt!.toLocal();
+    return '${months[local.month - 1]} ${local.year}';
+  }
 
   UserProfile copyWith({
     String? id,
@@ -25,6 +40,8 @@ class UserProfile {
     int? orderCount,
     int? favoriteCount,
     String? avatarUrl,
+    String? role,
+    DateTime? createdAt,
   }) {
     return UserProfile(
       id: id ?? this.id,
@@ -34,6 +51,8 @@ class UserProfile {
       orderCount: orderCount ?? this.orderCount,
       favoriteCount: favoriteCount ?? this.favoriteCount,
       avatarUrl: avatarUrl ?? this.avatarUrl,
+      role: role ?? this.role,
+      createdAt: createdAt ?? this.createdAt,
     );
   }
 
@@ -46,6 +65,9 @@ class UserProfile {
     final email = (data['email'] as String?)?.trim() ?? '';
     final phone = (data['phone'] as String?)?.trim() ?? '';
     final avatarUrl = (data['avatar_url'] as String?)?.trim();
+    final role = (data['role'] as String?)?.trim() ?? 'user';
+    final createdAtStr = data['created_at'] as String?;
+    final createdAt = createdAtStr != null ? DateTime.tryParse(createdAtStr) : null;
 
     return UserProfile(
       id: data['id']?.toString() ?? '',
@@ -57,6 +79,8 @@ class UserProfile {
       orderCount: orderCount,
       favoriteCount: favoriteCount,
       avatarUrl: (avatarUrl != null && avatarUrl.isNotEmpty) ? avatarUrl : null,
+      role: role,
+      createdAt: createdAt,
     );
   }
 
@@ -77,5 +101,7 @@ class UserProfile {
     orderCount: 0,
     favoriteCount: 0,
     avatarUrl: null,
+    role: 'user',
+    createdAt: null,
   );
 }

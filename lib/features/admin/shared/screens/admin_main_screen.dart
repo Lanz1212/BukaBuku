@@ -26,6 +26,8 @@ class _AdminMainScreenState extends State<AdminMainScreen> {
   late int _currentIndex;
   String? _targetStockBookId;
   int _stockScreenRebuildKeyCounter = 0;
+  int _targetOrderFilterIndex = 0;
+  int _orderScreenRebuildKeyCounter = 0;
 
   @override
   void initState() {
@@ -65,6 +67,14 @@ class _AdminMainScreenState extends State<AdminMainScreen> {
     });
   }
 
+  void _navigateToOrders({int filterIndex = 0}) {
+    setState(() {
+      _currentIndex = 3;
+      _targetOrderFilterIndex = filterIndex;
+      _orderScreenRebuildKeyCounter++;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -95,7 +105,7 @@ class _AdminMainScreenState extends State<AdminMainScreen> {
                   _targetStockBookId = null;
                 });
               },
-              onNavigateToOrders: () => setState(() => _currentIndex = 3),
+              onNavigateToOrders: _navigateToOrders,
               onNavigateToStockWithBook: _navigateToStockWithBook,
             ),
 
@@ -110,7 +120,10 @@ class _AdminMainScreenState extends State<AdminMainScreen> {
             ),
 
             // Tab 3: Pesanan Masuk
-            const OrderManagementScreen(),
+            OrderManagementScreen(
+              key: ValueKey('order_screen_${_targetOrderFilterIndex}_$_orderScreenRebuildKeyCounter'),
+              initialFilterIndex: _targetOrderFilterIndex,
+            ),
 
             // Tab 4: Profil Pengelola
             const AdminProfileScreen(),
