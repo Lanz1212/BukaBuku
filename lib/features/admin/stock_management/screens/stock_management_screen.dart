@@ -9,7 +9,14 @@ import '../widgets/stock_book_card.dart';
 import '../widgets/stock_summary_header.dart';
 
 class StockManagementScreen extends StatefulWidget {
-  const StockManagementScreen({super.key});
+  final String? initialTargetBookId;
+  final bool autoOpenAdjustModal;
+
+  const StockManagementScreen({
+    super.key,
+    this.initialTargetBookId,
+    this.autoOpenAdjustModal = false,
+  });
 
   @override
   State<StockManagementScreen> createState() => _StockManagementScreenState();
@@ -27,11 +34,49 @@ class _StockManagementScreenState extends State<StockManagementScreen> {
     'outOfStockCount': 0,
     'totalCopies': 0,
   };
+  bool _targetBookProcessed = false;
 
   @override
   void initState() {
     super.initState();
     _loadStockData();
+  }
+
+  @override
+  void didUpdateWidget(covariant StockManagementScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.initialTargetBookId != null &&
+        widget.initialTargetBookId != oldWidget.initialTargetBookId) {
+      _targetBookProcessed = false;
+      _checkTargetBook();
+    }
+  }
+
+  void _checkTargetBook() {
+    if (_targetBookProcessed) return;
+    final targetId = widget.initialTargetBookId;
+    if (targetId == null || targetId.isEmpty) return;
+
+    final targetIndex = _items.indexWhere(
+      (item) => item.bookId.toLowerCase() == targetId.toLowerCase(),
+    );
+
+    if (targetIndex != -1) {
+      _targetBookProcessed = true;
+      final targetItem = _items[targetIndex];
+      setState(() {
+        _selectedFilterIndex = 0;
+        _searchController.text = targetItem.title;
+      });
+
+      if (widget.autoOpenAdjustModal) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) {
+            _onOpenAdjustModal(targetItem);
+          }
+        });
+      }
+    }
   }
 
   @override
@@ -56,6 +101,8 @@ class _StockManagementScreenState extends State<StockManagementScreen> {
           _summary = summary;
           _isLoading = false;
         });
+
+        _checkTargetBook();
 
         if (showSnackBar) {
           ScaffoldMessenger.of(context).showSnackBar(

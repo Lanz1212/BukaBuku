@@ -3,7 +3,9 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/services/book_service.dart';
 import '../../../../core/services/order_service.dart';
+import '../../../../core/services/cashier_log_service.dart';
 import '../../order_management/models/admin_order_detail.dart';
+import '../../order_management/screens/admin_order_detail_screen.dart';
 import '../models/admin_stat_item.dart';
 import '../models/admin_order_item.dart';
 import '../widgets/admin_stat_card.dart';
@@ -17,10 +19,16 @@ import '../../scan_qr_pickup/screens/scan_qr_pickup_screen.dart';
 
 class AdminDashboardScreen extends StatefulWidget {
   final VoidCallback? onNavigateToBooks;
+  final VoidCallback? onNavigateToOrders;
+  final VoidCallback? onNavigateToStock;
+  final void Function(String bookId)? onNavigateToStockWithBook;
 
   const AdminDashboardScreen({
     super.key,
     this.onNavigateToBooks,
+    this.onNavigateToOrders,
+    this.onNavigateToStock,
+    this.onNavigateToStockWithBook,
   });
 
   @override
@@ -29,8 +37,11 @@ class AdminDashboardScreen extends StatefulWidget {
 
 class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   List<AdminStatItem> _stats = AdminStatItem.mockStats;
-  List<AdminRecentOrder> _orders = AdminRecentOrder.mockOrders;
-  List<AdminLowStockItem> _lowStock = AdminLowStockItem.mockLowStock;
+  List<AdminRecentOrder> _orders = [];
+  List<AdminLowStockItem> _lowStock = [];
+  int _totalOrdersCount = 0;
+  String _adminName = 'Admin';
+  bool _isLoading = true;
 
   @override
   void initState() {
@@ -38,99 +49,110 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     _loadDashboardData();
   }
 
+  String get _currentDateFormatted {
+    final now = DateTime.now();
+    const months = [
+      'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+      'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
+    ];
+    return 'Hari ini, ${now.day} ${months[now.month - 1]} ${now.year}';
+  }
+
   Future<void> _loadDashboardData() async {
     try {
+      final adminName = await CashierLogService.getCurrentAdminName();
       final summary = await BookService.fetchStockSummary();
       final lowBooks = await BookService.fetchLowStockBooks(limit: 5);
-      final realOrders = await OrderService.fetchAdminOrders(limit: 10);
+      final realOrders = await OrderService.fetchAdminOrders(limit: 50);
 
       if (mounted) {
         setState(() {
-          final updatedStats = List<AdminStatItem>.from(_stats);
-          if (updatedStats.isNotEmpty) {
-            updatedStats[0] = AdminStatItem(
+          _adminName = adminName;
+          _totalOrdersCount = realOrders.length;
+
+          // 1. Update stats with real data
+          final totalTitles = summary['totalTitles'] ?? 0;
+          final totalCopies = summary['totalCopies'] ?? 0;
+          final newOrdersCount = realOrders
+              .where((o) => o.status == AdminOrderStatus.baru)
+              .length;
+          final totalSales = realOrders
+              .where((o) => o.isPaid)
+              .fold(0, (sum, o) => sum + o.totalPrice);
+
+          final formattedSales = 'Rp${totalSales.toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]}.')}';
+
+          _stats = [
+            AdminStatItem(
               title: 'Total Buku',
-              value: '${summary['totalTitles'] ?? 0}',
+              value: '$totalTitles',
               unit: 'judul',
-              subtitle: '${summary['totalCopies'] ?? 0} total eksemplar',
+              subtitle: '$totalCopies total eksemplar',
               icon: Icons.menu_book_outlined,
+            ),
+            AdminStatItem(
+              title: 'Total Pesanan',
+              value: '${realOrders.length}',
+              unit: 'pesanan',
+              subtitle: 'Tersinkron Supabase',
+              icon: Icons.shopping_bag_outlined,
+            ),
+            AdminStatItem(
+              title: 'Pesanan Baru',
+              value: '$newOrdersCount',
+              unit: 'pesanan',
+              subtitle: 'Prioritas pemrosesan',
+              icon: Icons.pending_actions_rounded,
+              isHighlight: newOrdersCount > 0,
+              badgeText: newOrdersCount > 0 ? 'Perlu Proses' : null,
+            ),
+            AdminStatItem(
+              title: 'Total Transaksi',
+              value: formattedSales,
+              unit: '',
+              subtitle: 'Lunas terverifikasi',
+              icon: Icons.trending_up_rounded,
+            ),
+          ];
+
+          // 2. Update recent orders (limit to 5 for recent widget)
+          _orders = realOrders.take(5).map((o) {
+            final isDelivery = o.deliveryType.toLowerCase().contains('kurir') ||
+                o.deliveryType.toLowerCase().contains('delivery');
+            return AdminRecentOrder(
+              orderId: '#${o.orderId}',
+              rawOrderId: o.orderId,
+              customerName: o.customerName,
+              itemCount: o.books.fold(0, (sum, b) => sum + b.qty),
+              totalPrice: o.totalPrice,
+              deliveryType: isDelivery ? 'Antar ke Rumah' : 'Ambil di Toko',
+              deliveryIcon: isDelivery
+                  ? Icons.local_shipping_outlined
+                  : Icons.store_rounded,
+              status: o.statusLabel,
+              isNew: o.status == AdminOrderStatus.baru,
             );
-          }
+          }).toList();
 
-          if (realOrders.isNotEmpty) {
-            final newOrdersCount = realOrders
-                .where((o) => o.status == AdminOrderStatus.baru)
-                .length;
-            final totalSales = realOrders
-                .where((o) => o.isPaid)
-                .fold(0, (sum, o) => sum + o.totalPrice);
+          // 3. Update low stock items
+          _lowStock = lowBooks.map((b) => AdminLowStockItem(
+            bookId: b.id,
+            title: b.title,
+            author: b.author,
+            stockLeft: b.stock,
+            rackLocation: b.rackLocation,
+            coverUrl: b.coverUrl,
+          )).toList();
 
-            if (updatedStats.length > 2) {
-              updatedStats[1] = AdminStatItem(
-                title: 'Total Pesanan',
-                value: '${realOrders.length}',
-                unit: 'pesanan',
-                subtitle: 'Tersinkron Supabase',
-                icon: Icons.shopping_bag_outlined,
-              );
-              updatedStats[2] = AdminStatItem(
-                title: 'Pesanan Baru',
-                value: '$newOrdersCount',
-                unit: 'pesanan',
-                subtitle: 'Prioritas pemrosesan',
-                icon: Icons.pending_actions_rounded,
-                isHighlight: true,
-                badgeText: 'Perlu Proses',
-              );
-            }
-
-            if (updatedStats.length > 3) {
-              final formattedSales = 'Rp${totalSales.toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]}.')}';
-              updatedStats[3] = AdminStatItem(
-                title: 'Total Transaksi',
-                value: formattedSales,
-                unit: '',
-                subtitle: 'Lunas terverifikasi',
-                icon: Icons.trending_up_rounded,
-              );
-            }
-
-            _orders = realOrders.map((o) {
-              final isDelivery = o.deliveryType
-                      .toLowerCase()
-                      .contains('kurir') ||
-                  o.deliveryType.toLowerCase().contains('delivery');
-              return AdminRecentOrder(
-                orderId: '#${o.orderId}',
-                customerName: o.customerName,
-                itemCount: o.books.fold(0, (sum, b) => sum + b.qty),
-                totalPrice: o.totalPrice,
-                deliveryType:
-                    isDelivery ? 'Antar ke Rumah' : 'Ambil di Toko',
-                deliveryIcon: isDelivery
-                    ? Icons.local_shipping_outlined
-                    : Icons.store_rounded,
-                status: o.statusLabel,
-                isNew: o.status == AdminOrderStatus.baru,
-              );
-            }).toList();
-          }
-          _stats = updatedStats;
-
-          if (lowBooks.isNotEmpty) {
-            _lowStock = lowBooks
-                .map((b) => AdminLowStockItem(
-                      title: b.title,
-                      author: b.author,
-                      stockLeft: b.stock,
-                      rackLocation: b.rackLocation,
-                      coverUrl: b.coverUrl,
-                    ))
-                .toList();
-          }
+          _isLoading = false;
         });
       }
-    } catch (_) {}
+    } catch (e) {
+      debugPrint('Error loading admin dashboard data: $e');
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
   }
 
   void _showNotice(String message) {
@@ -144,81 +166,134 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     );
   }
 
+  Future<void> _navigateToOrderDetail(String rawOrderId) async {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => const Center(
+        child: CircularProgressIndicator(color: AppColors.primary),
+      ),
+    );
+
+    try {
+      final order = await OrderService.fetchOrderById(rawOrderId);
+      if (mounted) {
+        Navigator.pop(context); // Close loading dialog
+      }
+
+      if (order != null && mounted) {
+        await Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => AdminOrderDetailScreen(order: order),
+          ),
+        );
+        _loadDashboardData();
+      } else if (mounted) {
+        _showNotice('Pesanan #$rawOrderId tidak ditemukan di database');
+      }
+    } catch (e) {
+      if (mounted) {
+        Navigator.pop(context); // Close loading dialog
+        _showNotice('Gagal memuat detail pesanan: $e');
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 16.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          // Greeting & Status Header
-          _buildGreetingHeader(),
-          const SizedBox(height: 18),
+    return RefreshIndicator(
+      onRefresh: _loadDashboardData,
+      color: AppColors.primary,
+      child: SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            if (_isLoading) ...[
+              const LinearProgressIndicator(
+                minHeight: 2.5,
+                color: AppColors.primary,
+                backgroundColor: AppColors.surfaceContainerHigh,
+              ),
+              const SizedBox(height: 12),
+            ],
+            // Greeting & Status Header
+            _buildGreetingHeader(),
+            const SizedBox(height: 18),
 
-          // 2x2 Statistics Grid
-          _buildStatsGrid(),
-          const SizedBox(height: 22),
+            // 2x2 Statistics Grid
+            _buildStatsGrid(),
+            const SizedBox(height: 22),
 
-          // Aksi Cepat Admin
-          AdminQuickActions(
-            onScanQr: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const ScanQrPickupScreen(),
-                ),
-              );
-            },
-            onPayment: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const PaymentManagementScreen(),
-                ),
-              );
-            },
-            onAddBook: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const AddBookScreen(),
-                ),
-              );
-            },
-            onManageStock: widget.onNavigateToBooks ??
-                () => _showNotice('Buka kelola stok'),
-          ),
-          const SizedBox(height: 22),
+            // Aksi Cepat Admin
+            AdminQuickActions(
+              onScanQr: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const ScanQrPickupScreen(),
+                  ),
+                );
+              },
+              onPayment: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const PaymentManagementScreen(),
+                  ),
+                );
+              },
+              onAddBook: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const AddBookScreen(),
+                  ),
+                ).then((_) => _loadDashboardData());
+              },
+              onManageStock: widget.onNavigateToStock ??
+                  widget.onNavigateToBooks ??
+                  () => _showNotice('Buka kelola stok'),
+            ),
+            const SizedBox(height: 22),
 
-          // Pesanan Terbaru
-          AdminRecentOrders(
-            orders: _orders,
-            onViewAll: () => _showNotice('Membuka seluruh daftar pesanan toko (12)'),
-            onOrderAction: (order) {
-              if (order.isNew) {
-                _showNotice('Pesanan ${order.orderId} diproses');
-              } else {
-                _showNotice('Detail pesanan ${order.orderId}');
-              }
-            },
-          ),
-          const SizedBox(height: 22),
+            // Pesanan Terbaru (Real data from database)
+            AdminRecentOrders(
+              orders: _orders,
+              totalCount: _totalOrdersCount,
+              onViewAll: widget.onNavigateToOrders ??
+                  () => _showNotice('Membuka seluruh daftar pesanan'),
+              onOrderAction: (order) {
+                _navigateToOrderDetail(order.rawOrderId);
+              },
+            ),
+            const SizedBox(height: 22),
 
-          // Stok Menipis (Inventory Warning)
-          AdminLowStockSection(
-            lowStockItems: _lowStock,
-            onManageStock: widget.onNavigateToBooks ??
-                () => _showNotice('Membuka inventaris stok'),
-            onAddStock: (item) {
-              _showNotice('Permintaan restock "${item.title}" dicatat (+5 eks)');
-            },
-          ),
-          const SizedBox(height: 22),
+            // Stok Menipis (Inventory Warning from database)
+            AdminLowStockSection(
+              lowStockItems: _lowStock,
+              onManageStock: widget.onNavigateToStock ??
+                  widget.onNavigateToBooks ??
+                  () => _showNotice('Membuka inventaris stok'),
+              onAddStock: (item) {
+                if (widget.onNavigateToStockWithBook != null) {
+                  widget.onNavigateToStockWithBook!(item.bookId);
+                } else if (widget.onNavigateToStock != null) {
+                  widget.onNavigateToStock!();
+                } else {
+                  _showNotice('Membuka stok untuk "${item.title}"');
+                }
+              },
+            ),
+            const SizedBox(height: 22),
 
-          // Grafik Penjualan Mingguan
-          const AdminSalesChart(),
-          const SizedBox(height: 24),
-        ],
+            // Grafik Penjualan Bulanan Real
+            const AdminSalesChart(),
+            const SizedBox(height: 24),
+          ],
+        ),
       ),
     );
   }
@@ -233,7 +308,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Selamat datang, Budi 👋',
+                'Selamat datang, $_adminName 👋',
                 style: AppTypography.headlineMd.copyWith(
                   fontWeight: FontWeight.w700,
                   color: AppColors.onSurface,
@@ -253,7 +328,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                       borderRadius: BorderRadius.circular(9999),
                     ),
                     child: Text(
-                      'Owner & Admin Utama',
+                      'Staff & Kasir Toko',
                       style: AppTypography.caption.copyWith(
                         color: AppColors.onSecondaryContainer,
                         fontWeight: FontWeight.w600,
@@ -278,7 +353,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                   ),
                   const SizedBox(width: 4),
                   Text(
-                    'Hari ini, 12 Mei 2024',
+                    _currentDateFormatted,
                     style: AppTypography.caption.copyWith(
                       color: AppColors.onSurfaceVariant,
                       fontSize: 11.5,
@@ -328,7 +403,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
             Expanded(
               child: AdminStatCard(
                 item: _stats[1],
-                onTap: () => _showNotice('Buka daftar pesanan hari ini'),
+                onTap: widget.onNavigateToOrders,
               ),
             ),
           ],
@@ -339,7 +414,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
             Expanded(
               child: AdminStatCard(
                 item: _stats[2],
-                onTap: () => _showNotice('5 pesanan baru perlu diproses'),
+                onTap: widget.onNavigateToOrders,
               ),
             ),
             const SizedBox(width: 10),

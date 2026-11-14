@@ -24,6 +24,8 @@ class AdminMainScreen extends StatefulWidget {
 
 class _AdminMainScreenState extends State<AdminMainScreen> {
   late int _currentIndex;
+  String? _targetStockBookId;
+  int _stockScreenRebuildKeyCounter = 0;
 
   @override
   void initState() {
@@ -55,13 +57,20 @@ class _AdminMainScreenState extends State<AdminMainScreen> {
     });
   }
 
+  void _navigateToStockWithBook(String bookId) {
+    setState(() {
+      _currentIndex = 2;
+      _targetStockBookId = bookId;
+      _stockScreenRebuildKeyCounter++;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.surface,
       appBar: AdminAppBar(
         title: _getTitle(),
-        onExitAdmin: () => Navigator.of(context).pop(),
         onNotificationsTap: () {
           Navigator.push(
             context,
@@ -79,26 +88,32 @@ class _AdminMainScreenState extends State<AdminMainScreen> {
           children: [
             // Tab 0: Dashboard
             AdminDashboardScreen(
-              onNavigateToBooks: () {
+              onNavigateToBooks: () => setState(() => _currentIndex = 1),
+              onNavigateToStock: () {
                 setState(() {
-                  _currentIndex = 1;
+                  _currentIndex = 2;
+                  _targetStockBookId = null;
                 });
               },
+              onNavigateToOrders: () => setState(() => _currentIndex = 3),
+              onNavigateToStockWithBook: _navigateToStockWithBook,
             ),
 
             // Tab 1: Kelola Buku
             const BookManagementScreen(),
 
             // Tab 2: Stok Buku
-            const StockManagementScreen(),
+            StockManagementScreen(
+              key: ValueKey('stock_screen_${_targetStockBookId}_$_stockScreenRebuildKeyCounter'),
+              initialTargetBookId: _targetStockBookId,
+              autoOpenAdjustModal: _targetStockBookId != null,
+            ),
 
             // Tab 3: Pesanan Masuk
             const OrderManagementScreen(),
 
             // Tab 4: Profil Pengelola
-            AdminProfileScreen(
-              onExitAdmin: () => Navigator.of(context).pop(),
-            ),
+            const AdminProfileScreen(),
           ],
         ),
       ),

@@ -124,14 +124,6 @@ class AdminAppBar extends StatelessWidget implements PreferredSizeWidget {
               // Action Buttons
               Row(
                 children: [
-                  // Switch to Customer mode button
-                  IconButton(
-                    tooltip: 'Mode Pembeli',
-                    icon: const Icon(Icons.storefront_outlined, size: 22),
-                    color: AppColors.onSurfaceVariant,
-                    onPressed: onExitAdmin ?? () => Navigator.of(context).pop(),
-                  ),
-
                   // Notifications with Realtime Dynamic Badge
                   ValueListenableBuilder<int>(
                     valueListenable: AdminNotificationService.unreadCountNotifier,
