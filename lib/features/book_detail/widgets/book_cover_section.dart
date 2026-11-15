@@ -44,15 +44,18 @@ class BookCoverSection extends StatelessWidget {
               children: [
                 // Network Cover Image
                 Positioned.fill(
-                  child: Image.network(
-                    book.coverUrl,
-                    fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) => _buildFallbackCover(),
-                    loadingBuilder: (context, child, progress) {
-                      if (progress == null) return child;
-                      return _buildFallbackCover();
-                    },
-                  ),
+                  child: book.coverUrl.trim().isEmpty
+                      ? _buildFallbackCover()
+                      : Image.network(
+                          book.coverUrl,
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) =>
+                              _buildFallbackCover(),
+                          loadingBuilder: (context, child, progress) {
+                            if (progress == null) return child;
+                            return _buildFallbackCover();
+                          },
+                        ),
                 ),
 
                 // Subtle book spine shine overlay on left edge

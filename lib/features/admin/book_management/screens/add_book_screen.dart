@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
@@ -34,6 +35,8 @@ class _AddBookScreenState extends State<AddBookScreen> {
   String? _selectedCategory;
   String? _selectedFormat;
   String? _coverUrl;
+  File? _pickedCoverFile;
+  bool _isCoverRemoved = false;
   int _charCount = 0;
   bool _isSaving = false;
   List<String> _categoryOptions = [];
@@ -43,15 +46,6 @@ class _AddBookScreenState extends State<AddBookScreen> {
     'Softcover',
     'Hardcover',
     'E-Book',
-  ];
-
-  final List<String> _presetCovers = const [
-    'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&q=80&w=400',
-    'https://images.unsplash.com/photo-1497633762265-9d179a990aa6?auto=format&fit=crop&q=80&w=400',
-    'https://images.unsplash.com/photo-1512820790803-83ca734da794?auto=format&fit=crop&q=80&w=400',
-    'https://images.unsplash.com/photo-1495446815901-a7297e633e8d?auto=format&fit=crop&q=80&w=400',
-    'https://images.unsplash.com/photo-1476275466078-4007374efbbe?auto=format&fit=crop&q=80&w=400',
-    'https://images.unsplash.com/photo-1532012164546-f432f2e3777f?auto=format&fit=crop&q=80&w=400',
   ];
 
   @override
@@ -174,75 +168,6 @@ class _AddBookScreenState extends State<AddBookScreen> {
     );
   }
 
-  void _openCoverPicker() {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: AppColors.surfaceContainerLowest,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (ctx) => SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(20.0),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Pilih Contoh Foto Cover',
-                style: AppTypography.titleMd.copyWith(
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.onSurface,
-                ),
-              ),
-              const SizedBox(height: 6),
-              Text(
-                'Pilih salah satu template sampul buku untuk simulasi',
-                style: AppTypography.caption.copyWith(
-                  color: AppColors.onSurfaceVariant,
-                ),
-              ),
-              const SizedBox(height: 16),
-              SizedBox(
-                height: 120,
-                child: ListView.separated(
-                  scrollDirection: Axis.horizontal,
-                  itemCount: _presetCovers.length,
-                  separatorBuilder: (context, index) => const SizedBox(width: 10),
-                  itemBuilder: (context, idx) {
-                    final url = _presetCovers[idx];
-                    return InkWell(
-                      onTap: () {
-                        setState(() {
-                          _coverUrl = url;
-                        });
-                        Navigator.pop(ctx);
-                        _showNotice('Cover buku terpilih');
-                      },
-                      borderRadius: BorderRadius.circular(8),
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(8),
-                        child: SizedBox(
-                          width: 80,
-                          height: 120,
-                          child: Image.network(
-                            url,
-                            fit: BoxFit.cover,
-                          ),
-                        ),
-                      ),
-                    );
-                  },
-                ),
-              ),
-              const SizedBox(height: 14),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
   Future<void> _saveBook() async {
     final title = _titleController.text.trim();
     final author = _authorController.text.trim();
@@ -287,8 +212,31 @@ class _AddBookScreenState extends State<AddBookScreen> {
     setState(() => _isSaving = true);
 
     try {
+      final isEditing = widget.initialBook != null;
+      final bookId = isEditing
+          ? widget.initialBook!.id
+          : await BookService.generateNextBookId();
+
+      String coverUrlToSave = _coverUrl ?? '';
+
+      // 1. Jika admin memilih file gambar baru dari perangkat
+      if (_pickedCoverFile != null) {
+        coverUrlToSave = await BookService.uploadBookCover(
+          bookId: bookId,
+          imageFile: _pickedCoverFile!,
+          oldCoverUrl: widget.initialBook?.coverUrl,
+        );
+      } else if (_isCoverRemoved && isEditing) {
+        // 2. Jika admin menghapus cover pada buku yang diedit
+        if (widget.initialBook?.coverUrl != null &&
+            widget.initialBook!.coverUrl.isNotEmpty) {
+          await BookService.deleteBookCover(widget.initialBook!.coverUrl);
+        }
+        coverUrlToSave = '';
+      }
+
       final bookToSave = AdminBookItem(
-        id: widget.initialBook?.id ?? '',
+        id: bookId,
         title: title,
         author: author,
         isbn: isbn,
@@ -306,16 +254,16 @@ class _AddBookScreenState extends State<AddBookScreen> {
         category: _selectedCategory!,
         publisher: _publisherController.text.trim().isNotEmpty
             ? _publisherController.text.trim()
-            : 'Gramedia Pustaka',
+            : 'Penerbit Toko Budi',
         publishYear: int.tryParse(_yearController.text.trim()) ?? 2024,
         description: _descriptionController.text.trim(),
-        coverUrl: _coverUrl ?? _presetCovers[0],
+        coverUrl: coverUrlToSave,
         rating: widget.initialBook?.rating ?? 0.0,
         reviewCount: widget.initialBook?.reviewCount ?? 0,
       );
 
       AdminBookItem resultBook;
-      if (widget.initialBook == null) {
+      if (!isEditing) {
         resultBook = await BookService.createBook(bookToSave);
         CashierLogService.recordLog(
           action: 'Tambah Buku Baru',
@@ -368,11 +316,19 @@ class _AddBookScreenState extends State<AddBookScreen> {
 
                     // Section 1: Upload Cover
                     BookFormCoverUpload(
-                      coverUrl: _coverUrl,
-                      onPickCover: _openCoverPicker,
+                      initialCoverUrl: _coverUrl,
+                      pickedFile: _pickedCoverFile,
+                      onFileSelected: (file) {
+                        setState(() {
+                          _pickedCoverFile = file;
+                          _isCoverRemoved = false;
+                        });
+                      },
                       onRemoveCover: () {
                         setState(() {
+                          _pickedCoverFile = null;
                           _coverUrl = null;
+                          _isCoverRemoved = true;
                         });
                       },
                     ),

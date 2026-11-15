@@ -96,22 +96,33 @@ class FavoriteItemCard extends StatelessWidget {
             // Cover image
             Container(
               color: AppColors.surfaceContainer,
-              child: Image.network(
-                item.coverUrl,
-                fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) {
-                  return Container(
-                    color: AppColors.surfaceContainerLow,
-                    child: const Center(
-                      child: Icon(
-                        Icons.menu_book,
-                        size: 36,
-                        color: AppColors.outline,
+              child: item.coverUrl.trim().isEmpty
+                  ? Container(
+                      color: AppColors.surfaceContainerLow,
+                      child: const Center(
+                        child: Icon(
+                          Icons.menu_book,
+                          size: 36,
+                          color: AppColors.outline,
+                        ),
                       ),
+                    )
+                  : Image.network(
+                      item.coverUrl,
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) {
+                        return Container(
+                          color: AppColors.surfaceContainerLow,
+                          child: const Center(
+                            child: Icon(
+                              Icons.menu_book,
+                              size: 36,
+                              color: AppColors.outline,
+                            ),
+                          ),
+                        );
+                      },
                     ),
-                  );
-                },
-              ),
             ),
 
             // Grayscale overlay for out-of-stock items

@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'admin_notification_service.dart';
@@ -92,24 +93,29 @@ class BookService {
     return AdminBookItem.fromMap(response);
   }
 
+  // ─── UTILS: Generate Next Book ID ─────────────────────────────────────────
+  static Future<String> generateNextBookId() async {
+    final rows = await _client.from('books').select('id');
+    int maxNum = 0;
+    for (final row in rows as List<dynamic>) {
+      final id = (row['id'] as String?)?.trim() ?? '';
+      final match = RegExp(r'^B(\d+)$', caseSensitive: false).firstMatch(id);
+      if (match != null) {
+        final num = int.tryParse(match.group(1)!) ?? 0;
+        if (num < 10000 && num > maxNum) {
+          maxNum = num;
+        }
+      }
+    }
+    return 'B${(maxNum + 1).toString().padLeft(3, '0')}';
+  }
+
   // ─── CREATE: Add Book ──────────────────────────────────────────────────────
   static Future<AdminBookItem> createBook(AdminBookItem book) async {
     final bookMap = book.toMap();
     // If ID is empty, generate an incremental sequential ID (B001, B002, ..., B013, dst.)
     if (book.id.isEmpty) {
-      final rows = await _client.from('books').select('id');
-      int maxNum = 0;
-      for (final row in rows as List<dynamic>) {
-        final id = (row['id'] as String?)?.trim() ?? '';
-        final match = RegExp(r'^B(\d+)$', caseSensitive: false).firstMatch(id);
-        if (match != null) {
-          final num = int.tryParse(match.group(1)!) ?? 0;
-          if (num < 10000 && num > maxNum) {
-            maxNum = num;
-          }
-        }
-      }
-      bookMap['id'] = 'B${(maxNum + 1).toString().padLeft(3, '0')}';
+      bookMap['id'] = await generateNextBookId();
     }
 
     final response = await _client
@@ -162,8 +168,65 @@ class BookService {
     return updated;
   }
 
+  // ─── STORAGE: Upload Cover Buku ────────────────────────────────────────────
+  static Future<String> uploadBookCover({
+    required String bookId,
+    required File imageFile,
+    String? oldCoverUrl,
+  }) async {
+    // 1. Hapus foto lama dari Storage jika ada dan tersimpan di bucket book-covers
+    if (oldCoverUrl != null && oldCoverUrl.isNotEmpty) {
+      await deleteBookCover(oldCoverUrl);
+    }
+
+    // 2. Buat nama file unik: bookId_timestamp.ext
+    final timestamp = DateTime.now().millisecondsSinceEpoch;
+    final fileExt = imageFile.path.split('.').last.toLowerCase();
+    final sanitizedExt = (fileExt == 'png' || fileExt == 'webp') ? fileExt : 'jpg';
+    final safeBookId = bookId.replaceAll(RegExp(r'[^a-zA-Z0-9_-]'), '_');
+    final fileName = '${safeBookId}_$timestamp.$sanitizedExt';
+
+    // 3. Upload file ke Storage bucket 'book-covers'
+    final mimeType = sanitizedExt == 'png'
+        ? 'image/png'
+        : (sanitizedExt == 'webp' ? 'image/webp' : 'image/jpeg');
+
+    await _client.storage.from('book-covers').upload(
+          fileName,
+          imageFile,
+          fileOptions: FileOptions(
+            contentType: mimeType,
+            upsert: true,
+          ),
+        );
+
+    // 4. Dapatkan public URL
+    final publicUrl = _client.storage.from('book-covers').getPublicUrl(fileName);
+    return publicUrl;
+  }
+
+  // ─── STORAGE: Hapus Cover Buku ─────────────────────────────────────────────
+  static Future<void> deleteBookCover(String coverUrl) async {
+    if (coverUrl.isEmpty || !coverUrl.contains('book-covers')) return;
+    try {
+      final uri = Uri.parse(coverUrl);
+      final fileName = uri.pathSegments.last;
+      if (fileName.isNotEmpty) {
+        await _client.storage.from('book-covers').remove([fileName]);
+      }
+    } catch (e) {
+      debugPrint('Gagal menghapus cover lama dari Supabase Storage: $e');
+    }
+  }
+
   // ─── DELETE: Delete Book ───────────────────────────────────────────────────
   static Future<void> deleteBook(String id) async {
+    try {
+      final book = await fetchBookById(id);
+      if (book != null && book.coverUrl.isNotEmpty) {
+        await deleteBookCover(book.coverUrl);
+      }
+    } catch (_) {}
     await _client.from('books').delete().eq('id', id);
   }
 
@@ -325,20 +388,10 @@ class BookService {
           .map((e) => (e['name'] as String?)?.trim() ?? '')
           .where((name) => name.isNotEmpty)
           .toList();
-      if (list.isNotEmpty) return list;
-    } catch (_) {}
-
-    return [
-      'Novel & Sastra',
-      'Komik & Manga',
-      'Pengembangan Diri',
-      'Bisnis & Finansial',
-      'Non-Fiksi',
-      'Filsafat & Pemikiran',
-      'Sejarah & Budaya',
-      'Pendidikan',
-      'Buku Anak',
-    ];
+      return list;
+    } catch (_) {
+      return [];
+    }
   }
 
   // ─── CRUD: Category Management ─────────────────────────────────────────────
@@ -364,7 +417,7 @@ class BookService {
         return AdminCategoryItem.fromMap(map, bookCount: bookCounts[name] ?? 0);
       }).toList();
     } catch (_) {
-      return List.from(AdminCategoryItem.mockCategories);
+      return [];
     }
   }
 

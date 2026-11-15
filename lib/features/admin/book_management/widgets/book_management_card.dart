@@ -268,22 +268,33 @@ class BookManagementCard extends StatelessWidget {
               colorFilter: isOutOfStock
                   ? const ColorFilter.mode(Colors.grey, BlendMode.saturation)
                   : const ColorFilter.mode(Colors.transparent, BlendMode.multiply),
-              child: Image.network(
-                book.coverUrl,
-                fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) {
-                  return Container(
-                    color: AppColors.surfaceContainerHigh,
-                    child: const Center(
-                      child: Icon(
-                        Icons.book_rounded,
-                        color: AppColors.outline,
-                        size: 28,
+              child: book.coverUrl.trim().isEmpty
+                  ? Container(
+                      color: AppColors.surfaceContainerHigh,
+                      child: const Center(
+                        child: Icon(
+                          Icons.book_rounded,
+                          color: AppColors.outline,
+                          size: 28,
+                        ),
                       ),
+                    )
+                  : Image.network(
+                      book.coverUrl,
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) {
+                        return Container(
+                          color: AppColors.surfaceContainerHigh,
+                          child: const Center(
+                            child: Icon(
+                              Icons.book_rounded,
+                              color: AppColors.outline,
+                              size: 28,
+                            ),
+                          ),
+                        );
+                      },
                     ),
-                  );
-                },
-              ),
             ),
           ),
         ),

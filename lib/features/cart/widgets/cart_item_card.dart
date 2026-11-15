@@ -92,24 +92,39 @@ class CartItemCard extends StatelessWidget {
               children: [
                 ClipRRect(
                   borderRadius: BorderRadius.circular(10),
-                  child: Image.network(
-                    item.coverUrl,
-                    width: 76,
-                    height: 108,
-                    fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) {
-                      return Container(
-                        color: AppColors.surfaceContainerHigh,
-                        child: const Center(
-                          child: Icon(
-                            Icons.menu_book,
-                            color: AppColors.outline,
-                            size: 28,
+                  child: item.coverUrl.trim().isEmpty
+                      ? Container(
+                          width: 76,
+                          height: 108,
+                          color: AppColors.surfaceContainerHigh,
+                          child: const Center(
+                            child: Icon(
+                              Icons.menu_book,
+                              color: AppColors.outline,
+                              size: 28,
+                            ),
                           ),
+                        )
+                      : Image.network(
+                          item.coverUrl,
+                          width: 76,
+                          height: 108,
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) {
+                            return Container(
+                              width: 76,
+                              height: 108,
+                              color: AppColors.surfaceContainerHigh,
+                              child: const Center(
+                                child: Icon(
+                                  Icons.menu_book,
+                                  color: AppColors.outline,
+                                  size: 28,
+                                ),
+                              ),
+                            );
+                          },
                         ),
-                      );
-                    },
-                  ),
                 ),
                 // Warm bookmark ribbon indicator at top right
                 Positioned(

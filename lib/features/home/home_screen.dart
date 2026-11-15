@@ -52,15 +52,17 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _subscribeNotifications() {
-    final userId = Supabase.instance.client.auth.currentUser?.id;
-    if (userId != null) {
-      _notificationChannel = NotificationService.subscribeToNotifications(
-        userId: userId,
-        onData: () {
-          NotificationService.checkHasUnreadNotifications();
-        },
-      );
-    }
+    try {
+      final userId = Supabase.instance.client.auth.currentUser?.id;
+      if (userId != null) {
+        _notificationChannel = NotificationService.subscribeToNotifications(
+          userId: userId,
+          onData: () {
+            NotificationService.checkHasUnreadNotifications();
+          },
+        );
+      }
+    } catch (_) {}
   }
 
   Future<void> _loadBadgeData() async {
@@ -711,7 +713,9 @@ class _HomeScreenState extends State<HomeScreen> {
                 child: Container(
                   width: double.infinity,
                   color: AppColors.surfaceContainerLow,
-                  child: book.coverUrl.isNotEmpty
+                  child: (book.coverUrl.trim().isNotEmpty &&
+                          (book.coverUrl.startsWith('http://') ||
+                              book.coverUrl.startsWith('https://')))
                       ? Image.network(
                           book.coverUrl,
                           fit: BoxFit.cover,

@@ -72,32 +72,42 @@ class _BookSearchCardState extends State<BookSearchCard> {
                         Positioned.fill(
                           child: Container(
                             color: AppColors.surfaceContainerLow,
-                            child: Image.network(
-                              book.coverUrl,
-                              fit: BoxFit.cover,
-                              errorBuilder: (context, error, stackTrace) {
-                                return Container(
-                                  color: AppColors.surfaceContainer,
-                                  alignment: Alignment.center,
-                                  child: const Icon(
-                                    Icons.menu_book_rounded,
-                                    size: 36,
-                                    color: AppColors.outline,
+                            child: book.coverUrl.trim().isEmpty
+                                ? Container(
+                                    color: AppColors.surfaceContainer,
+                                    alignment: Alignment.center,
+                                    child: const Icon(
+                                      Icons.menu_book_rounded,
+                                      size: 36,
+                                      color: AppColors.outline,
+                                    ),
+                                  )
+                                : Image.network(
+                                    book.coverUrl,
+                                    fit: BoxFit.cover,
+                                    errorBuilder: (context, error, stackTrace) {
+                                      return Container(
+                                        color: AppColors.surfaceContainer,
+                                        alignment: Alignment.center,
+                                        child: const Icon(
+                                          Icons.menu_book_rounded,
+                                          size: 36,
+                                          color: AppColors.outline,
+                                        ),
+                                      );
+                                    },
+                                    loadingBuilder: (context, child, loadingProgress) {
+                                      if (loadingProgress == null) return child;
+                                      return Container(
+                                        color: AppColors.surfaceContainerLow,
+                                        alignment: Alignment.center,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                          color: AppColors.primaryContainer.withValues(alpha: 0.5),
+                                        ),
+                                      );
+                                    },
                                   ),
-                                );
-                              },
-                              loadingBuilder: (context, child, loadingProgress) {
-                                if (loadingProgress == null) return child;
-                                return Container(
-                                  color: AppColors.surfaceContainerLow,
-                                  alignment: Alignment.center,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                    color: AppColors.primaryContainer.withValues(alpha: 0.5),
-                                  ),
-                                );
-                              },
-                            ),
                           ),
                         ),
 

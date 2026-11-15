@@ -170,43 +170,4 @@ class AdminBookItem {
       'updated_at': DateTime.now().toUtc().toIso8601String(),
     };
   }
-
-  static List<AdminBookItem> get mockBooks => [
-        const AdminBookItem(
-          id: 'B001',
-          title: 'Atomic Habits',
-          author: 'James Clear',
-          isbn: '978-602-06-3317-6',
-          price: 85000,
-          stock: 3,
-          rackLocation: 'Rak B2 • Bisnis & Self-Help (Lantai 1)',
-          status: AdminBookStatus.menipis,
-          isActive: true,
-          category: 'Pengembangan Diri',
-          publisher: 'Gramedia Pustaka Utama',
-          publishYear: 2019,
-          description:
-              'Perubahan kecil yang memberikan hasil luar biasa melalui pembentukan kebiasaan harian secara konsisten.',
-          coverUrl:
-              'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&q=80&w=400',
-        ),
-        const AdminBookItem(
-          id: 'B002',
-          title: 'Filosofi Teras',
-          author: 'Henry Manampiring',
-          isbn: '978-602-412-518-9',
-          price: 98000,
-          stock: 14,
-          rackLocation: 'Rak B1 • Filsafat & Psikologi (Lantai 1)',
-          status: AdminBookStatus.tersedia,
-          isActive: true,
-          category: 'Non-Fiksi',
-          publisher: 'Penerbit Buku Kompas',
-          publishYear: 2018,
-          description:
-              'Penerapan filsafat Stoisisme kuno untuk mental tangguh di era modern yang penuh tantangan.',
-          coverUrl:
-              'https://images.unsplash.com/photo-1497633762265-9d179a990aa6?auto=format&fit=crop&q=80&w=400',
-        ),
-      ];
 }

@@ -125,31 +125,29 @@ class BookDetail {
     );
   }
 
-  /// Default sample matching the reference screen exactly
-  static const BookDetail atomicHabitsSample = BookDetail(
-    id: 'B001',
-    title: 'Atomic Habits',
-    author: 'James Clear',
-    authorPrefix: 'Karya',
-    publisher: 'Gramedia Pustaka Utama',
-    publishYear: '2019',
-    category: 'Pengembangan Diri',
-    isbn: '978-602-06-3317-6',
-    format: 'Softcover • 356 Hal.',
-    pageCount: 356,
-    price: 'Rp 85.000',
-    priceValue: 85000,
-    rating: 4.8,
-    reviewCount: 1240,
-    reviewCountFormatted: '1.240',
-    coverUrl:
-        'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&q=80&w=400',
-    stockStatus: StockStatus.inStock,
-    stockLabel: 'Stok Tersedia',
-    storeLocation: 'Rak B2 • Bisnis & Self-Help (Lantai 1)',
-    remainingStock: 4,
-    description:
-        'Perubahan kecil yang memberikan hasil luar biasa melalui pembentukan kebiasaan harian secara konsisten.',
+  /// Empty fallback instance
+  static const BookDetail empty = BookDetail(
+    id: '',
+    title: 'Memuat...',
+    author: '',
+    authorPrefix: '',
+    publisher: '',
+    publishYear: '',
+    category: '',
+    isbn: '',
+    format: '',
+    pageCount: 0,
+    price: '',
+    priceValue: 0,
+    rating: 0.0,
+    reviewCount: 0,
+    reviewCountFormatted: '0',
+    coverUrl: '',
+    stockStatus: StockStatus.outOfStock,
+    stockLabel: 'Tidak Tersedia',
+    storeLocation: '',
+    remainingStock: 0,
+    description: '',
     reviews: [],
   );
 

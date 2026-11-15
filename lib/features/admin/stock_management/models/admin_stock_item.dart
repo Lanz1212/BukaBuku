@@ -151,21 +151,4 @@ class AdminStockItem {
         return AppColors.error.withValues(alpha: 0.12);
     }
   }
-
-  static List<AdminStockItem> get mockItems => [
-        const AdminStockItem(
-          bookId: 'B001',
-          title: 'Atomic Habits',
-          author: 'James Clear',
-          isbn: '978-602-06-3317-6',
-          rackCode: 'Rak B2',
-          rackLocation: 'Rak B2 • Bisnis & Self-Help (Lantai 1)',
-          coverUrl: 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=400&auto=format&fit=crop&q=80',
-          currentStock: 14,
-          minStock: 5,
-          price: 85000,
-          lastSyncTime: 'Baru saja',
-          status: AdminStockStatus.tersedia,
-        ),
-      ];
 }

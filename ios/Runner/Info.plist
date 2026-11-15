@@ -4,6 +4,10 @@
 <dict>
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Izinkan akses galeri foto untuk mengunggah sampul buku</string>
+	<key>NSCameraUsageDescription</key>
+	<string>Izinkan akses kamera untuk mengambil foto sampul buku</string>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>

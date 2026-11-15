@@ -61,7 +61,7 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
     } else if (widget.searchItem != null) {
       _book = BookDetail.fromSearchItem(widget.searchItem!);
     } else {
-      _book = BookDetail.atomicHabitsSample;
+      _book = BookDetail.empty;
     }
 
     _loadRealBookDetails();

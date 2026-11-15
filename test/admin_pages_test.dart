@@ -27,26 +27,6 @@ void main() {
       expect(find.text('Gerai Utama Toko Budi'), findsOneWidget);
       expect(find.text('Total Judul'), findsOneWidget);
       expect(find.text('Stok Menipis'), findsWidgets);
-
-      // Verify Books list
-      expect(find.text('Atomic Habits'), findsOneWidget);
-      expect(find.text('Filosofi Teras'), findsOneWidget);
-
-      // Tap "Atur Stok" on first book
-      final adjustButtons = find.text('Atur Stok');
-      expect(adjustButtons, findsWidgets);
-      await tester.tap(adjustButtons.first);
-      await tester.pumpAndSettle();
-
-      // Verify Adjust Modal opened
-      expect(find.textContaining('Atur Stok:'), findsOneWidget);
-      expect(find.text('Jenis Perubahan'), findsOneWidget);
-      expect(find.text('Tambah Stok Masuk (+)'), findsOneWidget);
-      expect(find.text('Simpan Perubahan Stok'), findsOneWidget);
-
-      // Close modal
-      await tester.tap(find.text('Batal'));
-      await tester.pumpAndSettle();
     });
 
     testWidgets('CategoryManagementScreen renders categories and opens add modal',
@@ -65,11 +45,6 @@ void main() {
       // Verify Header
       expect(find.text('Kategori Buku'), findsOneWidget);
       expect(find.text('Klasifikasi & Penempatan Rak Toko'), findsOneWidget);
-
-      // Verify Categories
-      expect(find.text('Novel & Fiksi'), findsOneWidget);
-      expect(find.text('NVL-01'), findsOneWidget);
-      expect(find.text('Komik & Manga'), findsOneWidget);
 
       // Verify Add button and tap it
       final addButton = find.text('Tambah Kategori Baru');

@@ -337,18 +337,27 @@ class OrderCardItem extends StatelessWidget {
               width: 58,
               height: 76,
               color: AppColors.surfaceContainerHighest,
-              child: Image.network(
-                order.summaryCoverUrl,
-                fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) => Container(
-                  color: AppColors.surfaceContainerHigh,
-                  child: const Icon(
-                    Icons.menu_book_rounded,
-                    size: 28,
-                    color: AppColors.secondary,
-                  ),
-                ),
-              ),
+              child: order.summaryCoverUrl.trim().isEmpty
+                  ? Container(
+                      color: AppColors.surfaceContainerHigh,
+                      child: const Icon(
+                        Icons.menu_book_rounded,
+                        size: 28,
+                        color: AppColors.secondary,
+                      ),
+                    )
+                  : Image.network(
+                      order.summaryCoverUrl,
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) => Container(
+                        color: AppColors.surfaceContainerHigh,
+                        child: const Icon(
+                          Icons.menu_book_rounded,
+                          size: 28,
+                          color: AppColors.secondary,
+                        ),
+                      ),
+                    ),
             ),
           ),
           const SizedBox(width: 12),
