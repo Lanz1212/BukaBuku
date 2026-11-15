@@ -47,26 +47,37 @@ class OrderCard extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Row(
-                children: [
-                  Text(
-                    '#${order.orderId}',
-                    style: AppTypography.titleMd.copyWith(
-                      fontWeight: FontWeight.w800,
-                      color: AppColors.onSurface,
-                      fontSize: 14.5,
+              Expanded(
+                child: Row(
+                  children: [
+                    Flexible(
+                      child: Text(
+                        '#${order.orderId}',
+                        style: AppTypography.titleMd.copyWith(
+                          fontWeight: FontWeight.w800,
+                          color: AppColors.onSurface,
+                          fontSize: 14.5,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     ),
-                  ),
-                  const SizedBox(width: 6),
-                  Text(
-                    '•  ${order.orderTime}',
-                    style: AppTypography.caption.copyWith(
-                      color: AppColors.onSurfaceVariant,
-                      fontSize: 11.5,
+                    const SizedBox(width: 6),
+                    Flexible(
+                      child: Text(
+                        '•  ${order.orderTime}',
+                        style: AppTypography.caption.copyWith(
+                          color: AppColors.onSurfaceVariant,
+                          fontSize: 11.5,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
+              const SizedBox(width: 8),
               OrderStatusChip(status: order.status),
             ],
           ),
@@ -219,13 +230,18 @@ class OrderCard extends StatelessWidget {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(
-                      'Total Belanja (${order.books.length} judul)',
-                      style: AppTypography.caption.copyWith(
-                        color: AppColors.onSurfaceVariant,
-                        fontSize: 11.5,
+                    Expanded(
+                      child: Text(
+                        'Total Belanja (${order.books.length} judul)',
+                        style: AppTypography.caption.copyWith(
+                          color: AppColors.onSurfaceVariant,
+                          fontSize: 11.5,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ),
+                    const SizedBox(width: 8),
                     Text(
                       _formatCurrency(order.totalPrice),
                       style: AppTypography.titleMd.copyWith(

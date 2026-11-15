@@ -26,7 +26,6 @@ class AdminOrderDetailScreen extends StatefulWidget {
 
 class _AdminOrderDetailScreenState extends State<AdminOrderDetailScreen> {
   late AdminOrderDetail _currentOrder;
-  bool _isTorchOn = false;
 
   @override
   void initState() {
@@ -131,32 +130,6 @@ class _AdminOrderDetailScreenState extends State<AdminOrderDetailScreen> {
               ),
             ),
             const SizedBox(width: 4),
-
-            // Torch Toggle Button
-            IconButton(
-              icon: Icon(
-                _isTorchOn
-                    ? Icons.flashlight_on_rounded
-                    : Icons.flashlight_on_outlined,
-                size: 20,
-                color: _isTorchOn ? const Color(0xFFD99A35) : AppColors.outline,
-              ),
-              tooltip: 'Senter Scanner',
-              onPressed: () {
-                setState(() {
-                  _isTorchOn = !_isTorchOn;
-                });
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(_isTorchOn
-                        ? 'Senter scanner aktif'
-                        : 'Senter scanner nonaktif'),
-                    duration: const Duration(seconds: 1),
-                    behavior: SnackBarBehavior.floating,
-                  ),
-                );
-              },
-            ),
 
             // Camera / Quick Scan Button
             IconButton(

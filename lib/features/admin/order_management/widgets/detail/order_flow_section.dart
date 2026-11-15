@@ -560,11 +560,15 @@ class _OrderFlowSectionState extends State<OrderFlowSection> {
                 size: 20,
               ),
               const SizedBox(width: 8),
-              Text(
-                'Pesanan Telah Diterima Pembeli (Selesai)',
-                style: AppTypography.labelMd.copyWith(
-                  color: AppColors.success,
-                  fontWeight: FontWeight.w700,
+              Flexible(
+                child: Text(
+                  'Pesanan Telah Diterima Pembeli (Selesai)',
+                  style: AppTypography.labelMd.copyWith(
+                    color: AppColors.success,
+                    fontWeight: FontWeight.w700,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
             ],

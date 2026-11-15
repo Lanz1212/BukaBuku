@@ -526,14 +526,19 @@ class _OrderManagementScreenState extends State<OrderManagementScreen> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(
-                      'Detail Pesanan #${order.orderId}',
-                      style: AppTypography.titleMd.copyWith(
-                        fontWeight: FontWeight.w700,
-                        color: AppColors.onSurface,
-                        fontSize: 17,
+                    Expanded(
+                      child: Text(
+                        'Detail Pesanan #${order.orderId}',
+                        style: AppTypography.titleMd.copyWith(
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.onSurface,
+                          fontSize: 17,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ),
+                    const SizedBox(width: 8),
                     OrderStatusChip(status: order.status),
                   ],
                 ),
@@ -575,7 +580,14 @@ class _OrderManagementScreenState extends State<OrderManagementScreen> {
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text('${b.qty}x ${b.title}'),
+                        Expanded(
+                          child: Text(
+                            '${b.qty}x ${b.title}',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
                         Text('Rp ${b.price * b.qty}'),
                       ],
                     ),

@@ -55,26 +55,33 @@ class PickupOrderSummaryCard extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Row(
-                children: [
-                  const Icon(
-                    Icons.receipt_outlined,
-                    size: 18,
-                    color: AppColors.primaryContainer,
-                  ),
-                  const SizedBox(width: 6),
-                  Text(
-                    order.orderId.startsWith('#')
-                        ? order.orderId
-                        : '#${order.orderId}',
-                    style: AppTypography.titleMd.copyWith(
-                      fontWeight: FontWeight.w800,
-                      color: AppColors.onSurface,
-                      fontSize: 15,
+              Expanded(
+                child: Row(
+                  children: [
+                    const Icon(
+                      Icons.receipt_outlined,
+                      size: 18,
+                      color: AppColors.primaryContainer,
                     ),
-                  ),
-                ],
+                    const SizedBox(width: 6),
+                    Flexible(
+                      child: Text(
+                        order.orderId.startsWith('#')
+                            ? order.orderId
+                            : '#${order.orderId}',
+                        style: AppTypography.titleMd.copyWith(
+                          fontWeight: FontWeight.w800,
+                          color: AppColors.onSurface,
+                          fontSize: 15,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
+                ),
               ),
+              const SizedBox(width: 8),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                 decoration: BoxDecoration(

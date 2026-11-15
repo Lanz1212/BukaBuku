@@ -44,78 +44,91 @@ class OrderHeaderCard extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    '#${order.orderId}',
-                    style: AppTypography.headlineSm.copyWith(
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.onSurface,
-                      letterSpacing: -0.2,
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  InkWell(
-                    borderRadius: BorderRadius.circular(6),
-                    onTap: () {
-                      Clipboard.setData(ClipboardData(text: order.orderId));
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text(
-                            'ID #${order.orderId} disalin ke papan klip',
-                          ),
-                          behavior: SnackBarBehavior.floating,
-                          duration: const Duration(seconds: 2),
-                        ),
-                      );
-                    },
-                    child: Padding(
-                      padding: const EdgeInsets.all(4.0),
-                      child: Icon(
-                        Icons.copy_rounded,
-                        size: 16,
-                        color: AppColors.outline.withValues(alpha: 0.9),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 5,
-                ),
-                decoration: BoxDecoration(
-                  color: AppColors.surfaceContainerHigh,
-                  borderRadius: BorderRadius.circular(9999),
-                  border: Border.all(
-                    color: AppColors.outlineVariant.withValues(alpha: 0.5),
-                  ),
-                ),
+              Expanded(
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(
-                      order.deliveryType.contains('Pickup') ||
-                              order.deliveryType.contains('Ambil')
-                          ? Icons.storefront_outlined
-                          : Icons.local_shipping_outlined,
-                      size: 13,
-                      color: AppColors.primaryContainer,
+                    Flexible(
+                      child: Text(
+                        '#${order.orderId}',
+                        style: AppTypography.headlineSm.copyWith(
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.onSurface,
+                          letterSpacing: -0.2,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     ),
-                    const SizedBox(width: 5),
-                    Text(
-                      order.deliveryType.contains('Ambil')
-                          ? 'Ambil di Toko'
-                          : order.deliveryType,
-                      style: AppTypography.caption.copyWith(
-                        color: AppColors.primaryContainer,
-                        fontWeight: FontWeight.w600,
-                        fontSize: 11.5,
+                    const SizedBox(width: 8),
+                    InkWell(
+                      borderRadius: BorderRadius.circular(6),
+                      onTap: () {
+                        Clipboard.setData(ClipboardData(text: order.orderId));
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(
+                              'ID #${order.orderId} disalin ke papan klip',
+                            ),
+                            behavior: SnackBarBehavior.floating,
+                            duration: const Duration(seconds: 2),
+                          ),
+                        );
+                      },
+                      child: Padding(
+                        padding: const EdgeInsets.all(4.0),
+                        child: Icon(
+                          Icons.copy_rounded,
+                          size: 16,
+                          color: AppColors.outline.withValues(alpha: 0.9),
+                        ),
                       ),
                     ),
                   ],
+                ),
+              ),
+              const SizedBox(width: 8),
+              Flexible(
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 5,
+                  ),
+                  decoration: BoxDecoration(
+                    color: AppColors.surfaceContainerHigh,
+                    borderRadius: BorderRadius.circular(9999),
+                    border: Border.all(
+                      color: AppColors.outlineVariant.withValues(alpha: 0.5),
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        order.deliveryType.contains('Pickup') ||
+                                order.deliveryType.contains('Ambil')
+                            ? Icons.storefront_outlined
+                            : Icons.local_shipping_outlined,
+                        size: 13,
+                        color: AppColors.primaryContainer,
+                      ),
+                      const SizedBox(width: 5),
+                      Flexible(
+                        child: Text(
+                          order.deliveryType.contains('Ambil')
+                              ? 'Ambil di Toko'
+                              : order.deliveryType,
+                          style: AppTypography.caption.copyWith(
+                            color: AppColors.primaryContainer,
+                            fontWeight: FontWeight.w600,
+                            fontSize: 11.5,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ],

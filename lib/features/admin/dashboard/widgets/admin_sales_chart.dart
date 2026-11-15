@@ -146,11 +146,15 @@ class _AdminSalesChartState extends State<AdminSalesChart> {
                   children: [
                     Row(
                       children: [
-                        Text(
-                          'Grafik Penjualan Bulanan',
-                          style: AppTypography.titleMd.copyWith(
-                            fontWeight: FontWeight.w700,
-                            color: AppColors.onSurface,
+                        Flexible(
+                          child: Text(
+                            'Grafik Penjualan Bulanan',
+                            style: AppTypography.titleMd.copyWith(
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.onSurface,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                           ),
                         ),
                         const SizedBox(width: 6),
@@ -188,10 +192,13 @@ class _AdminSalesChartState extends State<AdminSalesChart> {
                             ? FontWeight.w600
                             : FontWeight.w400,
                       ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ],
                 ),
               ),
+              const SizedBox(width: 8),
               Column(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
