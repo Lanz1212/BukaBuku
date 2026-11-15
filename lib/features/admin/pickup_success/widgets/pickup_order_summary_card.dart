@@ -237,22 +237,47 @@ class PickupOrderSummaryCard extends StatelessWidget {
                 ),
                 child: Row(
                   children: [
-                    Container(
-                      width: 34,
-                      height: 42,
-                      decoration: BoxDecoration(
-                        color: AppColors.surfaceContainerHigh,
-                        borderRadius: BorderRadius.circular(4),
-                        border: Border.all(
-                          color: AppColors.outlineVariant.withValues(alpha: 0.4),
-                        ),
-                      ),
-                      child: Center(
-                        child: Icon(
-                          Icons.menu_book_rounded,
-                          size: 18,
-                          color: AppColors.primaryContainer.withValues(alpha: 0.7),
-                        ),
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(4),
+                      child: SizedBox(
+                        width: 34,
+                        height: 42,
+                        child: (book.imageUrl != null &&
+                                book.imageUrl!.trim().isNotEmpty)
+                            ? Image.network(
+                                book.imageUrl!,
+                                fit: BoxFit.cover,
+                                errorBuilder: (context, error, stackTrace) =>
+                                    Container(
+                                  color: AppColors.surfaceContainerHigh,
+                                  child: Center(
+                                    child: Icon(
+                                      Icons.menu_book_rounded,
+                                      size: 18,
+                                      color: AppColors.primaryContainer
+                                          .withValues(alpha: 0.7),
+                                    ),
+                                  ),
+                                ),
+                              )
+                            : Container(
+                                color: AppColors.surfaceContainerHigh,
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(4),
+                                  border: Border.all(
+                                    color: AppColors.outlineVariant
+                                        .withValues(alpha: 0.4),
+                                  ),
+                                ),
+                                child: Center(
+                                  child: Icon(
+                                    Icons.menu_book_rounded,
+                                    size: 18,
+                                    color: AppColors.primaryContainer
+                                        .withValues(alpha: 0.7),
+                                  ),
+                                ),
+                              ),
                       ),
                     ),
                     const SizedBox(width: 10),

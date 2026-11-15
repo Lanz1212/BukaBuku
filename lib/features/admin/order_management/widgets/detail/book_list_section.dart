@@ -17,20 +17,14 @@ class BookListSection extends StatelessWidget {
   }
 
   Widget _buildBookCoverThumbnail(AdminOrderBookItem book) {
-    final titleLower = book.title.toLowerCase();
+    final imageUrl = book.imageUrl?.trim() ?? '';
 
-    // High fidelity custom cover visuals mirroring the screenshot
-    if (titleLower.contains('atomic')) {
+    if (imageUrl.isNotEmpty) {
       return Container(
         width: 48,
         height: 64,
         decoration: BoxDecoration(
-          color: const Color(0xFFF7F3EB),
           borderRadius: BorderRadius.circular(6),
-          border: Border.all(
-            color: const Color(0xFFE4DACB),
-            width: 1,
-          ),
           boxShadow: [
             BoxShadow(
               color: Colors.black.withValues(alpha: 0.08),
@@ -39,114 +33,45 @@ class BookListSection extends StatelessWidget {
             ),
           ],
         ),
-        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Container(
-              height: 2,
-              width: 20,
-              color: const Color(0xFFC0732E),
-            ),
-            Column(
-              children: [
-                Text(
-                  'Atomic',
-                  style: TextStyle(
-                    fontFamily: AppTypography.caption.fontFamily,
-                    fontSize: 7,
-                    fontWeight: FontWeight.w800,
-                    color: const Color(0xFF3B2E24),
-                    height: 1.1,
-                  ),
-                ),
-                Text(
-                  'Habits',
-                  style: TextStyle(
-                    fontFamily: AppTypography.caption.fontFamily,
-                    fontSize: 7,
-                    fontWeight: FontWeight.w800,
-                    color: const Color(0xFF3B2E24),
-                    height: 1.1,
-                  ),
-                ),
-              ],
-            ),
-            Container(
-              width: 10,
-              height: 10,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                border: Border.all(color: const Color(0xFFD6C1AA), width: 1.5),
-              ),
-            ),
-          ],
-        ),
-      );
-    }
-
-    if (titleLower.contains('filosofi')) {
-      return Container(
-        width: 48,
-        height: 64,
-        decoration: BoxDecoration(
-          color: const Color(0xFF2B2520),
+        child: ClipRRect(
           borderRadius: BorderRadius.circular(6),
-          border: Border.all(
-            color: const Color(0xFF4A3E35),
-            width: 1,
+          child: Image.network(
+            imageUrl,
+            width: 48,
+            height: 64,
+            fit: BoxFit.cover,
+            errorBuilder: (context, error, stackTrace) =>
+                _buildFallbackCover(),
+            loadingBuilder: (context, child, loadingProgress) {
+              if (loadingProgress == null) return child;
+              return Container(
+                width: 48,
+                height: 64,
+                decoration: BoxDecoration(
+                  color: AppColors.surfaceContainerHigh,
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: const Center(
+                  child: SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: AppColors.primaryContainer,
+                    ),
+                  ),
+                ),
+              );
+            },
           ),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.12),
-              blurRadius: 4,
-              offset: const Offset(1, 2),
-            ),
-          ],
-        ),
-        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Container(
-              height: 2,
-              width: 16,
-              color: const Color(0xFFD99A35),
-            ),
-            Column(
-              children: [
-                Text(
-                  'FILOSOFI',
-                  style: TextStyle(
-                    fontFamily: AppTypography.caption.fontFamily,
-                    fontSize: 6,
-                    fontWeight: FontWeight.w800,
-                    color: const Color(0xFFF3ECE0),
-                    letterSpacing: 0.5,
-                  ),
-                ),
-                Text(
-                  'TERAS',
-                  style: TextStyle(
-                    fontFamily: AppTypography.caption.fontFamily,
-                    fontSize: 6,
-                    fontWeight: FontWeight.w800,
-                    color: const Color(0xFFD99A35),
-                  ),
-                ),
-              ],
-            ),
-            const Icon(
-              Icons.auto_stories_rounded,
-              size: 10,
-              color: Color(0xFFD99A35),
-            ),
-          ],
         ),
       );
     }
 
-    // Default book cover fallback
+    return _buildFallbackCover();
+  }
+
+  Widget _buildFallbackCover() {
     return Container(
       width: 48,
       height: 64,

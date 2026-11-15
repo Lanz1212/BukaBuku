@@ -28,7 +28,8 @@ class OrderService {
       final client = _safeClient;
       if (client == null) return [];
 
-      var query = client.from('orders').select('*, order_items(*)');
+      var query =
+          client.from('orders').select('*, order_items(*, books(cover_url))');
 
       if (statusQuery != null &&
           statusQuery.isNotEmpty &&
@@ -71,7 +72,7 @@ class OrderService {
 
       final response = await client
           .from('orders')
-          .select('*, order_items(*)')
+          .select('*, order_items(*, books(cover_url))')
           .eq('id', cleanId)
           .maybeSingle();
 
@@ -103,7 +104,7 @@ class OrderService {
 
       final response = await client
           .from('orders')
-          .select('*, order_items(*)')
+          .select('*, order_items(*, books(cover_url))')
           .or('id.eq.$code,qr_code.eq.$code,pickup_code.eq.$code')
           .maybeSingle();
 
@@ -142,12 +143,19 @@ class OrderService {
       final price = (iMap['price'] as num?)?.toInt() ?? 0;
       final qty = (iMap['quantity'] as num?)?.toInt() ?? 1;
       final sub = price * qty;
+      String itemCover = iMap['image_url'] as String? ?? '';
+      if (itemCover.trim().isEmpty) {
+        final bData = iMap['books'];
+        if (bData is Map<String, dynamic>) {
+          itemCover = bData['cover_url'] as String? ?? '';
+        }
+      }
       return OrderItemModel(
         id: 'item-${iMap['id'] ?? ''}',
         bookId: iMap['book_id'] as String?,
         title: iMap['title'] as String? ?? 'Buku',
         author: iMap['author'] as String? ?? '',
-        coverUrl: iMap['image_url'] as String? ?? '',
+        coverUrl: itemCover,
         quantity: qty,
         pricePerUnit: _formatRupiah(price),
         pricePerUnitValue: price,
@@ -596,7 +604,7 @@ class OrderService {
 
       final response = await _client
           .from('orders')
-          .select('*, order_items(*)')
+          .select('*, order_items(*, books(cover_url))')
           .eq('user_id', effectiveUid)
           .order('created_at', ascending: false);
       final list = response as List<dynamic>;
@@ -622,7 +630,7 @@ class OrderService {
 
       final response = await client
           .from('orders')
-          .select('*, order_items(*)')
+          .select('*, order_items(*, books(cover_url))')
           .eq('id', cleanId)
           .maybeSingle();
 

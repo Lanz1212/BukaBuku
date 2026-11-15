@@ -29,6 +29,17 @@ class AdminOrderBookItem {
   });
 
   factory AdminOrderBookItem.fromMap(Map<String, dynamic> map) {
+    String? img = (map['image_url'] as String?)?.trim();
+    if (img == null || img.isEmpty) {
+      img = (map['cover_url'] as String?)?.trim();
+    }
+    if (img == null || img.isEmpty) {
+      final booksData = map['books'];
+      if (booksData is Map<String, dynamic>) {
+        img = (booksData['cover_url'] as String?)?.trim();
+      }
+    }
+
     return AdminOrderBookItem(
       title: map['title'] as String? ?? 'Buku',
       author: map['author'] as String? ?? 'Penulis',
@@ -37,7 +48,7 @@ class AdminOrderBookItem {
           1,
       price: (map['price'] as num?)?.toInt() ?? 0,
       rackLocation: map['rack_location'] as String?,
-      imageUrl: map['image_url'] as String?,
+      imageUrl: img,
     );
   }
 

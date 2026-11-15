@@ -100,22 +100,47 @@ class QrResultBookList extends StatelessWidget {
               return Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Container(
-                    width: 46,
-                    height: 60,
-                    decoration: BoxDecoration(
-                      color: AppColors.surfaceContainerHigh,
-                      borderRadius: BorderRadius.circular(6),
-                      border: Border.all(
-                        color: AppColors.outlineVariant.withValues(alpha: 0.4),
-                      ),
-                    ),
-                    child: Center(
-                      child: Icon(
-                        Icons.menu_book_rounded,
-                        color: AppColors.primaryContainer.withValues(alpha: 0.6),
-                        size: 24,
-                      ),
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(6),
+                    child: SizedBox(
+                      width: 46,
+                      height: 60,
+                      child: (book.imageUrl != null &&
+                              book.imageUrl!.trim().isNotEmpty)
+                          ? Image.network(
+                              book.imageUrl!,
+                              fit: BoxFit.cover,
+                              errorBuilder: (context, error, stackTrace) =>
+                                  Container(
+                                color: AppColors.surfaceContainerHigh,
+                                child: Center(
+                                  child: Icon(
+                                    Icons.menu_book_rounded,
+                                    color: AppColors.primaryContainer
+                                        .withValues(alpha: 0.6),
+                                    size: 24,
+                                  ),
+                                ),
+                              ),
+                            )
+                          : Container(
+                              color: AppColors.surfaceContainerHigh,
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(6),
+                                border: Border.all(
+                                  color: AppColors.outlineVariant
+                                      .withValues(alpha: 0.4),
+                                ),
+                              ),
+                              child: Center(
+                                child: Icon(
+                                  Icons.menu_book_rounded,
+                                  color: AppColors.primaryContainer
+                                      .withValues(alpha: 0.6),
+                                  size: 24,
+                                ),
+                              ),
+                            ),
                     ),
                   ),
                   const SizedBox(width: 12),
