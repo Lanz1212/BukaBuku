@@ -294,26 +294,33 @@ class FavoriteItemCard extends StatelessWidget {
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         // Price section
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Harga',
-              style: AppTypography.caption.copyWith(
-                color: AppColors.outline,
+        Flexible(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Harga',
+                style: AppTypography.caption.copyWith(
+                  color: AppColors.outline,
+                ),
               ),
-            ),
-            Text(
-              item.price,
-              style: AppTypography.titleMd.copyWith(
-                color: isOutOfStock
-                    ? AppColors.onSurfaceVariant
-                    : AppColors.secondary,
-                fontWeight: FontWeight.w700,
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  item.price,
+                  style: AppTypography.titleMd.copyWith(
+                    color: isOutOfStock
+                        ? AppColors.onSurfaceVariant
+                        : AppColors.secondary,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
+        const SizedBox(width: 8),
 
         // Action button
         isOutOfStock
@@ -330,7 +337,7 @@ class FavoriteItemCard extends StatelessWidget {
         onTap: onAddToCart,
         borderRadius: BorderRadius.circular(8),
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
           decoration: BoxDecoration(
             color: AppColors.primary,
             borderRadius: BorderRadius.circular(8),

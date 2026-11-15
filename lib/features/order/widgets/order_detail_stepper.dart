@@ -40,13 +40,17 @@ class OrderDetailStepper extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                'Status Perjalanan Buku',
-                style: AppTypography.titleMd.copyWith(
-                  color: AppColors.onSurface,
-                  fontWeight: FontWeight.w700,
+              Flexible(
+                child: Text(
+                  'Status Perjalanan Buku',
+                  style: AppTypography.titleMd.copyWith(
+                    color: AppColors.onSurface,
+                    fontWeight: FontWeight.w700,
+                  ),
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
+              const SizedBox(width: 8),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 decoration: BoxDecoration(
@@ -111,20 +115,23 @@ class OrderDetailStepper extends StatelessWidget {
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                Text(
-                                  step.title,
-                                  style: AppTypography.labelMd.copyWith(
-                                    color: step.isActive
-                                        ? AppColors.primary
-                                        : step.isDone
-                                            ? AppColors.onSurface
-                                            : AppColors.onSurfaceVariant,
-                                    fontWeight: step.isActive || step.isDone
-                                        ? FontWeight.w700
-                                        : FontWeight.w500,
+                                Expanded(
+                                  child: Text(
+                                    step.title,
+                                    style: AppTypography.labelMd.copyWith(
+                                      color: step.isActive
+                                          ? AppColors.primary
+                                          : step.isDone
+                                              ? AppColors.onSurface
+                                              : AppColors.onSurfaceVariant,
+                                      fontWeight: step.isActive || step.isDone
+                                          ? FontWeight.w700
+                                          : FontWeight.w500,
+                                    ),
                                   ),
                                 ),
-                                if (step.time.isNotEmpty)
+                                if (step.time.isNotEmpty) ...[
+                                  const SizedBox(width: 8),
                                   Text(
                                     step.time,
                                     style: AppTypography.caption.copyWith(
@@ -136,6 +143,7 @@ class OrderDetailStepper extends StatelessWidget {
                                           : FontWeight.w400,
                                     ),
                                   ),
+                                ],
                               ],
                             ),
                             const SizedBox(height: 3),

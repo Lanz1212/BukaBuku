@@ -174,42 +174,49 @@ class _NotificationScreenState extends State<NotificationScreen> {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Row(
-                        children: [
-                          Text(
-                            'Notifikasi',
-                            style: AppTypography.headlineMd.copyWith(
-                              color: AppColors.onSurface,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          AnimatedContainer(
-                            duration: const Duration(milliseconds: 200),
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 8,
-                              vertical: 3,
-                            ),
-                            decoration: BoxDecoration(
-                              color: _unreadCount > 0
-                                  ? AppColors.secondaryContainer
-                                  : AppColors.surfaceContainer,
-                              borderRadius: BorderRadius.circular(9999),
-                            ),
-                            child: Text(
-                              _unreadCount > 0
-                                  ? '$_unreadCount Baru'
-                                  : 'Semua Dibaca',
-                              style: AppTypography.caption.copyWith(
-                                color: _unreadCount > 0
-                                    ? AppColors.onSecondaryContainer
-                                    : AppColors.onSurfaceVariant,
-                                fontWeight: FontWeight.w600,
+                      Flexible(
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Flexible(
+                              child: Text(
+                                'Notifikasi',
+                                style: AppTypography.headlineMd.copyWith(
+                                  color: AppColors.onSurface,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                                overflow: TextOverflow.ellipsis,
                               ),
                             ),
-                          ),
-                        ],
+                            const SizedBox(width: 8),
+                            AnimatedContainer(
+                              duration: const Duration(milliseconds: 200),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 3,
+                              ),
+                              decoration: BoxDecoration(
+                                color: _unreadCount > 0
+                                    ? AppColors.secondaryContainer
+                                    : AppColors.surfaceContainer,
+                                borderRadius: BorderRadius.circular(9999),
+                              ),
+                              child: Text(
+                                _unreadCount > 0
+                                    ? '$_unreadCount Baru'
+                                    : 'Semua Dibaca',
+                                style: AppTypography.caption.copyWith(
+                                  color: _unreadCount > 0
+                                      ? AppColors.onSecondaryContainer
+                                      : AppColors.onSurfaceVariant,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
+                      const SizedBox(width: 8),
                       InkWell(
                         onTap: _unreadCount > 0 ? _markAllAsRead : null,
                         borderRadius: BorderRadius.circular(8),
