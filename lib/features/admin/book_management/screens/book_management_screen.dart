@@ -563,27 +563,34 @@ class _BookManagementScreenState extends State<BookManagementScreen> {
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Kelola Buku',
-              style: AppTypography.headlineMd.copyWith(
-                fontWeight: FontWeight.w700,
-                color: AppColors.onSurface,
-                letterSpacing: -0.5,
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Kelola Buku',
+                style: AppTypography.headlineMd.copyWith(
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.onSurface,
+                  letterSpacing: -0.5,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
               ),
-            ),
-            const SizedBox(height: 2),
-            Text(
-              'Katalog toko fisik & inventaris database',
-              style: AppTypography.caption.copyWith(
-                color: AppColors.onSurfaceVariant,
-                fontSize: 12,
+              const SizedBox(height: 2),
+              Text(
+                'Katalog toko fisik & inventaris database',
+                style: AppTypography.caption.copyWith(
+                  color: AppColors.onSurfaceVariant,
+                  fontSize: 12,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
               ),
-            ),
-          ],
+            ],
+          ),
         ),
+        const SizedBox(width: 8),
         Row(
           mainAxisSize: MainAxisSize.min,
           children: [

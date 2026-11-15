@@ -66,43 +66,52 @@ class PaymentCashSummary extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(6),
-                    decoration: BoxDecoration(
-                      color: AppColors.primaryContainer.withValues(alpha: 0.12),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: const Icon(
-                      Icons.account_balance_wallet_outlined,
-                      size: 18,
-                      color: AppColors.primaryContainer,
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Arus Kas Bulanan',
-                        style: AppTypography.titleMd.copyWith(
-                          fontWeight: FontWeight.w700,
-                          color: AppColors.onSurface,
-                          fontSize: 14,
-                        ),
+              Expanded(
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(6),
+                      decoration: BoxDecoration(
+                        color: AppColors.primaryContainer.withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(8),
                       ),
-                      Text(
-                        isCurrentMonth ? 'Bulan Berjalan' : 'Arsip Bulan Lalu',
-                        style: AppTypography.caption.copyWith(
-                          color: AppColors.onSurfaceVariant,
-                          fontSize: 10.5,
-                        ),
+                      child: const Icon(
+                        Icons.account_balance_wallet_outlined,
+                        size: 18,
+                        color: AppColors.primaryContainer,
                       ),
-                    ],
-                  ),
-                ],
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Arus Kas Bulanan',
+                            style: AppTypography.titleMd.copyWith(
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.onSurface,
+                              fontSize: 14,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          Text(
+                            isCurrentMonth ? 'Bulan Berjalan' : 'Arsip Bulan Lalu',
+                            style: AppTypography.caption.copyWith(
+                              color: AppColors.onSurfaceVariant,
+                              fontSize: 10.5,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
               ),
+              const SizedBox(width: 8),
               // Month Navigator Widget
               Container(
                 decoration: BoxDecoration(
@@ -170,13 +179,19 @@ class PaymentCashSummary extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.baseline,
               textBaseline: TextBaseline.alphabetic,
               children: [
-                Text(
-                  _formatPrice(totalAmount),
-                  style: AppTypography.headlineMd.copyWith(
-                    fontWeight: FontWeight.w800,
-                    color: AppColors.primaryContainer,
-                    fontSize: 26,
-                    letterSpacing: -0.5,
+                Flexible(
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      _formatPrice(totalAmount),
+                      style: AppTypography.headlineMd.copyWith(
+                        fontWeight: FontWeight.w800,
+                        color: AppColors.primaryContainer,
+                        fontSize: 26,
+                        letterSpacing: -0.5,
+                      ),
+                    ),
                   ),
                 ),
                 const SizedBox(width: 8),
@@ -224,23 +239,31 @@ class PaymentCashSummary extends StatelessWidget {
                             color: AppColors.warning,
                           ),
                           const SizedBox(width: 5),
-                          Text(
-                            'Tunai Kasir',
-                            style: AppTypography.caption.copyWith(
-                              color: AppColors.onSurfaceVariant,
-                              fontWeight: FontWeight.w700,
-                              fontSize: 11,
+                          Flexible(
+                            child: Text(
+                              'Tunai Kasir',
+                              style: AppTypography.caption.copyWith(
+                                color: AppColors.onSurfaceVariant,
+                                fontWeight: FontWeight.w700,
+                                fontSize: 11,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                             ),
                           ),
                         ],
                       ),
                       const SizedBox(height: 6),
-                      Text(
-                        _formatPrice(cashAmount),
-                        style: AppTypography.labelLg.copyWith(
-                          fontWeight: FontWeight.w800,
-                          color: AppColors.onSurface,
-                          fontSize: 15,
+                      FittedBox(
+                        fit: BoxFit.scaleDown,
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          _formatPrice(cashAmount),
+                          style: AppTypography.labelLg.copyWith(
+                            fontWeight: FontWeight.w800,
+                            color: AppColors.onSurface,
+                            fontSize: 15,
+                          ),
                         ),
                       ),
                     ],
@@ -270,23 +293,31 @@ class PaymentCashSummary extends StatelessWidget {
                             color: AppColors.success,
                           ),
                           const SizedBox(width: 5),
-                          Text(
-                            'Midtrans Gateway',
-                            style: AppTypography.caption.copyWith(
-                              color: AppColors.onSurfaceVariant,
-                              fontWeight: FontWeight.w700,
-                              fontSize: 11,
+                          Flexible(
+                            child: Text(
+                              'Midtrans Gateway',
+                              style: AppTypography.caption.copyWith(
+                                color: AppColors.onSurfaceVariant,
+                                fontWeight: FontWeight.w700,
+                                fontSize: 11,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                             ),
                           ),
                         ],
                       ),
                       const SizedBox(height: 6),
-                      Text(
-                        _formatPrice(midtransAmount),
-                        style: AppTypography.labelLg.copyWith(
-                          fontWeight: FontWeight.w800,
-                          color: AppColors.onSurface,
-                          fontSize: 15,
+                      FittedBox(
+                        fit: BoxFit.scaleDown,
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          _formatPrice(midtransAmount),
+                          style: AppTypography.labelLg.copyWith(
+                            fontWeight: FontWeight.w800,
+                            color: AppColors.onSurface,
+                            fontSize: 15,
+                          ),
                         ),
                       ),
                     ],

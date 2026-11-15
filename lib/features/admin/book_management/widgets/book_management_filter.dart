@@ -168,6 +168,8 @@ class BookManagementFilter extends StatelessWidget {
                                 isSelected ? FontWeight.w600 : FontWeight.w500,
                             fontSize: 12.5,
                           ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
                         const SizedBox(width: 5),
                         Container(

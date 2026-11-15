@@ -357,11 +357,15 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                     color: AppColors.primary,
                   ),
                   const SizedBox(width: 4),
-                  Text(
-                    _currentDateFormatted,
-                    style: AppTypography.caption.copyWith(
-                      color: AppColors.onSurfaceVariant,
-                      fontSize: 11.5,
+                  Flexible(
+                    child: Text(
+                      _currentDateFormatted,
+                      style: AppTypography.caption.copyWith(
+                        color: AppColors.onSurfaceVariant,
+                        fontSize: 11.5,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ),
                 ],

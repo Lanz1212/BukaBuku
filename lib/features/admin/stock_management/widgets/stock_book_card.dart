@@ -23,8 +23,8 @@ class StockBookCard extends StatelessWidget {
           color: item.status == AdminStockStatus.habis
               ? AppColors.error.withValues(alpha: 0.3)
               : item.status == AdminStockStatus.menipis
-                  ? AppColors.warning.withValues(alpha: 0.3)
-                  : AppColors.outlineVariant.withValues(alpha: 0.4),
+              ? AppColors.warning.withValues(alpha: 0.3)
+              : AppColors.outlineVariant.withValues(alpha: 0.4),
         ),
         boxShadow: [
           BoxShadow(
@@ -85,7 +85,10 @@ class StockBookCard extends StatelessWidget {
                         ),
                         const SizedBox(width: 6),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 7,
+                            vertical: 3,
+                          ),
                           decoration: BoxDecoration(
                             color: item.statusBackgroundColor,
                             borderRadius: BorderRadius.circular(6),
@@ -115,9 +118,14 @@ class StockBookCard extends StatelessWidget {
                     Row(
                       children: [
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 6,
+                            vertical: 2,
+                          ),
                           decoration: BoxDecoration(
-                            color: AppColors.secondaryContainer.withValues(alpha: 0.5),
+                            color: AppColors.secondaryContainer.withValues(
+                              alpha: 0.5,
+                            ),
                             borderRadius: BorderRadius.circular(6),
                           ),
                           child: Row(
@@ -141,11 +149,15 @@ class StockBookCard extends StatelessWidget {
                           ),
                         ),
                         const SizedBox(width: 8),
-                        Text(
-                          'ISBN: ${item.isbn}',
-                          style: AppTypography.caption.copyWith(
-                            color: AppColors.outline,
-                            fontSize: 10.5,
+                        Flexible(
+                          child: Text(
+                            'ISBN: ${item.isbn}',
+                            style: AppTypography.caption.copyWith(
+                              color: AppColors.outline,
+                              fontSize: 10.5,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                           ),
                         ),
                       ],
@@ -163,48 +175,60 @@ class StockBookCard extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Row(
-                children: [
-                  Icon(
-                    Icons.inventory_2_outlined,
-                    size: 16,
-                    color: item.statusColor,
-                  ),
-                  const SizedBox(width: 6),
-                  RichText(
-                    text: TextSpan(
-                      text: 'Stok: ',
-                      style: AppTypography.bodyMd.copyWith(
-                        color: AppColors.onSurfaceVariant,
-                        fontSize: 12.5,
-                      ),
-                      children: [
-                        TextSpan(
-                          text: '${item.currentStock}',
-                          style: AppTypography.bodyMd.copyWith(
-                            fontWeight: FontWeight.w800,
-                            color: item.statusColor,
-                            fontSize: 14,
-                          ),
-                        ),
-                        TextSpan(
-                          text: ' eksemplar',
-                          style: AppTypography.caption.copyWith(
-                            color: AppColors.onSurfaceVariant,
-                            fontSize: 11,
-                          ),
-                        ),
-                      ],
+              Expanded(
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.inventory_2_outlined,
+                      size: 16,
+                      color: item.statusColor,
                     ),
-                  ),
-                ],
+                    const SizedBox(width: 6),
+                    Flexible(
+                      child: FittedBox(
+                        fit: BoxFit.scaleDown,
+                        alignment: Alignment.centerLeft,
+                        child: RichText(
+                          text: TextSpan(
+                            text: 'Stok: ',
+                            style: AppTypography.bodyMd.copyWith(
+                              color: AppColors.onSurfaceVariant,
+                              fontSize: 12.5,
+                            ),
+                            children: [
+                              TextSpan(
+                                text: '${item.currentStock}',
+                                style: AppTypography.bodyMd.copyWith(
+                                  fontWeight: FontWeight.w800,
+                                  color: item.statusColor,
+                                  fontSize: 14,
+                                ),
+                              ),
+                              TextSpan(
+                                text: ' eksemplar',
+                                style: AppTypography.caption.copyWith(
+                                  color: AppColors.onSurfaceVariant,
+                                  fontSize: 11,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
+              const SizedBox(width: 8),
               OutlinedButton.icon(
                 onPressed: onAdjustTap,
                 style: OutlinedButton.styleFrom(
                   foregroundColor: AppColors.primary,
                   side: const BorderSide(color: AppColors.primary, width: 1.2),
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 6,
+                  ),
                   minimumSize: Size.zero,
                   tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                   shape: RoundedRectangleBorder(

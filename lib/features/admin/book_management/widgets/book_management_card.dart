@@ -107,46 +107,53 @@ class BookManagementCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
                     // Price & Stock
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Harga & Stok',
-                          style: AppTypography.caption.copyWith(
-                            color: AppColors.outline,
-                            fontSize: 10,
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Harga & Stok',
+                            style: AppTypography.caption.copyWith(
+                              color: AppColors.outline,
+                              fontSize: 10,
+                            ),
                           ),
-                        ),
-                        const SizedBox(height: 2),
-                        Row(
-                          children: [
-                            Text(
-                              'Rp${_formatNumber(book.price)}',
-                              style: AppTypography.titleMd.copyWith(
-                                fontWeight: FontWeight.w700,
-                                color: isOutOfStock
-                                    ? AppColors.onSurfaceVariant
-                                    : AppColors.primary,
-                                fontSize: 13.5,
+                          const SizedBox(height: 2),
+                          Row(
+                            children: [
+                              Flexible(
+                                child: Text(
+                                  'Rp${_formatNumber(book.price)}',
+                                  style: AppTypography.titleMd.copyWith(
+                                    fontWeight: FontWeight.w700,
+                                    color: isOutOfStock
+                                        ? AppColors.onSurfaceVariant
+                                        : AppColors.primary,
+                                    fontSize: 13.5,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
                               ),
-                            ),
-                            const SizedBox(width: 5),
-                            Text(
-                              '${book.stock} eks',
-                              style: AppTypography.caption.copyWith(
-                                fontWeight: FontWeight.w600,
-                                color: isOutOfStock
-                                    ? AppColors.error
-                                    : (isMenipis
-                                        ? AppColors.secondary
-                                        : AppColors.onSurfaceVariant),
-                                fontSize: 11.5,
+                              const SizedBox(width: 5),
+                              Text(
+                                '${book.stock} eks',
+                                style: AppTypography.caption.copyWith(
+                                  fontWeight: FontWeight.w600,
+                                  color: isOutOfStock
+                                      ? AppColors.error
+                                      : (isMenipis
+                                          ? AppColors.secondary
+                                          : AppColors.onSurfaceVariant),
+                                  fontSize: 11.5,
+                                ),
                               ),
-                            ),
-                          ],
-                        ),
-                      ],
+                            ],
+                          ),
+                        ],
+                      ),
                     ),
+                    const SizedBox(width: 6),
 
                     // Actions: Active toggle, Edit, Delete
                     Row(

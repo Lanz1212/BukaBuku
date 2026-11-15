@@ -56,26 +56,37 @@ class PaymentTransactionCard extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Row(
-                children: [
-                  Text(
-                    transaction.orderId,
-                    style: AppTypography.titleMd.copyWith(
-                      fontWeight: FontWeight.w800,
-                      color: AppColors.onSurface,
-                      fontSize: 14.5,
+              Expanded(
+                child: Row(
+                  children: [
+                    Flexible(
+                      child: Text(
+                        transaction.orderId,
+                        style: AppTypography.titleMd.copyWith(
+                          fontWeight: FontWeight.w800,
+                          color: AppColors.onSurface,
+                          fontSize: 14.5,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     ),
-                  ),
-                  const SizedBox(width: 6),
-                  Text(
-                    '• ${transaction.time}',
-                    style: AppTypography.caption.copyWith(
-                      color: AppColors.onSurfaceVariant,
-                      fontSize: 11,
+                    const SizedBox(width: 6),
+                    Flexible(
+                      child: Text(
+                        '• ${transaction.time}',
+                        style: AppTypography.caption.copyWith(
+                          color: AppColors.onSurfaceVariant,
+                          fontSize: 11,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
+              const SizedBox(width: 8),
               _buildStatusBadge(),
             ],
           ),
@@ -84,18 +95,22 @@ class PaymentTransactionCard extends StatelessWidget {
           // Customer Row
           Row(
             children: [
-              Icon(
+              const Icon(
                 Icons.person_outline_rounded,
                 size: 15,
                 color: AppColors.onSurfaceVariant,
               ),
               const SizedBox(width: 5),
-              Text(
-                transaction.customerName,
-                style: AppTypography.labelMd.copyWith(
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.onSurface,
-                  fontSize: 13,
+              Flexible(
+                child: Text(
+                  transaction.customerName,
+                  style: AppTypography.labelMd.copyWith(
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.onSurface,
+                    fontSize: 13,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
               const SizedBox(width: 8),
@@ -183,30 +198,35 @@ class PaymentTransactionCard extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Total Pembayaran',
-                    style: AppTypography.caption.copyWith(
-                      color: AppColors.onSurfaceVariant,
-                      fontSize: 11,
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Total Pembayaran',
+                      style: AppTypography.caption.copyWith(
+                        color: AppColors.onSurfaceVariant,
+                        fontSize: 11,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 1),
-                  Text(
-                    transaction.formattedTotal,
-                    style: AppTypography.titleMd.copyWith(
-                      fontWeight: FontWeight.w800,
-                      color: isFailed
-                          ? AppColors.onSurfaceVariant
-                          : AppColors.onSurface,
-                      fontSize: 16,
-                      decoration: isFailed ? TextDecoration.lineThrough : null,
+                    const SizedBox(height: 1),
+                    Text(
+                      transaction.formattedTotal,
+                      style: AppTypography.titleMd.copyWith(
+                        fontWeight: FontWeight.w800,
+                        color: isFailed
+                            ? AppColors.onSurfaceVariant
+                            : AppColors.onSurface,
+                        fontSize: 16,
+                        decoration: isFailed ? TextDecoration.lineThrough : null,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
+              const SizedBox(width: 8),
               _buildActionButton(context),
             ],
           ),
