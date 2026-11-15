@@ -118,21 +118,6 @@ class OrderCard extends StatelessWidget {
                   ],
                 ),
               ),
-              // Call / WhatsApp shortcut icon
-              IconButton(
-                onPressed: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('Menghubungi ${order.customerName} (${order.customerPhone})'),
-                      behavior: SnackBarBehavior.floating,
-                    ),
-                  );
-                },
-                icon: const Icon(Icons.phone_outlined, size: 18),
-                color: AppColors.primary,
-                visualDensity: VisualDensity.compact,
-                tooltip: 'Hubungi Pembeli',
-              ),
             ],
           ),
           const SizedBox(height: 8),

@@ -15,6 +15,7 @@ import '../order/screens/order_list_screen.dart';
 import '../notification/screens/notification_screen.dart';
 import '../notification/services/notification_service.dart';
 import '../profile/screens/profile_screen.dart';
+import '../profile/services/profile_service.dart';
 import '../../shared/widgets/bookstore_bottom_nav.dart';
 
 /// Home Page — Buka Buku
@@ -31,6 +32,7 @@ class _HomeScreenState extends State<HomeScreen> {
   List<AdminBookItem> _books = [];
   List<AdminBookItem> _topRatedBooks = [];
   List<String> _categories = ['Semua'];
+  String _userName = 'Pembaca';
   bool _isLoading = true;
   RealtimeChannel? _notificationChannel;
 
@@ -76,8 +78,23 @@ class _HomeScreenState extends State<HomeScreen> {
         BookService.fetchTopRatedBooks(limit: 10),
         BookService.fetchCategoryNames(),
       ]);
+
+      String currentUserName = 'Pembaca';
+      final currentUser = Supabase.instance.client.auth.currentUser;
+      if (currentUser != null) {
+        try {
+          final profile = await ProfileService.fetchCurrentUserProfile();
+          if (profile.name.trim().isNotEmpty) {
+            currentUserName = profile.name.trim();
+          } else if (currentUser.email != null) {
+            currentUserName = currentUser.email!.split('@').first;
+          }
+        } catch (_) {}
+      }
+
       if (mounted) {
         setState(() {
+          _userName = currentUserName;
           _books = results[0] as List<AdminBookItem>;
           _topRatedBooks = results[1] as List<AdminBookItem>;
           _categories = ['Semua', ...(results[2] as List<String>)];
@@ -372,48 +389,14 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
               const SizedBox(width: 12),
 
-              // Greeting Text and Badge
+              // Greeting Text
               Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Halo, Budi 👋',
-                      style: AppTypography.headlineLg.copyWith(
-                        color: AppColors.onSurface,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 4,
-                      ),
-                      decoration: BoxDecoration(
-                        color: AppColors.secondaryContainer.withValues(alpha: 0.5),
-                        borderRadius: BorderRadius.circular(9999),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Icon(
-                            Icons.menu_book,
-                            size: 12,
-                            color: AppColors.secondary,
-                          ),
-                          const SizedBox(width: 4),
-                          Text(
-                            'Pembaca Setia',
-                            style: AppTypography.caption.copyWith(
-                              color: AppColors.secondary,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
+                child: Text(
+                  'Halo, $_userName 👋',
+                  style: AppTypography.headlineLg.copyWith(
+                    color: AppColors.onSurface,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
               ),
 

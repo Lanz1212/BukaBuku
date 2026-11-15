@@ -16,6 +16,7 @@ class BookManagementFilter extends StatelessWidget {
   final int selectedCategoryIndex;
   final ValueChanged<int> onCategorySelected;
   final List<BookCategoryFilterItem> categories;
+  final bool hasActiveFilter;
 
   const BookManagementFilter({
     super.key,
@@ -25,6 +26,7 @@ class BookManagementFilter extends StatelessWidget {
     required this.selectedCategoryIndex,
     required this.onCategorySelected,
     required this.categories,
+    this.hasActiveFilter = false,
   });
 
   @override
@@ -77,13 +79,34 @@ class BookManagementFilter extends StatelessWidget {
                   ),
                 ),
               ),
-              IconButton(
-                icon: const Icon(
-                  Icons.tune_rounded,
-                  color: AppColors.onSurfaceVariant,
-                  size: 20,
-                ),
-                onPressed: onFilterTuneTap,
+              Stack(
+                alignment: Alignment.center,
+                children: [
+                  IconButton(
+                    icon: Icon(
+                      Icons.tune_rounded,
+                      color: hasActiveFilter
+                          ? AppColors.primaryContainer
+                          : AppColors.onSurfaceVariant,
+                      size: 20,
+                    ),
+                    onPressed: onFilterTuneTap,
+                    tooltip: 'Filter Lanjutan',
+                  ),
+                  if (hasActiveFilter)
+                    Positioned(
+                      top: 10,
+                      right: 10,
+                      child: Container(
+                        width: 7,
+                        height: 7,
+                        decoration: const BoxDecoration(
+                          color: AppColors.primaryContainer,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                    ),
+                ],
               ),
             ],
           ),

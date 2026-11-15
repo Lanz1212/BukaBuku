@@ -383,7 +383,6 @@ class _StaffGuideScreenState extends State<StaffGuideScreen> {
     return Container(
       margin: const EdgeInsets.only(bottom: 14),
       decoration: BoxDecoration(
-        color: AppColors.surfaceContainerLowest,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
           color: AppColors.outlineVariant.withValues(alpha: 0.45),
@@ -396,38 +395,51 @@ class _StaffGuideScreenState extends State<StaffGuideScreen> {
           ),
         ],
       ),
-      child: Theme(
-        data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
-        child: ExpansionTile(
-          initiallyExpanded: true,
-          tilePadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-          leading: Container(
-            width: 36,
-            height: 36,
-            decoration: BoxDecoration(
-              color: category.color.withValues(alpha: 0.12),
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Icon(category.icon, color: category.color, size: 20),
+      child: Material(
+        color: AppColors.surfaceContainerLowest,
+        borderRadius: BorderRadius.circular(16),
+        clipBehavior: Clip.antiAlias,
+        child: Theme(
+          data: Theme.of(context).copyWith(
+            dividerColor: Colors.transparent,
+            splashColor: category.color.withValues(alpha: 0.1),
+            highlightColor: Colors.transparent,
           ),
-          title: Text(
-            category.title,
-            style: AppTypography.titleMd.copyWith(
-              fontWeight: FontWeight.w700,
-              fontSize: 14.5,
-              color: AppColors.onSurface,
+          child: ExpansionTile(
+            backgroundColor: AppColors.surfaceContainerLowest,
+            collapsedBackgroundColor: AppColors.surfaceContainerLowest,
+            shape: const Border(),
+            collapsedShape: const Border(),
+            initiallyExpanded: true,
+            tilePadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+            leading: Container(
+              width: 36,
+              height: 36,
+              decoration: BoxDecoration(
+                color: category.color.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Icon(category.icon, color: category.color, size: 20),
             ),
-          ),
-          subtitle: Text(
-            '${category.items.length} SOP & Petunjuk',
-            style: AppTypography.caption.copyWith(
-              color: AppColors.onSurfaceVariant,
-              fontSize: 11.5,
+            title: Text(
+              category.title,
+              style: AppTypography.titleMd.copyWith(
+                fontWeight: FontWeight.w700,
+                fontSize: 14.5,
+                color: AppColors.onSurface,
+              ),
             ),
+            subtitle: Text(
+              '${category.items.length} SOP & Petunjuk',
+              style: AppTypography.caption.copyWith(
+                color: AppColors.onSurfaceVariant,
+                fontSize: 11.5,
+              ),
+            ),
+            children: category.items.map((item) {
+              return _buildItemCard(item, category.color);
+            }).toList(),
           ),
-          children: category.items.map((item) {
-            return _buildItemCard(item, category.color);
-          }).toList(),
         ),
       ),
     );

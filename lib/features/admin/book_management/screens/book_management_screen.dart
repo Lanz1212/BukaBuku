@@ -6,6 +6,7 @@ import '../../../../core/services/cashier_log_service.dart';
 import '../models/admin_book_item.dart';
 import '../widgets/book_management_card.dart';
 import '../widgets/book_management_filter.dart';
+import '../widgets/admin_book_filter_modal.dart';
 import '../../category_management/screens/category_management_screen.dart';
 import 'add_book_screen.dart';
 
@@ -23,6 +24,12 @@ class _BookManagementScreenState extends State<BookManagementScreen> {
   String? _errorMessage;
   int _selectedCategoryIndex = 0;
   List<BookCategoryFilterItem> _categories = [];
+
+  // Filter lanjutan state
+  RangeValues? _minMaxPrice;
+  RangeValues? _selectedPriceRange;
+  String _selectedStockFilter = 'Semua'; // 'Semua', 'Tersedia', 'Menipis', 'Habis'
+  String? _selectedRack; // null / 'Semua' / string rak
 
   @override
   void initState() {
@@ -45,9 +52,30 @@ class _BookManagementScreenState extends State<BookManagementScreen> {
     try {
       final books = await BookService.fetchBooks();
       _rebuildCategories(books);
+
+      int minP = 0;
+      int maxP = 500000;
+      if (books.isNotEmpty) {
+        minP = books.map((b) => b.price).reduce((a, b) => a < b ? a : b);
+        maxP = books.map((b) => b.price).reduce((a, b) => a > b ? a : b);
+        if (minP == maxP) {
+          maxP = minP + 50000;
+        }
+      }
+      final computedMinMax = RangeValues(minP.toDouble(), maxP.toDouble());
+
       if (mounted) {
         setState(() {
           _books = books;
+          _minMaxPrice = computedMinMax;
+          if (_selectedPriceRange == null) {
+            _selectedPriceRange = computedMinMax;
+          } else {
+            _selectedPriceRange = RangeValues(
+              _selectedPriceRange!.start.clamp(computedMinMax.start, computedMinMax.end),
+              _selectedPriceRange!.end.clamp(computedMinMax.start, computedMinMax.end),
+            );
+          }
           _isLoading = false;
         });
       }
@@ -81,6 +109,63 @@ class _BookManagementScreenState extends State<BookManagementScreen> {
     }
   }
 
+  List<String> get _availableRacks {
+    final racks = _books
+        .map((b) => b.rackLocation.trim())
+        .where((r) => r.isNotEmpty)
+        .toSet()
+        .toList();
+    racks.sort();
+    return racks;
+  }
+
+  bool get _hasActiveAdvancedFilter {
+    final isPriceFiltered = _minMaxPrice != null &&
+        _selectedPriceRange != null &&
+        (_selectedPriceRange!.start > _minMaxPrice!.start ||
+            _selectedPriceRange!.end < _minMaxPrice!.end);
+    final isStockFiltered = _selectedStockFilter != 'Semua';
+    final isRackFiltered = _selectedRack != null && _selectedRack != 'Semua';
+    return isPriceFiltered || isStockFiltered || isRackFiltered;
+  }
+
+  void _resetAdvancedFilters() {
+    setState(() {
+      if (_minMaxPrice != null) {
+        _selectedPriceRange = _minMaxPrice;
+      }
+      _selectedStockFilter = 'Semua';
+      _selectedRack = 'Semua';
+    });
+  }
+
+  void _openFilterModal() {
+    if (_minMaxPrice == null) return;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        return AdminBookFilterModal(
+          minMaxPrice: _minMaxPrice!,
+          currentPriceRange: _selectedPriceRange ?? _minMaxPrice!,
+          currentStockFilter: _selectedStockFilter,
+          currentRackFilter: _selectedRack,
+          availableRacks: _availableRacks,
+          onApply: (priceRange, stockFilter, rackFilter) {
+            setState(() {
+              _selectedPriceRange = priceRange;
+              _selectedStockFilter = stockFilter;
+              _selectedRack = rackFilter;
+            });
+          },
+          onReset: _resetAdvancedFilters,
+        );
+      },
+    );
+  }
+
   List<AdminBookItem> get _filteredBooks {
     final query = _searchController.text.trim().toLowerCase();
     final selectedCat = _categories.isNotEmpty && _selectedCategoryIndex < _categories.length
@@ -97,7 +182,27 @@ class _BookManagementScreenState extends State<BookManagementScreen> {
       final matchesCategory =
           selectedCat == 'Semua' || book.category == selectedCat;
 
-      return matchesSearch && matchesCategory;
+      final matchesPrice = _selectedPriceRange == null ||
+          (book.price >= _selectedPriceRange!.start &&
+              book.price <= _selectedPriceRange!.end);
+
+      final matchesStock = _selectedStockFilter == 'Semua' ||
+          (_selectedStockFilter == 'Tersedia' &&
+              book.status == AdminBookStatus.tersedia) ||
+          (_selectedStockFilter == 'Menipis' &&
+              book.status == AdminBookStatus.menipis) ||
+          (_selectedStockFilter == 'Habis' &&
+              (book.status == AdminBookStatus.outOfStock || book.stock <= 0));
+
+      final matchesRack = _selectedRack == null ||
+          _selectedRack == 'Semua' ||
+          book.rackLocation == _selectedRack;
+
+      return matchesSearch &&
+          matchesCategory &&
+          matchesPrice &&
+          matchesStock &&
+          matchesRack;
     }).toList();
   }
 
@@ -255,8 +360,8 @@ class _BookManagementScreenState extends State<BookManagementScreen> {
                   BookManagementFilter(
                     searchController: _searchController,
                     onSearchChanged: (val) => setState(() {}),
-                    onFilterTuneTap: () =>
-                        _showNotice('Filter lanjutan: Rentang harga, stok, rak'),
+                    onFilterTuneTap: _openFilterModal,
+                    hasActiveFilter: _hasActiveAdvancedFilter,
                     selectedCategoryIndex: _selectedCategoryIndex,
                     onCategorySelected: (idx) {
                       setState(() {
@@ -265,6 +370,10 @@ class _BookManagementScreenState extends State<BookManagementScreen> {
                     },
                     categories: _categories,
                   ),
+                if (_hasActiveAdvancedFilter) ...[
+                  const SizedBox(height: 8),
+                  _buildActiveFilterChips(),
+                ],
                 const SizedBox(height: 16),
 
                 // Sort Row & Item count
@@ -368,6 +477,84 @@ class _BookManagementScreenState extends State<BookManagementScreen> {
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildActiveFilterChips() {
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: Row(
+        children: [
+          if (_selectedStockFilter != 'Semua')
+            _buildActiveChip('Stok: $_selectedStockFilter', () {
+              setState(() => _selectedStockFilter = 'Semua');
+            }),
+          if (_selectedRack != null && _selectedRack != 'Semua')
+            _buildActiveChip('Rak: $_selectedRack', () {
+              setState(() => _selectedRack = 'Semua');
+            }),
+          if (_minMaxPrice != null &&
+              _selectedPriceRange != null &&
+              (_selectedPriceRange!.start > _minMaxPrice!.start ||
+                  _selectedPriceRange!.end < _minMaxPrice!.end))
+            _buildActiveChip(
+              'Harga: Rp ${(_selectedPriceRange!.start / 1000).round()}k - Rp ${(_selectedPriceRange!.end / 1000).round()}k',
+              () {
+                setState(() => _selectedPriceRange = _minMaxPrice);
+              },
+            ),
+          TextButton(
+            onPressed: _resetAdvancedFilters,
+            style: TextButton.styleFrom(
+              visualDensity: VisualDensity.compact,
+              padding: const EdgeInsets.symmetric(horizontal: 8),
+            ),
+            child: Text(
+              'Reset Semua',
+              style: AppTypography.caption.copyWith(
+                color: AppColors.error,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildActiveChip(String label, VoidCallback onRemove) {
+    return Container(
+      margin: const EdgeInsets.only(right: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(
+        color: AppColors.primaryContainer.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(9999),
+        border: Border.all(
+          color: AppColors.primaryContainer.withValues(alpha: 0.3),
+        ),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            label,
+            style: AppTypography.caption.copyWith(
+              color: AppColors.primaryContainer,
+              fontWeight: FontWeight.w600,
+              fontSize: 11,
+            ),
+          ),
+          const SizedBox(width: 4),
+          GestureDetector(
+            onTap: onRemove,
+            child: const Icon(
+              Icons.close_rounded,
+              size: 14,
+              color: AppColors.primaryContainer,
+            ),
+          ),
+        ],
+      ),
     );
   }
 

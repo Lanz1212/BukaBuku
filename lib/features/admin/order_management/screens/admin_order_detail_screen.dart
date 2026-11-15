@@ -183,16 +183,6 @@ class _AdminOrderDetailScreenState extends State<AdminOrderDetailScreen> {
               // 2. Customer Info Section
               CustomerInfoSection(
                 order: _currentOrder,
-                onCallCustomer: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(
-                        'Menghubungi ${_currentOrder.customerPhone}...',
-                      ),
-                      behavior: SnackBarBehavior.floating,
-                    ),
-                  );
-                },
               ),
               const SizedBox(height: 14),
 

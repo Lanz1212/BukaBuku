@@ -139,58 +139,40 @@ class _LoginScreenState extends State<LoginScreen> {
           ),
         ],
       ),
-      actions: [
-        Padding(
-          padding: const EdgeInsets.only(right: 16),
-          child: ClipOval(
-            child: Image.asset(
-              'assets/images/Profile.png',
-              width: 36,
-              height: 36,
-              fit: BoxFit.cover,
-              errorBuilder: (context, error, stackTrace) {
-                return CircleAvatar(
-                  radius: 18,
-                  backgroundColor: AppColors.surfaceContainerHighest,
-                  child: const Icon(
-                    Icons.person,
-                    size: 20,
-                    color: AppColors.onSurfaceVariant,
-                  ),
-                );
-              },
-            ),
-          ),
-        ),
-      ],
     );
   }
 
-  // ─── App Logo ────────────────────────────────────────────────────────────────
+  // ─── Logo ────────────────────────────────────────────────────────────────────
 
-Widget _buildLogo() {
-  return Center(
-    child: Image.asset(
-      'assets/images/Margin.png',
-      width: 100,
-      height: 100,
-      fit: BoxFit.contain,
-      errorBuilder: (context, error, stackTrace) {
-        return Container(
-          width: 100,
-          height: 100,
-          decoration: BoxDecoration(
-            color: AppColors.surfaceContainerLow,
-            borderRadius: BorderRadius.circular(22),
-            border: Border.all(
-              color: AppColors.outlineVariant,
-            ),
+  Widget _buildLogo() {
+    return Center(
+      child: Container(
+        width: 90,
+        height: 90,
+        decoration: BoxDecoration(
+          color: AppColors.surfaceContainerLow,
+          borderRadius: BorderRadius.circular(22),
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(22),
+          child: Image.asset(
+            'assets/images/Logo Toko Buku Budi.png',
+            width: 90,
+            height: 90,
+            fit: BoxFit.contain,
+            errorBuilder: (context, error, stackTrace) {
+              return const Icon(
+                Icons.auto_stories,
+                size: 50,
+                color: AppColors.secondary,
+              );
+            },
           ),
-        );
-      },
-    ),
-  );
-}
+        ),
+      ),
+    );
+  }
+
   // ─── Heading ─────────────────────────────────────────────────────────────────
 
   Widget _buildHeading() {

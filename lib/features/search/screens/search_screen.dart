@@ -218,18 +218,6 @@ class _SearchScreenState extends State<SearchScreen> {
       appBar: BookstoreAppBar(
         title: 'Pencarian Buku',
         showBackButton: true,
-        showShareButton: true,
-        onSharePressed: () {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: const Text('Tautan koleksi buku berhasil disalin!'),
-              backgroundColor: AppColors.primaryContainer,
-              behavior: SnackBarBehavior.floating,
-              duration: const Duration(seconds: 2),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-            ),
-          );
-        },
         onProfilePressed: () {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(

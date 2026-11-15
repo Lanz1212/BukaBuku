@@ -6,7 +6,6 @@ import '../../../shared/widgets/bookstore_bottom_nav.dart';
 import '../../../core/services/book_service.dart';
 import '../models/book_category.dart';
 import '../widgets/category_card.dart';
-import '../widgets/curator_banner.dart';
 import '../../search/screens/search_screen.dart';
 import '../../home/home_screen.dart';
 import '../../cart/screens/cart_screen.dart';
@@ -121,114 +120,6 @@ class _CategoryScreenState extends State<CategoryScreen> {
           initialQuery: query ?? '',
         ),
       ),
-    );
-  }
-
-  void _showCuratorDialog() {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.transparent,
-      builder: (context) {
-        return Container(
-          decoration: const BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-          ),
-          padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Center(
-                child: Container(
-                  width: 40,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: AppColors.outlineVariant,
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 20),
-              Row(
-                children: [
-                  Container(
-                    width: 44,
-                    height: 44,
-                    decoration: BoxDecoration(
-                      color: AppColors.primaryContainer,
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: const Icon(
-                      Icons.support_agent_rounded,
-                      color: Colors.white,
-                      size: 24,
-                    ),
-                  ),
-                  const SizedBox(width: 14),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Kurator Toko Buku Budi',
-                        style: AppTypography.titleMd.copyWith(
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      Text(
-                        'Online • Respons rata-rata 3 menit',
-                        style: AppTypography.caption.copyWith(
-                          color: const Color(0xFF3F8F5F),
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-              Text(
-                'Halo! Apakah Anda sedang mencari rekomendasi buku untuk keperluan studi, hobi, atau hadiah spesial? Kurator kami siap membantu mencarikan edisi terbaik di rak fisik toko.',
-                style: AppTypography.bodyMd.copyWith(
-                  color: AppColors.onSurfaceVariant,
-                  height: 1.5,
-                ),
-              ),
-              const SizedBox(height: 24),
-              SizedBox(
-                width: double.infinity,
-                height: 48,
-                child: ElevatedButton.icon(
-                  onPressed: () {
-                    Navigator.pop(context);
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(
-                          'Membuka sesi konsultasi bersama kurator...',
-                          style: AppTypography.bodyMd.copyWith(color: Colors.white),
-                        ),
-                        backgroundColor: AppColors.primaryContainer,
-                        behavior: SnackBarBehavior.floating,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                      ),
-                    );
-                  },
-                  icon: const Icon(Icons.chat_rounded, size: 18),
-                  label: const Text('Buka Obrolan Langsung'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primaryContainer,
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14),
-                    ),
-                    elevation: 0,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        );
-      },
     );
   }
 
@@ -396,13 +287,6 @@ class _CategoryScreenState extends State<CategoryScreen> {
               )
             else
               _buildCategoryEmptyState(),
-
-            const SizedBox(height: 24),
-
-            // Curator Consultation Service Banner
-            CuratorBanner(
-              onConsultPressed: _showCuratorDialog,
-            ),
 
             const SizedBox(height: 28),
           ],

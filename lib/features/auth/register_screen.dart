@@ -89,9 +89,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const SizedBox(height: 28),
-              _buildLogo(),
-              const SizedBox(height: 20),
+              const SizedBox(height: 24),
               _buildHeading(),
               const SizedBox(height: 28),
               _buildFormFields(),
@@ -139,56 +137,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
             style: AppTypography.titleMd,
           ),
         ],
-      ),
-      actions: [
-        Padding(
-          padding: const EdgeInsets.only(right: 16),
-          child: ClipOval(
-            child: Image.asset(
-              'assets/images/Profile.png',
-              width: 36,
-              height: 36,
-              fit: BoxFit.cover,
-              errorBuilder: (context, error, stackTrace) {
-                return CircleAvatar(
-                  radius: 18,
-                  backgroundColor: AppColors.surfaceContainerHighest,
-                  child: const Icon(
-                    Icons.person,
-                    size: 20,
-                    color: AppColors.onSurfaceVariant,
-                  ),
-                );
-              },
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  // ─── App Logo ────────────────────────────────────────────────────────────────
-
-  Widget _buildLogo() {
-    return Center(
-      child: Image.asset(
-        'assets/images/Margin.png',
-        width: 100,
-        height: 100,
-        fit: BoxFit.contain,
-        errorBuilder: (context, error, stackTrace) {
-          return Container(
-            width: 100,
-            height: 100,
-            decoration: BoxDecoration(
-              color: AppColors.surfaceContainerLow,
-              borderRadius: BorderRadius.circular(22),
-              border: Border.all(
-                color: AppColors.outlineVariant,
-              ),
-            ),
-          );
-        },
       ),
     );
   }
