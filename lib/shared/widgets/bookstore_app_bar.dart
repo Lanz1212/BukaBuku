@@ -11,6 +11,7 @@ class BookstoreAppBar extends StatelessWidget implements PreferredSizeWidget {
   final bool showSearchButton;
   final bool showShareButton;
   final bool showHelpButton;
+  final String? avatarUrl;
   final VoidCallback? onNotificationPressed;
   final VoidCallback? onSearchPressed;
   final VoidCallback? onSharePressed;
@@ -21,6 +22,7 @@ class BookstoreAppBar extends StatelessWidget implements PreferredSizeWidget {
   const BookstoreAppBar({
     super.key,
     required this.title,
+    this.avatarUrl,
     this.showBackButton = false,
     this.showNotificationButton = false,
     this.showSearchButton = false,
@@ -244,17 +246,25 @@ class BookstoreAppBar extends StatelessWidget implements PreferredSizeWidget {
                         ],
                       ),
                       child: ClipOval(
-                        child: Image.asset(
-                          'assets/images/Profile.png',
-                          fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) {
-                            return const Icon(
-                              Icons.person,
-                              size: 18,
-                              color: AppColors.onPrimary,
-                            );
-                          },
-                        ),
+                        child: (avatarUrl != null &&
+                                avatarUrl!.trim().isNotEmpty &&
+                                avatarUrl!.startsWith('http'))
+                            ? Image.network(
+                                avatarUrl!,
+                                fit: BoxFit.cover,
+                                errorBuilder: (context, error, stackTrace) {
+                                  return const Icon(
+                                    Icons.person,
+                                    size: 18,
+                                    color: AppColors.onPrimary,
+                                  );
+                                },
+                              )
+                            : const Icon(
+                                Icons.person,
+                                size: 18,
+                                color: AppColors.onPrimary,
+                              ),
                       ),
                     ),
                   ),

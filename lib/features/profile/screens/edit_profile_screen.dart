@@ -25,11 +25,13 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   late TextEditingController _nameController;
   late TextEditingController _emailController;
   late TextEditingController _phoneController;
+  String? _avatarUrl;
   bool _isSaving = false;
 
   @override
   void initState() {
     super.initState();
+    _avatarUrl = widget.user.avatarUrl;
     _nameController = TextEditingController(text: widget.user.name);
     _emailController = TextEditingController(text: widget.user.email);
     _phoneController = TextEditingController(text: widget.user.phone);
@@ -51,6 +53,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         name: _nameController.text.trim(),
         email: _emailController.text.trim(),
         phone: _phoneController.text.trim(),
+        avatarUrl: _avatarUrl,
       );
 
       final success = await ProfileService.updateProfile(updatedUser);
@@ -118,20 +121,13 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                     children: [
                       // Avatar Editor
                       EditProfileAvatar(
-                        imagePath: widget.user.avatarUrl,
-                        onChangePhoto: () {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: const Text(
-                                'Fitur upload foto profil segera hadir!',
-                              ),
-                              behavior: SnackBarBehavior.floating,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                              duration: const Duration(seconds: 1),
-                            ),
-                          );
+                        avatarUrl: _avatarUrl,
+                        userName: _nameController.text,
+                        onAvatarChanged: (newUrl) {
+                          setState(() => _avatarUrl = newUrl);
+                        },
+                        onAvatarRemoved: () {
+                          setState(() => _avatarUrl = null);
                         },
                       ),
                       const SizedBox(height: 28),

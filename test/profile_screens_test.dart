@@ -3,6 +3,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:buka_buku/features/profile/screens/profile_screen.dart';
 import 'package:buka_buku/features/profile/screens/edit_profile_screen.dart';
 import 'package:buka_buku/features/profile/screens/shipping_address_screen.dart';
+import 'package:buka_buku/features/profile/widgets/edit_profile_avatar.dart';
+import 'package:buka_buku/features/profile/widgets/profile_header_card.dart';
 import 'package:buka_buku/features/profile/models/user_profile.dart';
 
 void main() {
@@ -113,6 +115,59 @@ void main() {
       expect(find.text('Daftar Alamat Saya'), findsOneWidget);
       expect(find.text('BUKU & PENGIRIMAN'), findsOneWidget);
       expect(find.text('Tambah Alamat Baru'), findsOneWidget);
+    });
+
+    testWidgets('EditProfileAvatar renders initial and opens source picker bottom sheet',
+        (WidgetTester tester) async {
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: EditProfileAvatar(
+              avatarUrl: null,
+              userName: 'Budi Pembaca',
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // Fallback shows initial 'B'
+      expect(find.text('B'), findsOneWidget);
+      expect(find.text('Ubah Foto Profil'), findsOneWidget);
+      expect(find.text('Format JPG, PNG atau WebP (maks 2MB)'), findsOneWidget);
+
+      // Tap Ubah Foto Profil to open bottom sheet
+      await tester.tap(find.text('Ubah Foto Profil'));
+      await tester.pumpAndSettle();
+
+      // Verify bottom sheet options
+      expect(find.text('Pilih Sumber Foto Profil'), findsOneWidget);
+      expect(find.text('Galeri Foto / Storage HP'), findsOneWidget);
+      expect(find.text('Kamera HP'), findsOneWidget);
+    });
+
+    testWidgets('ProfileHeaderCard renders initial when avatarUrl is null',
+        (WidgetTester tester) async {
+      const user = UserProfile(
+        id: 'u_1',
+        name: 'Siti Rahma',
+        email: 'siti@mail.com',
+        phone: '0812345678',
+        avatarUrl: null,
+      );
+
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: ProfileHeaderCard(user: user),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('Siti Rahma'), findsOneWidget);
+      expect(find.text('siti@mail.com'), findsOneWidget);
+      expect(find.text('S'), findsOneWidget);
     });
   });
 }

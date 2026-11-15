@@ -445,11 +445,13 @@ class _QrPickupScreenState extends State<QrPickupScreen> {
                 itemCountText: '${order.items.length} Buku Fisik',
                 bookTitlesText: order.items.map((i) => i.title).join(' • '),
                 totalAmount: order.totalAmount,
-                paymentStatus: '${order.paymentMethod} • ${order.isPaid ? "Lunas" : "Menunggu"}',
-                pickupLocation: order.pickupLocation ??
+                paymentStatus:
+                    '${order.paymentMethod} • ${order.isPaid ? "Lunas" : "Menunggu"}',
+                pickupLocation:
+                    order.pickupLocation ??
                     'Meja Kasir 1, Gerai Utama Buka Buku',
-                pickupSchedule: order.pickupSchedule ??
-                    'Buka Hari Ini: 08.00 - 21.00 WIB',
+                pickupSchedule:
+                    order.pickupSchedule ?? 'Buka Hari Ini: 08.00 - 21.00 WIB',
               ),
             ],
           ),
@@ -781,8 +783,8 @@ class _QrPickupScreenState extends State<QrPickupScreen> {
                     Text(
                       order.items.isNotEmpty
                           ? (order.items.length > 1
-                              ? '${order.items.first.title} & ${order.items.length - 1} lainnya'
-                              : order.items.first.title)
+                                ? '${order.items.first.title} & ${order.items.length - 1} lainnya'
+                                : order.items.first.title)
                           : order.summaryTitle,
                       style: AppTypography.labelMd.copyWith(
                         color: AppColors.onSurface,

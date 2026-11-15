@@ -27,10 +27,7 @@ import '../../../core/services/midtrans_service.dart';
 class CheckoutScreen extends StatefulWidget {
   final List<CartItem> checkoutItems;
 
-  const CheckoutScreen({
-    super.key,
-    required this.checkoutItems,
-  });
+  const CheckoutScreen({super.key, required this.checkoutItems});
 
   @override
   State<CheckoutScreen> createState() => _CheckoutScreenState();
@@ -92,7 +89,8 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                   (item) => item['isPrimary'] == true,
                   orElse: () => decoded.first,
                 );
-                resolvedAddress = primary['fullAddress']?.toString() ?? resolvedAddress;
+                resolvedAddress =
+                    primary['fullAddress']?.toString() ?? resolvedAddress;
               }
             } catch (_) {
               resolvedAddress = rawAddresses;
@@ -147,14 +145,12 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   }
 
   int get _subtotal => widget.checkoutItems.fold(
-        0,
-        (sum, item) => sum + (item.priceValue * item.quantity),
-      );
+    0,
+    (sum, item) => sum + (item.priceValue * item.quantity),
+  );
 
-  int get _totalBookCount => widget.checkoutItems.fold(
-        0,
-        (sum, item) => sum + item.quantity,
-      );
+  int get _totalBookCount =>
+      widget.checkoutItems.fold(0, (sum, item) => sum + item.quantity);
 
   int get _shippingFee =>
       _fulfillmentMode == FulfillmentMode.delivery ? 12000 : 0;
@@ -169,10 +165,12 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (context) {
-        final addressController =
-            TextEditingController(text: _deliveryAddress.address);
-        final notesController =
-            TextEditingController(text: _deliveryAddress.notes);
+        final addressController = TextEditingController(
+          text: _deliveryAddress.address,
+        );
+        final notesController = TextEditingController(
+          text: _deliveryAddress.notes,
+        );
 
         return Container(
           padding: EdgeInsets.fromLTRB(
@@ -191,7 +189,9 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
             children: [
               Text(
                 'Ubah Alamat Pengiriman',
-                style: AppTypography.titleMd.copyWith(fontWeight: FontWeight.w700),
+                style: AppTypography.titleMd.copyWith(
+                  fontWeight: FontWeight.w700,
+                ),
               ),
               const SizedBox(height: 14),
               TextField(
@@ -202,7 +202,9 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                   labelStyle: AppTypography.caption,
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: AppColors.outlineVariant),
+                    borderSide: const BorderSide(
+                      color: AppColors.outlineVariant,
+                    ),
                   ),
                 ),
               ),
@@ -214,7 +216,9 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                   labelStyle: AppTypography.caption,
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: AppColors.outlineVariant),
+                    borderSide: const BorderSide(
+                      color: AppColors.outlineVariant,
+                    ),
                   ),
                 ),
               ),
@@ -240,7 +244,10 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                       borderRadius: BorderRadius.circular(14),
                     ),
                   ),
-                  child: const Text('Simpan Alamat', style: TextStyle(color: Colors.white)),
+                  child: const Text(
+                    'Simpan Alamat',
+                    style: TextStyle(color: Colors.white),
+                  ),
                 ),
               ),
             ],
@@ -277,7 +284,9 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
             const SizedBox(width: 8),
             Text(
               'Gagal Membuka Midtrans',
-              style: AppTypography.titleMd.copyWith(fontWeight: FontWeight.w700),
+              style: AppTypography.titleMd.copyWith(
+                fontWeight: FontWeight.w700,
+              ),
             ),
           ],
         ),
@@ -311,7 +320,10 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(),
-            child: const Text('Tutup', style: TextStyle(color: AppColors.onSurfaceVariant)),
+            child: const Text(
+              'Tutup',
+              style: TextStyle(color: AppColors.onSurfaceVariant),
+            ),
           ),
           ElevatedButton(
             onPressed: () {
@@ -347,10 +359,13 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       }).toList();
 
       final isDelivery = _fulfillmentMode == FulfillmentMode.delivery;
-      final deliveryType =
-          isDelivery ? 'Kurir Toko (Delivery)' : 'Ambil di Toko (Pickup)';
+      final deliveryType = isDelivery
+          ? 'Kurir Toko (Delivery)'
+          : 'Ambil di Toko (Pickup)';
       final isCash = _selectedPayment.id == 'cash';
-      final paymentMethod = isCash ? 'Bayar di Kasir' : 'Midtrans Payment Gateway';
+      final paymentMethod = isCash
+          ? 'Bayar di Kasir'
+          : 'Midtrans Payment Gateway';
 
       final pickupCode = isDelivery
           ? null
@@ -361,8 +376,9 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
         userId: _userId,
         customerName: _deliveryAddress.recipientName,
         customerPhone: _deliveryAddress.phone,
-        customerAddress:
-            isDelivery ? _deliveryAddress.address : _storeInfo.address,
+        customerAddress: isDelivery
+            ? _deliveryAddress.address
+            : _storeInfo.address,
         deliveryType: deliveryType,
         paymentMethod: paymentMethod,
         paymentChannel: _selectedPayment.subtitle,
@@ -497,7 +513,9 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
 
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-              content: Text('Pesanan dibuat. Menunggu penyelesaian pembayaran Midtrans.'),
+              content: Text(
+                'Pesanan dibuat. Menunggu penyelesaian pembayaran Midtrans.',
+              ),
               backgroundColor: AppColors.secondary,
               behavior: SnackBarBehavior.floating,
             ),
@@ -514,7 +532,9 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
         } else {
           // MidtransPaymentResult.cancelled / failed / ditutup oleh pembaca
           // Cek terlebih dahulu apakah sudah tercatat lunas di DB (misal via webhook Midtrans)
-          final checkDb = await OrderService.fetchOrderById(createdOrder.orderId);
+          final checkDb = await OrderService.fetchOrderById(
+            createdOrder.orderId,
+          );
           if (checkDb != null && checkDb.isPaid) {
             if (!mounted) return;
             final successFlow = isDelivery
@@ -540,7 +560,11 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
             SnackBar(
               content: Row(
                 children: [
-                  const Icon(Icons.cancel_outlined, color: Colors.white, size: 20),
+                  const Icon(
+                    Icons.cancel_outlined,
+                    color: Colors.white,
+                    size: 20,
+                  ),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
@@ -558,7 +582,10 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       } catch (midtransError) {
         debugPrint('Midtrans Token Error: $midtransError');
         if (!mounted) return;
-        _showMidtransSetupHelpDialog(midtransError.toString(), createdOrder.orderId);
+        _showMidtransSetupHelpDialog(
+          midtransError.toString(),
+          createdOrder.orderId,
+        );
       }
     } catch (e) {
       debugPrint('Error creating order in Supabase: $e');
@@ -592,7 +619,9 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
               backgroundColor: AppColors.primaryContainer,
               behavior: SnackBarBehavior.floating,
               duration: const Duration(seconds: 1),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
             ),
           );
         },
@@ -616,7 +645,9 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                         vertical: 4,
                       ),
                       decoration: BoxDecoration(
-                        color: AppColors.secondaryContainer.withValues(alpha: 0.4),
+                        color: AppColors.secondaryContainer.withValues(
+                          alpha: 0.4,
+                        ),
                         borderRadius: BorderRadius.circular(9999),
                       ),
                       child: Row(
@@ -677,7 +708,8 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                           // If switching from pickup to delivery while Cash was selected, fallback to QRIS
                           if (mode == FulfillmentMode.delivery &&
                               _selectedPayment.id == 'cash') {
-                            _selectedPayment = PaymentMethodOption.allOptions.first;
+                            _selectedPayment =
+                                PaymentMethodOption.allOptions.first;
                           }
                         });
                       },

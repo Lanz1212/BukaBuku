@@ -175,6 +175,7 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
               storeLocation: storeLocation,
               joinedDate: joinedDate,
               accessLevel: 'Penuh (Admin)',
+              avatarUrl: profile?.avatarUrl,
               onEditProfile: () async {
                 if (profile != null) {
                   await Navigator.push(

@@ -127,26 +127,16 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
           ),
         ],
       ),
-      actions: [
+      actions: const [
         Padding(
-          padding: const EdgeInsets.only(right: 16),
-          child: ClipOval(
-            child: Image.asset(
-              'assets/images/Profile.png',
-              width: 36,
-              height: 36,
-              fit: BoxFit.cover,
-              errorBuilder: (context, error, stackTrace) {
-                return CircleAvatar(
-                  radius: 18,
-                  backgroundColor: AppColors.surfaceContainerHighest,
-                  child: const Icon(
-                    Icons.person,
-                    size: 20,
-                    color: AppColors.onSurfaceVariant,
-                  ),
-                );
-              },
+          padding: EdgeInsets.only(right: 16),
+          child: CircleAvatar(
+            radius: 18,
+            backgroundColor: AppColors.surfaceContainerHighest,
+            child: Icon(
+              Icons.lock_reset_rounded,
+              size: 20,
+              color: AppColors.primaryContainer,
             ),
           ),
         ),

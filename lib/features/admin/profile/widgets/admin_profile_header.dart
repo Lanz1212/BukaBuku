@@ -12,6 +12,7 @@ class AdminProfileHeader extends StatelessWidget {
   final String phone;
   final String joinedDate;
   final String accessLevel;
+  final String? avatarUrl;
   final VoidCallback? onEditProfile;
 
   const AdminProfileHeader({
@@ -24,6 +25,7 @@ class AdminProfileHeader extends StatelessWidget {
     this.phone = '-',
     this.joinedDate = '-',
     this.accessLevel = 'Penuh (Admin)',
+    this.avatarUrl,
     this.onEditProfile,
   });
 
@@ -62,14 +64,38 @@ class AdminProfileHeader extends StatelessWidget {
                     height: 68,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
+                      color: AppColors.primaryContainer,
                       border: Border.all(
                         color: AppColors.outlineVariant.withValues(alpha: 0.6),
                         width: 2,
                       ),
-                      image: const DecorationImage(
-                        image: AssetImage('assets/images/Profile.png'),
-                        fit: BoxFit.cover,
-                      ),
+                    ),
+                    child: ClipOval(
+                      child: (avatarUrl != null &&
+                              avatarUrl!.trim().isNotEmpty &&
+                              avatarUrl!.startsWith('http'))
+                          ? Image.network(
+                              avatarUrl!,
+                              fit: BoxFit.cover,
+                              errorBuilder: (context, error, stackTrace) {
+                                return const Icon(
+                                  Icons.person,
+                                  size: 32,
+                                  color: AppColors.onPrimary,
+                                );
+                              },
+                            )
+                          : Center(
+                              child: Text(
+                                name.trim().isNotEmpty
+                                    ? name.trim().characters.first.toUpperCase()
+                                    : 'A',
+                                style: AppTypography.headlineMd.copyWith(
+                                  color: AppColors.onPrimary,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
                     ),
                   ),
                   Positioned(

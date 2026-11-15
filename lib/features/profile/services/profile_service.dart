@@ -102,6 +102,91 @@ class ProfileService {
     }
   }
 
+  /// Uploads avatar image to Supabase Storage bucket 'avatars'
+  /// and updates the 'avatar_url' column in the user's profile.
+  /// Returns the public URL with cache-busting timestamp on success, or null on error.
+  static Future<String?> uploadAvatar({
+    required Uint8List bytes,
+    String fileExtension = 'jpg',
+  }) async {
+    final client = _client;
+    if (client == null) return null;
+
+    try {
+      final user = client.auth.currentUser;
+      if (user == null) {
+        debugPrint('Cannot upload avatar: No logged-in user.');
+        return null;
+      }
+
+      final userId = user.id;
+      final cleanExt = fileExtension.replaceAll('.', '').toLowerCase();
+      final mimeType = cleanExt == 'png'
+          ? 'image/png'
+          : (cleanExt == 'webp' ? 'image/webp' : 'image/jpeg');
+      final fileName = 'avatar.$cleanExt';
+      final storagePath = '$userId/$fileName';
+
+      // Upload binary to Supabase Storage (upsert: true to overwrite previous avatar)
+      await client.storage.from('avatars').uploadBinary(
+            storagePath,
+            bytes,
+            fileOptions: FileOptions(
+              contentType: mimeType,
+              upsert: true,
+            ),
+          );
+
+      // Get public URL
+      final publicUrl = client.storage.from('avatars').getPublicUrl(storagePath);
+      final timestampedUrl =
+          '$publicUrl?t=${DateTime.now().millisecondsSinceEpoch}';
+
+      // Update avatar_url in the profiles table
+      await client.from('profiles').update({
+        'avatar_url': timestampedUrl,
+        'updated_at': DateTime.now().toUtc().toIso8601String(),
+      }).eq('id', userId);
+
+      return timestampedUrl;
+    } catch (e) {
+      debugPrint('Error uploading avatar to Supabase: $e');
+      return null;
+    }
+  }
+
+  /// Removes avatar from Supabase Storage and clears avatar_url in profiles table.
+  static Future<bool> removeAvatar() async {
+    final client = _client;
+    if (client == null) return false;
+
+    try {
+      final user = client.auth.currentUser;
+      if (user == null) return false;
+
+      final userId = user.id;
+      try {
+        final files = await client.storage.from('avatars').list(path: userId);
+        if (files.isNotEmpty) {
+          final filePaths = files.map((f) => '$userId/${f.name}').toList();
+          await client.storage.from('avatars').remove(filePaths);
+        }
+      } catch (storageError) {
+        debugPrint('Warning removing avatar files from storage: $storageError');
+      }
+
+      await client.from('profiles').update({
+        'avatar_url': null,
+        'updated_at': DateTime.now().toUtc().toIso8601String(),
+      }).eq('id', userId);
+
+      return true;
+    } catch (e) {
+      debugPrint('Error removing avatar: $e');
+      return false;
+    }
+  }
+
   /// Fetches stored shipping addresses for the logged-in user.
   static Future<List<ShippingAddress>> fetchUserAddresses() async {
     final client = _client;

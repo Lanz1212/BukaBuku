@@ -33,6 +33,7 @@ class _HomeScreenState extends State<HomeScreen> {
   List<AdminBookItem> _topRatedBooks = [];
   List<String> _categories = ['Semua'];
   String _userName = 'Pembaca';
+  String? _avatarUrl;
   bool _isLoading = true;
   RealtimeChannel? _notificationChannel;
 
@@ -80,10 +81,12 @@ class _HomeScreenState extends State<HomeScreen> {
       ]);
 
       String currentUserName = 'Pembaca';
+      String? currentAvatarUrl;
       final currentUser = Supabase.instance.client.auth.currentUser;
       if (currentUser != null) {
         try {
           final profile = await ProfileService.fetchCurrentUserProfile();
+          currentAvatarUrl = profile.avatarUrl;
           if (profile.name.trim().isNotEmpty) {
             currentUserName = profile.name.trim();
           } else if (currentUser.email != null) {
@@ -95,6 +98,7 @@ class _HomeScreenState extends State<HomeScreen> {
       if (mounted) {
         setState(() {
           _userName = currentUserName;
+          _avatarUrl = currentAvatarUrl;
           _books = results[0] as List<AdminBookItem>;
           _topRatedBooks = results[1] as List<AdminBookItem>;
           _categories = ['Semua', ...(results[2] as List<String>)];
@@ -342,17 +346,25 @@ class _HomeScreenState extends State<HomeScreen> {
                         shape: BoxShape.circle,
                       ),
                       child: ClipOval(
-                        child: Image.asset(
-                          'assets/images/Profile.png',
-                          fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) {
-                            return const Icon(
-                              Icons.person,
-                              size: 20,
-                              color: AppColors.onPrimary,
-                            );
-                          },
-                        ),
+                        child: (_avatarUrl != null &&
+                                _avatarUrl!.trim().isNotEmpty &&
+                                _avatarUrl!.startsWith('http'))
+                            ? Image.network(
+                                _avatarUrl!,
+                                fit: BoxFit.cover,
+                                errorBuilder: (context, error, stackTrace) {
+                                  return const Icon(
+                                    Icons.person,
+                                    size: 20,
+                                    color: AppColors.onPrimary,
+                                  );
+                                },
+                              )
+                            : const Icon(
+                                Icons.person,
+                                size: 20,
+                                color: AppColors.onPrimary,
+                              ),
                       ),
                     ),
                   ),
@@ -369,22 +381,42 @@ class _HomeScreenState extends State<HomeScreen> {
               Container(
                 width: 56,
                 height: 56,
-                decoration: BoxDecoration(
+                decoration: const BoxDecoration(
                   color: AppColors.surfaceContainer,
                   shape: BoxShape.circle,
                 ),
                 child: ClipOval(
-                  child: Image.asset(
-                    'assets/images/Profile.png',
-                    fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) {
-                      return const Icon(
-                        Icons.person,
-                        size: 28,
-                        color: AppColors.onSurfaceVariant,
-                      );
-                    },
-                  ),
+                  child: (_avatarUrl != null &&
+                          _avatarUrl!.trim().isNotEmpty &&
+                          _avatarUrl!.startsWith('http'))
+                      ? Image.network(
+                          _avatarUrl!,
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) {
+                            return const Icon(
+                              Icons.person,
+                              size: 28,
+                              color: AppColors.onSurfaceVariant,
+                            );
+                          },
+                        )
+                      : (_userName.trim().isNotEmpty && _userName != 'Pembaca'
+                          ? Container(
+                              color: AppColors.primaryContainer,
+                              alignment: Alignment.center,
+                              child: Text(
+                                _userName.trim().characters.first.toUpperCase(),
+                                style: AppTypography.titleMd.copyWith(
+                                  color: AppColors.onPrimary,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            )
+                          : const Icon(
+                              Icons.person,
+                              size: 28,
+                              color: AppColors.onSurfaceVariant,
+                            )),
                 ),
               ),
               const SizedBox(width: 12),

@@ -68,10 +68,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
       MaterialPageRoute(builder: (context) => EditProfileScreen(user: _user)),
     );
 
-    if (updated != null && mounted) {
-      setState(() {
-        _user = updated;
-      });
+    if (mounted) {
+      if (updated != null) {
+        setState(() {
+          _user = updated;
+        });
+      }
       _loadProfile();
     }
   }

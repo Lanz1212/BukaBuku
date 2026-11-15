@@ -1,4 +1,4 @@
-import 'package:flutter/foundation.dart';
+﻿import 'package:flutter/foundation.dart';
 import 'order_item_model.dart';
 
 enum OrderStatus {
@@ -32,10 +32,7 @@ extension OrderStatusExtension on OrderStatus {
   }
 }
 
-enum DeliveryType {
-  pickup,
-  delivery,
-}
+enum DeliveryType { pickup, delivery }
 
 class OrderTimelineStepModel {
   final String title;

@@ -54,20 +54,7 @@ class ProfileHeaderCard extends StatelessWidget {
               ],
             ),
             child: ClipOval(
-              child: Image.asset(
-                user.avatarUrl ?? 'assets/images/Profile.png',
-                fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) {
-                  return Container(
-                    color: AppColors.primaryContainer,
-                    child: const Icon(
-                      Icons.person_rounded,
-                      size: 40,
-                      color: AppColors.onPrimary,
-                    ),
-                  );
-                },
-              ),
+              child: _buildAvatar(),
             ),
           ),
           const SizedBox(width: 16),
@@ -154,6 +141,69 @@ class ProfileHeaderCard extends StatelessWidget {
               visualDensity: VisualDensity.compact,
             ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildAvatar() {
+    final avatarUrl = user.avatarUrl;
+    final hasNetworkUrl = avatarUrl != null &&
+        avatarUrl.trim().isNotEmpty &&
+        avatarUrl.startsWith('http');
+
+    if (hasNetworkUrl) {
+      return Image.network(
+        avatarUrl,
+        fit: BoxFit.cover,
+        loadingBuilder: (context, child, progress) {
+          if (progress == null) return child;
+          return Container(
+            color: AppColors.surfaceContainerLow,
+            child: const Center(
+              child: SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  color: AppColors.primaryContainer,
+                ),
+              ),
+            ),
+          );
+        },
+        errorBuilder: (context, error, stackTrace) => _buildFallbackAvatar(),
+      );
+    }
+
+    return _buildFallbackAvatar();
+  }
+
+  Widget _buildFallbackAvatar() {
+    final name = user.name.trim();
+    if (name.isNotEmpty) {
+      final initial = name.characters.first.toUpperCase();
+      return Container(
+        color: AppColors.primaryContainer,
+        alignment: Alignment.center,
+        child: Text(
+          initial,
+          style: AppTypography.headlineMd.copyWith(
+            color: AppColors.onPrimary,
+            fontWeight: FontWeight.w700,
+            fontSize: 26,
+          ),
+        ),
+      );
+    }
+
+    return Container(
+      color: AppColors.primaryContainer,
+      child: const Center(
+        child: Icon(
+          Icons.person_rounded,
+          size: 40,
+          color: AppColors.onPrimary,
+        ),
       ),
     );
   }
