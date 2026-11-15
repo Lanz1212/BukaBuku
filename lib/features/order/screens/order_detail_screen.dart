@@ -668,46 +668,53 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Nomor Pesanan',
-                style: AppTypography.caption.copyWith(
-                  color: AppColors.onSurfaceVariant,
-                ),
-              ),
-              const SizedBox(height: 2),
-              Row(
-                children: [
-                  Text(
-                    order.id,
-                    style: AppTypography.headlineSm.copyWith(
-                      color: AppColors.primary,
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: -0.2,
-                    ),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Nomor Pesanan',
+                  style: AppTypography.caption.copyWith(
+                    color: AppColors.onSurfaceVariant,
                   ),
-                  const SizedBox(width: 6),
-                  Material(
-                    color: Colors.transparent,
-                    child: InkWell(
-                      borderRadius: BorderRadius.circular(9999),
-                      onTap: () => _copyOrderId(context),
-                      child: Container(
-                        padding: const EdgeInsets.all(4),
-                        child: const Icon(
-                          Icons.content_copy_rounded,
-                          size: 16,
-                          color: AppColors.onSurfaceVariant,
+                ),
+                const SizedBox(height: 2),
+                Row(
+                  children: [
+                    Flexible(
+                      child: Text(
+                        order.id,
+                        style: AppTypography.headlineSm.copyWith(
+                          color: AppColors.primary,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: -0.2,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                        maxLines: 1,
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        borderRadius: BorderRadius.circular(9999),
+                        onTap: () => _copyOrderId(context),
+                        child: Container(
+                          padding: const EdgeInsets.all(4),
+                          child: const Icon(
+                            Icons.content_copy_rounded,
+                            size: 16,
+                            color: AppColors.onSurfaceVariant,
+                          ),
                         ),
                       ),
                     ),
-                  ),
-                ],
-              ),
-            ],
+                  ],
+                ),
+              ],
+            ),
           ),
+          const SizedBox(width: 10),
           Column(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
@@ -1376,23 +1383,30 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Row(
-                  children: [
-                    const Icon(
-                      Icons.sell_outlined,
-                      size: 15,
-                      color: AppColors.secondary,
-                    ),
-                    const SizedBox(width: 5),
-                    Text(
-                      'Voucher (${order.voucherCode})',
-                      style: AppTypography.bodyMd.copyWith(
+                Expanded(
+                  child: Row(
+                    children: [
+                      const Icon(
+                        Icons.sell_outlined,
+                        size: 15,
                         color: AppColors.secondary,
-                        fontSize: 13,
                       ),
-                    ),
-                  ],
+                      const SizedBox(width: 5),
+                      Flexible(
+                        child: Text(
+                          'Voucher (${order.voucherCode})',
+                          style: AppTypography.bodyMd.copyWith(
+                            color: AppColors.secondary,
+                            fontSize: 13,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                          maxLines: 1,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
+                const SizedBox(width: 8),
                 Text(
                   order.voucherDiscount!,
                   style: AppTypography.bodyMd.copyWith(
@@ -1436,25 +1450,30 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Total Pembayaran',
-                    style: AppTypography.caption.copyWith(
-                      color: AppColors.onSurfaceVariant,
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Total Pembayaran',
+                      style: AppTypography.caption.copyWith(
+                        color: AppColors.onSurfaceVariant,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 1),
-                  Text(
-                    'Metode: ${order.paymentMethod}',
-                    style: AppTypography.caption.copyWith(
-                      color: AppColors.onSurfaceVariant,
-                      fontSize: 11,
+                    const SizedBox(height: 1),
+                    Text(
+                      'Metode: ${order.paymentMethod}',
+                      style: AppTypography.caption.copyWith(
+                        color: AppColors.onSurfaceVariant,
+                        fontSize: 11,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
+              const SizedBox(width: 8),
               Text(
                 order.totalAmount,
                 style: AppTypography.headlineMd.copyWith(
@@ -1477,13 +1496,16 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(
-          label,
-          style: AppTypography.bodyMd.copyWith(
-            color: AppColors.onSurfaceVariant,
-            fontSize: 13,
+        Expanded(
+          child: Text(
+            label,
+            style: AppTypography.bodyMd.copyWith(
+              color: AppColors.onSurfaceVariant,
+              fontSize: 13,
+            ),
           ),
         ),
+        const SizedBox(width: 8),
         Text(
           value,
           style: AppTypography.bodyMd.copyWith(

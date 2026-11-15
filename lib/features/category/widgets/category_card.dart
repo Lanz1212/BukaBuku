@@ -105,6 +105,8 @@ class _CategoryCardState extends State<CategoryCard> {
                         color: AppColors.onSurfaceVariant,
                         fontSize: 12.5,
                       ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ],
                 ),

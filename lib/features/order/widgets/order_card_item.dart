@@ -124,31 +124,40 @@ class OrderCardItem extends StatelessWidget {
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Text(
-                  order.id,
-                  style: AppTypography.titleMd.copyWith(
-                    color: AppColors.onSurface,
-                    fontWeight: FontWeight.w700,
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Flexible(
+                    child: Text(
+                      order.id,
+                      style: AppTypography.titleMd.copyWith(
+                        color: AppColors.onSurface,
+                        fontWeight: FontWeight.w700,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                      maxLines: 1,
+                    ),
                   ),
-                ),
-                const SizedBox(width: 8),
-                _buildStatusPill(),
-              ],
-            ),
-            const SizedBox(height: 3),
-            Text(
-              order.dateTimeStr,
-              style: AppTypography.caption.copyWith(
-                color: AppColors.onSurfaceVariant,
+                  const SizedBox(width: 8),
+                  _buildStatusPill(),
+                ],
               ),
-            ),
-          ],
+              const SizedBox(height: 3),
+              Text(
+                order.dateTimeStr,
+                style: AppTypography.caption.copyWith(
+                  color: AppColors.onSurfaceVariant,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
+          ),
         ),
+        const SizedBox(width: 8),
         if (order.status == OrderStatus.completed)
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
@@ -409,12 +418,17 @@ class OrderCardItem extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.baseline,
                   textBaseline: TextBaseline.alphabetic,
                   children: [
-                    Text(
-                      order.summaryItemCountLabel,
-                      style: AppTypography.caption.copyWith(
-                        color: AppColors.onSurfaceVariant,
+                    Expanded(
+                      child: Text(
+                        order.summaryItemCountLabel,
+                        style: AppTypography.caption.copyWith(
+                          color: AppColors.onSurfaceVariant,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ),
+                    const SizedBox(width: 6),
                     Text(
                       order.totalAmount,
                       style: AppTypography.headlineSm.copyWith(
@@ -478,12 +492,16 @@ class OrderCardItem extends StatelessWidget {
                       color: AppColors.secondary,
                     ),
                     const SizedBox(width: 4),
-                    Text(
-                      order.pickupSchedule ?? '',
-                      style: AppTypography.caption.copyWith(
-                        color: AppColors.secondary,
-                        fontWeight: FontWeight.w600,
-                        fontSize: 11,
+                    Expanded(
+                      child: Text(
+                        order.pickupSchedule ?? '',
+                        style: AppTypography.caption.copyWith(
+                          color: AppColors.secondary,
+                          fontWeight: FontWeight.w600,
+                          fontSize: 11,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ),
                   ],

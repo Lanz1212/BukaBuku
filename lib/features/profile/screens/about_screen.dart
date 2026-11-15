@@ -205,24 +205,31 @@ class AboutScreen extends StatelessWidget {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Row(
-                          children: [
-                            const Icon(
-                              Icons.location_on_rounded,
-                              size: 20,
-                              color: AppColors.secondary,
-                            ),
-                            const SizedBox(width: 8),
-                            Text(
-                              'Gerai Utama Buka Buku',
-                              style: AppTypography.titleMd.copyWith(
-                                fontSize: 15,
-                                fontWeight: FontWeight.w700,
-                                color: AppColors.onSurface,
+                        Expanded(
+                          child: Row(
+                            children: [
+                              const Icon(
+                                Icons.location_on_rounded,
+                                size: 20,
+                                color: AppColors.secondary,
                               ),
-                            ),
-                          ],
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  'Gerai Utama Buka Buku',
+                                  style: AppTypography.titleMd.copyWith(
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w700,
+                                    color: AppColors.onSurface,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
+                        const SizedBox(width: 8),
                         TextButton.icon(
                           onPressed: () => _copyAddress(context),
                           icon: const Icon(Icons.copy_rounded, size: 14),
@@ -263,12 +270,16 @@ class AboutScreen extends StatelessWidget {
                           color: AppColors.outline,
                         ),
                         const SizedBox(width: 8),
-                        Text(
-                          'Buka Setiap Hari: 08:00 – 21:00 WIB',
-                          style: AppTypography.caption.copyWith(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
-                            color: AppColors.onSurface,
+                        Expanded(
+                          child: Text(
+                            'Buka Setiap Hari: 08:00 – 21:00 WIB',
+                            style: AppTypography.caption.copyWith(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.onSurface,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                           ),
                         ),
                       ],

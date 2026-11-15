@@ -211,12 +211,16 @@ class CartItemCard extends StatelessWidget {
                       color: AppColors.secondary,
                     ),
                     const SizedBox(width: 4),
-                    Text(
-                      item.storeLocation,
-                      style: AppTypography.caption.copyWith(
-                        color: AppColors.secondary,
-                        fontWeight: FontWeight.w500,
-                        fontSize: 12,
+                    Expanded(
+                      child: Text(
+                        item.storeLocation,
+                        style: AppTypography.caption.copyWith(
+                          color: AppColors.secondary,
+                          fontWeight: FontWeight.w500,
+                          fontSize: 12,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ),
                   ],
@@ -229,30 +233,41 @@ class CartItemCard extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     // Price with strikethrough if available
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.baseline,
-                      textBaseline: TextBaseline.alphabetic,
-                      children: [
-                        Text(
-                          item.price,
-                          style: AppTypography.titleMd.copyWith(
-                            color: AppColors.primaryContainer,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                        if (item.originalPrice != null) ...[
-                          const SizedBox(width: 6),
-                          Text(
-                            item.originalPrice!,
-                            style: AppTypography.caption.copyWith(
-                              color: AppColors.outline,
-                              decoration: TextDecoration.lineThrough,
-                              fontSize: 11,
+                    Expanded(
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.baseline,
+                        textBaseline: TextBaseline.alphabetic,
+                        children: [
+                          Flexible(
+                            child: Text(
+                              item.price,
+                              style: AppTypography.titleMd.copyWith(
+                                color: AppColors.primaryContainer,
+                                fontWeight: FontWeight.w700,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                              maxLines: 1,
                             ),
                           ),
+                          if (item.originalPrice != null) ...[
+                            const SizedBox(width: 6),
+                            Flexible(
+                              child: Text(
+                                item.originalPrice!,
+                                style: AppTypography.caption.copyWith(
+                                  color: AppColors.outline,
+                                  decoration: TextDecoration.lineThrough,
+                                  fontSize: 11,
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                                maxLines: 1,
+                              ),
+                            ),
+                          ],
                         ],
-                      ],
+                      ),
                     ),
+                    const SizedBox(width: 8),
 
                     // Pill Stepper
                     Container(

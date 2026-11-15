@@ -100,12 +100,17 @@ class OrderDetailBookItem extends StatelessWidget {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(
-                    '${item.quantity}x ${item.pricePerUnit}',
-                    style: AppTypography.caption.copyWith(
-                      color: AppColors.onSurfaceVariant,
+                  Expanded(
+                    child: Text(
+                      '${item.quantity}x ${item.pricePerUnit}',
+                      style: AppTypography.caption.copyWith(
+                        color: AppColors.onSurfaceVariant,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ),
+                  const SizedBox(width: 8),
                   Text(
                     item.subtotal,
                     style: AppTypography.labelMd.copyWith(
