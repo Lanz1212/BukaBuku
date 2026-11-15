@@ -50,7 +50,7 @@ class AdminNotificationService {
   }) async {
     try {
       final adminIds = await _getAdminUserIds();
-      final nowStr = DateTime.now().toIso8601String();
+      final nowStr = DateTime.now().toUtc().toIso8601String();
 
       // Bersihkan format ID jika ada tanda pagar
       final cleanOrderId = orderId?.replaceAll('#', '').trim();

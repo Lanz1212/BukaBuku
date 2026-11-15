@@ -25,7 +25,10 @@ class OrderService {
     int? limit,
   }) async {
     try {
-      var query = _client.from('orders').select('*, order_items(*)');
+      final client = _safeClient;
+      if (client == null) return [];
+
+      var query = client.from('orders').select('*, order_items(*)');
 
       if (statusQuery != null &&
           statusQuery.isNotEmpty &&
@@ -46,10 +49,12 @@ class OrderService {
 
       final list = response as List<dynamic>;
       return list
-          .map((row) => AdminOrderDetail.fromMap(
-                row as Map<String, dynamic>,
-                row['order_items'] as List<dynamic>?,
-              ))
+          .map(
+            (row) => AdminOrderDetail.fromMap(
+              row as Map<String, dynamic>,
+              row['order_items'] as List<dynamic>?,
+            ),
+          )
           .toList();
     } catch (e) {
       debugPrint('Error fetching admin orders: $e');
@@ -81,13 +86,22 @@ class OrderService {
     }
   }
 
+  @visibleForTesting
+  static Future<AdminOrderDetail?> Function(String code)? testOrderLookup;
+
   // ─── READ: Cari Pesanan Berdasarkan QR Code / Order ID / Pickup Code ─────────
   static Future<AdminOrderDetail?> fetchOrderByCodeOrId(String rawCode) async {
+    if (testOrderLookup != null) {
+      return testOrderLookup!(rawCode);
+    }
     try {
       final code = rawCode.replaceAll('#', '').trim();
       if (code.isEmpty) return null;
 
-      final response = await _client
+      final client = _safeClient;
+      if (client == null) return null;
+
+      final response = await client
           .from('orders')
           .select('*, order_items(*)')
           .or('id.eq.$code,qr_code.eq.$code,pickup_code.eq.$code')
@@ -106,6 +120,19 @@ class OrderService {
 
   static String _formatRupiah(int amount) =>
       'Rp${amount.toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (m) => '${m[1]}.')}';
+
+  /// Helper untuk mem-parsing timestamp UTC dari Supabase ke waktu lokal perangkat (WIB)
+  static DateTime? _parseTimestampToLocal(dynamic val) {
+    if (val == null) return null;
+    final str = val.toString().trim();
+    if (str.isEmpty) return null;
+    if (str.endsWith('Z') ||
+        str.contains('+') ||
+        RegExp(r'-\d{2}:\d{2}$').hasMatch(str)) {
+      return DateTime.tryParse(str)?.toLocal();
+    }
+    return DateTime.tryParse('${str}Z')?.toLocal();
+  }
 
   // ─── HELPER: Map Single Database Row to OrderModel ─────────────────────────
   static OrderModel mapRowToOrderModel(Map<String, dynamic> orderMap) {
@@ -149,8 +176,7 @@ class OrderService {
     final totalPrice = (orderMap['total_price'] as num?)?.toInt() ?? 0;
     final totalStr = _formatRupiah(totalPrice);
 
-    final itemsSubtotalValue =
-        items.fold(0, (sum, i) => sum + i.subtotalValue);
+    final itemsSubtotalValue = items.fold(0, (sum, i) => sum + i.subtotalValue);
     final itemsSubtotalStr = _formatRupiah(itemsSubtotalValue);
 
     final firstItem = items.isNotEmpty ? items.first : null;
@@ -189,12 +215,11 @@ class OrderService {
       'Sep',
       'Okt',
       'Nov',
-      'Des'
+      'Des',
     ];
 
     if (orderMap['created_at'] != null) {
-      final parsedDate =
-          DateTime.tryParse(orderMap['created_at'].toString())?.toLocal();
+      final parsedDate = _parseTimestampToLocal(orderMap['created_at']);
       if (parsedDate != null) {
         final day = parsedDate.day.toString().padLeft(2, '0');
         final month = monthNames[parsedDate.month - 1];
@@ -208,10 +233,10 @@ class OrderService {
 
     String? completionDate = orderMap['completion_date'] as String?;
     if (status == OrderStatus.completed) {
-      final doneTimestamp = orderMap['completed_at'] ?? orderMap['pickup_confirmed_at'];
+      final doneTimestamp =
+          orderMap['completed_at'] ?? orderMap['pickup_confirmed_at'];
       if (completionDate == null && doneTimestamp != null) {
-        final confirmedDate =
-            DateTime.tryParse(doneTimestamp.toString())?.toLocal();
+        final confirmedDate = _parseTimestampToLocal(doneTimestamp);
         if (confirmedDate != null) {
           final day = confirmedDate.day.toString().padLeft(2, '0');
           final month = monthNames[confirmedDate.month - 1];
@@ -221,13 +246,16 @@ class OrderService {
           completionDate = '$day $month $year, $hour:$minute WIB';
         }
       }
-      completionDate ??= orderDateExact.isNotEmpty ? orderDateExact : dateTimeDisplay;
+      completionDate ??= orderDateExact.isNotEmpty
+          ? orderDateExact
+          : dateTimeDisplay;
     }
 
     String? deliveryConfirmedTime;
     if (orderMap['delivery_confirmed_at'] != null) {
-      final delivDate =
-          DateTime.tryParse(orderMap['delivery_confirmed_at'].toString())?.toLocal();
+      final delivDate = _parseTimestampToLocal(
+        orderMap['delivery_confirmed_at'],
+      );
       if (delivDate != null) {
         final hour = delivDate.hour.toString().padLeft(2, '0');
         final minute = delivDate.minute.toString().padLeft(2, '0');
@@ -294,13 +322,15 @@ class OrderService {
           OrderTimelineStepModel(
             title: 'Kurir Toko Menuju Alamat',
             time: deliveryConfirmedTime ?? 'Dalam Perjalanan',
-            description: 'Kurir toko kami sedang menuju ke alamat pengantaran Anda.',
+            description:
+                'Kurir toko kami sedang menuju ke alamat pengantaran Anda.',
             isActive: true,
           ),
           const OrderTimelineStepModel(
             title: 'Pesanan Sampai',
             time: '',
-            description: 'Klik tombol konfirmasi jika buku sudah tiba di tangan Anda.',
+            description:
+                'Klik tombol konfirmasi jika buku sudah tiba di tangan Anda.',
           ),
         ];
       } else if (status == OrderStatus.readyDelivery) {
@@ -320,7 +350,8 @@ class OrderService {
           const OrderTimelineStepModel(
             title: 'Paket Siap Dikirim',
             time: 'Siap',
-            description: 'Buku telah dikemas rapi. Menunggu kurir toko berangkat.',
+            description:
+                'Buku telah dikemas rapi. Menunggu kurir toko berangkat.',
             isActive: true,
           ),
           const OrderTimelineStepModel(
@@ -345,7 +376,8 @@ class OrderService {
           const OrderTimelineStepModel(
             title: 'Pembayaran Dibatalkan',
             time: 'Dibatalkan',
-            description: 'Pembayaran tidak diselesaikan atau pesanan dibatalkan.',
+            description:
+                'Pembayaran tidak diselesaikan atau pesanan dibatalkan.',
             isDone: true,
             isActive: true,
           ),
@@ -362,7 +394,8 @@ class OrderService {
           const OrderTimelineStepModel(
             title: 'Sedang Disiapkan Admin',
             time: 'Proses',
-            description: 'Staf toko sedang menyiapkan dan mengemas buku pesanan Anda.',
+            description:
+                'Staf toko sedang menyiapkan dan mengemas buku pesanan Anda.',
             isActive: true,
           ),
           const OrderTimelineStepModel(
@@ -485,7 +518,9 @@ class OrderService {
     } else {
       deliveryBadgeLabel = status == OrderStatus.readyPickup
           ? 'Siap Diambil di Toko'
-          : (status == OrderStatus.completed ? 'Selesai Diambil' : 'Ambil di Toko');
+          : (status == OrderStatus.completed
+                ? 'Selesai Diambil'
+                : 'Ambil di Toko');
     }
 
     return OrderModel(
@@ -499,23 +534,27 @@ class OrderService {
       courierName: isDelivery ? 'Kurir Toko Buka Buku' : null,
       courierEta: isDelivery
           ? (status == OrderStatus.shipping
-              ? 'Dalam Perjalanan'
-              : (status == OrderStatus.completed ? 'Telah Tiba' : 'Menunggu Pengiriman'))
+                ? 'Dalam Perjalanan'
+                : (status == OrderStatus.completed
+                      ? 'Telah Tiba'
+                      : 'Menunggu Pengiriman'))
           : null,
       trackingNumber: isDelivery ? 'KRR-${orderMap['id']}' : null,
-      pickupLocation: orderMap['pickup_point'] as String? ??
+      pickupLocation:
+          orderMap['pickup_point'] as String? ??
           orderMap['pickup_location'] as String? ??
           'Meja Kasir 1 • Gerai Utama Buka Buku',
-      branchName: orderMap['pickup_location'] as String? ??
+      branchName:
+          orderMap['pickup_location'] as String? ??
           orderMap['pickup_point'] as String? ??
           'Gerai Utama Buka Buku',
       branchAddress: 'Jl. Cikini Raya No. 42, Menteng, Jakarta Pusat 10330',
       branchSchedule: 'Buka Hari Ini: 08.00 – 21.00 WIB',
       completionNote: status == OrderStatus.completed
           ? (orderMap['completion_note'] as String? ??
-              (isDelivery
-                  ? 'Buku telah sampai dan diterima di alamat pengantaran'
-                  : 'Buku telah diterima di Gerai Utama Buka Buku'))
+                (isDelivery
+                    ? 'Buku telah sampai dan diterima di alamat pengantaran'
+                    : 'Buku telah diterima di Gerai Utama Buka Buku'))
           : null,
       completionDate: completionDate,
       summaryTitle: summaryTitle,
@@ -531,11 +570,13 @@ class OrderService {
       totalAmount: totalStr,
       totalAmountValue: totalPrice,
       paymentMethod: orderMap['payment_method'] as String? ?? 'QRIS',
-      customerName: orderMap['customer_name'] as String? ?? 'Pembaca',
-      customerAddress: orderMap['customer_address'] as String? ??
+      customerName: orderMap['customer_name'] as String? ?? '',
+      customerAddress:
+          orderMap['customer_address'] as String? ??
           orderMap['account_address'] as String?,
       customerPhone: orderMap['customer_phone'] as String?,
-      qrCode: orderMap['qr_code'] as String? ??
+      qrCode:
+          orderMap['qr_code'] as String? ??
           orderMap['pickup_code'] as String? ??
           orderMap['id'] as String? ??
           'PKP-ONLINE',
@@ -548,26 +589,16 @@ class OrderService {
   // ─── READ: Ambil Pesanan Customer (untuk Pesanan Saya) ───────────────────────
   static Future<List<OrderModel>> fetchCustomerOrders({String? userId}) async {
     try {
-      String? effectiveUid = userId ?? _client.auth.currentUser?.id;
+      final effectiveUid = userId ?? _client.auth.currentUser?.id;
       if (effectiveUid == null) {
-        try {
-          final defaultProfile = await _client
-              .from('profiles')
-              .select('id')
-              .eq('role', 'user')
-              .limit(1)
-              .maybeSingle();
-          if (defaultProfile != null) {
-            effectiveUid = defaultProfile['id'] as String?;
-          }
-        } catch (_) {}
+        return [];
       }
 
-      var query = _client.from('orders').select('*, order_items(*)');
-      if (effectiveUid != null) {
-        query = query.eq('user_id', effectiveUid);
-      }
-      final response = await query.order('created_at', ascending: false);
+      final response = await _client
+          .from('orders')
+          .select('*, order_items(*)')
+          .eq('user_id', effectiveUid)
+          .order('created_at', ascending: false);
       final list = response as List<dynamic>;
       if (list.isEmpty) return [];
 
@@ -587,10 +618,7 @@ class OrderService {
       if (cleanId.isEmpty) return null;
 
       final client = _safeClient;
-      if (client == null) {
-        final matches = mockOrders.where((o) => o.id.replaceAll('#', '').trim() == cleanId);
-        return matches.isNotEmpty ? matches.first : mockOrders.first;
-      }
+      if (client == null) return null;
 
       final response = await client
           .from('orders')
@@ -661,22 +689,8 @@ class OrderService {
       finalOrderId = 'ORD$dateCode$randomSuffix$uniqueMicro';
     }
 
-    // 2. Fallback user_id jika null
-    String? effectiveUserId = userId ?? _client.auth.currentUser?.id;
-    if (effectiveUserId == null) {
-      // Ambil user default dari tabel profiles jika ada
-      try {
-        final defaultProfile = await _client
-            .from('profiles')
-            .select('id')
-            .eq('role', 'user')
-            .limit(1)
-            .maybeSingle();
-        if (defaultProfile != null) {
-          effectiveUserId = defaultProfile['id'] as String?;
-        }
-      } catch (_) {}
-    }
+    // 2. User ID dari pengguna yang sedang login
+    final effectiveUserId = userId ?? _client.auth.currentUser?.id;
 
     // 3. Tentukan QR Code: Hanya tersedia untuk Ambil di Toko
     final isPickup = deliveryType.toLowerCase().contains('ambil');
@@ -707,8 +721,8 @@ class OrderService {
       'midtrans_payment_type': midtransPaymentType,
       'midtrans_transaction_status': midtransTransactionStatus,
       'is_verified_user': true,
-      'created_at': DateTime.now().toIso8601String(),
-      'updated_at': DateTime.now().toIso8601String(),
+      'created_at': DateTime.now().toUtc().toIso8601String(),
+      'updated_at': DateTime.now().toUtc().toIso8601String(),
     };
 
     await _client.from('orders').insert(orderMap);
@@ -725,7 +739,7 @@ class OrderService {
           'price': (item['price'] as num?)?.toInt() ?? 0,
           'rack_location': item['rack_location'] as String?,
           'image_url': item['image_url'] as String?,
-          'created_at': DateTime.now().toIso8601String(),
+          'created_at': DateTime.now().toUtc().toIso8601String(),
         };
       }).toList();
 
@@ -744,7 +758,8 @@ class OrderService {
         type: 'newOrder',
         category: 'order',
         title: 'Pesanan Baru Masuk! 🛒',
-        body: 'Pesanan #$finalOrderId dari $customerName ($totalBooks buku) senilai ${_formatRupiah(totalPrice)} via $methodStr ($typeLabel).',
+        body:
+            'Pesanan #$finalOrderId dari $customerName ($totalBooks buku) senilai ${_formatRupiah(totalPrice)} via $methodStr ($typeLabel).',
         orderId: finalOrderId,
       );
     } catch (e) {
@@ -753,11 +768,7 @@ class OrderService {
 
     // 6. Kembalikan data lengkap pesanan yang baru dibuat
     final created = await fetchOrderById(finalOrderId);
-    return created ??
-        AdminOrderDetail.fromMap(
-          orderMap,
-          items,
-        );
+    return created ?? AdminOrderDetail.fromMap(orderMap, items);
   }
 
   // ─── UPDATE: Ubah Status Pesanan ───────────────────────────────────────────
@@ -768,7 +779,7 @@ class OrderService {
   }) async {
     try {
       final cleanId = orderId.replaceAll('#', '').trim();
-      final nowStr = DateTime.now().toIso8601String();
+      final nowStr = DateTime.now().toUtc().toIso8601String();
       final updateData = <String, dynamic>{
         'status': AdminOrderDetail.statusToString(status),
         'updated_at': nowStr,
@@ -798,7 +809,7 @@ class OrderService {
   static Future<void> markHandedOverToCourier(String orderId) async {
     try {
       final cleanId = orderId.replaceAll('#', '').trim();
-      final nowStr = DateTime.now().toIso8601String();
+      final nowStr = DateTime.now().toUtc().toIso8601String();
       final updateData = <String, dynamic>{
         'status': 'dalamPengiriman',
         'delivery_confirmed_at': nowStr,
@@ -816,7 +827,7 @@ class OrderService {
   static Future<void> markDeliveryReceived(String orderId) async {
     try {
       final cleanId = orderId.replaceAll('#', '').trim();
-      final nowStr = DateTime.now().toIso8601String();
+      final nowStr = DateTime.now().toUtc().toIso8601String();
       final updateData = <String, dynamic>{
         'status': 'selesai',
         'completed_at': nowStr,
@@ -830,7 +841,8 @@ class OrderService {
           type: 'orderCompleted',
           category: 'order',
           title: 'Pesanan Selesai Diterima 📦',
-          body: 'Pesanan #$cleanId telah diterima oleh pelanggan dan statusnya kini selesai.',
+          body:
+              'Pesanan #$cleanId telah diterima oleh pelanggan dan statusnya kini selesai.',
           orderId: cleanId,
         );
       } catch (_) {}
@@ -850,9 +862,10 @@ class OrderService {
   }) async {
     try {
       final cleanId = orderId.replaceAll('#', '').trim();
+      final nowStr = DateTime.now().toUtc().toIso8601String();
       final updateData = <String, dynamic>{
         'is_paid': isPaid,
-        'updated_at': DateTime.now().toIso8601String(),
+        'updated_at': nowStr,
       };
       if (paymentMethod != null) {
         updateData['payment_method'] = paymentMethod;
@@ -863,7 +876,7 @@ class OrderService {
         updateData['status'] = 'diproses';
       }
       if (setPickupConfirmed) {
-        updateData['pickup_confirmed_at'] = DateTime.now().toIso8601String();
+        updateData['pickup_confirmed_at'] = nowStr;
       }
 
       await _client.from('orders').update(updateData).eq('id', cleanId);
@@ -874,7 +887,8 @@ class OrderService {
             type: 'orderPaid',
             category: 'order',
             title: 'Pembayaran Diterima 💳',
-            body: 'Pembayaran untuk pesanan #$cleanId telah berhasil diverifikasi (${paymentMethod ?? "Lunas"}).',
+            body:
+                'Pembayaran untuk pesanan #$cleanId telah berhasil diverifikasi (${paymentMethod ?? "Lunas"}).',
             orderId: cleanId,
           );
         } catch (_) {}
@@ -901,9 +915,10 @@ class OrderService {
   }) async {
     try {
       final cleanId = orderId.replaceAll('#', '').trim();
+      final nowStr = DateTime.now().toUtc().toIso8601String();
       final updateData = <String, dynamic>{
         'is_paid': isPaid,
-        'updated_at': DateTime.now().toIso8601String(),
+        'updated_at': nowStr,
       };
       if (snapToken != null) {
         updateData['midtrans_snap_token'] = snapToken;
@@ -935,7 +950,7 @@ class OrderService {
         'status': 'dibatalkan',
         'is_paid': false,
         'midtrans_transaction_status': 'cancel',
-        'updated_at': DateTime.now().toIso8601String(),
+        'updated_at': DateTime.now().toUtc().toIso8601String(),
       };
       await _client.from('orders').update(updateData).eq('id', cleanId);
       debugPrint('Order $cleanId successfully marked as dibatalkan');
@@ -945,9 +960,7 @@ class OrderService {
   }
 
   // ─── REALTIME: Langganan Perubahan Pesanan Global ───────────────────────────
-  static RealtimeChannel? subscribeToOrders({
-    required void Function() onData,
-  }) {
+  static RealtimeChannel? subscribeToOrders({required void Function() onData}) {
     try {
       final channel = _client.channel('public:orders_realtime');
       channel
@@ -975,7 +988,8 @@ class OrderService {
   }) {
     try {
       final cleanId = orderId.replaceAll('#', '').trim();
-      final channelName = 'order_status_${cleanId}_${DateTime.now().millisecondsSinceEpoch}';
+      final channelName =
+          'order_status_${cleanId}_${DateTime.now().millisecondsSinceEpoch}';
       final channel = _client.channel(channelName);
       channel
           .onPostgresChanges(

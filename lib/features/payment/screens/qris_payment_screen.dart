@@ -342,25 +342,15 @@ class _QrisPaymentScreenState extends State<QrisPaymentScreen> {
                               imageUrl: b.imageUrl ?? '',
                             );
                           }).toList()
-                        : const [
-                            PaymentSuccessItem(
-                              title: 'Atomic Habits',
-                              subtitle: 'James Clear • 1x Hardcover',
-                              price: 'Rp108.000',
-                              imageUrl:
-                                  'https://lh3.googleusercontent.com/aida-public/AB6AXuDuro3027OrnxnzHhMWNNhxlL6yQ7uRMP4gN56vlkj8gMZdzZ7-U7J-AiMpN9z6agF63Q5IceDcr-ELrDh46dR-dg4sNIRfuvNTfmG0GDGb1H-GjJyb3nBFfSVJREh0B_fT9xfanJsispJlPm4rdAP3oZObX-VkWht5KFxVjOdeqFAeGSlto5ORp0V83N93AtcA-drkc4EIiM7dyJbCUw7h8pSJesulR-EIhER1dmhq5uEeNEB6zrFljQ',
-                            ),
-                          ];
+                        : null;
 
                     Navigator.of(context).push(
                       MaterialPageRoute(
                         builder: (context) => PaymentSuccessScreen(
                           orderId: widget.orderId,
                           totalAmount: widget.totalAmount,
-                          customerPhone:
-                              widget.customerPhone ?? '0812-3456-7890',
-                          deliveryAddress: widget.deliveryAddress ??
-                              'Jl. Cikini Raya No. 42, Menteng, Jakarta Pusat',
+                          customerPhone: widget.customerPhone ?? '',
+                          deliveryAddress: widget.deliveryAddress ?? '',
                           books: receiptBooks,
                         ),
                       ),

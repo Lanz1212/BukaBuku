@@ -85,22 +85,51 @@ class _PaymentSuccessScreenState extends State<PaymentSuccessScreen> {
         : (widget.deliveryTitle?.toLowerCase().contains('kurir') ?? false);
 
     final resolvedAmount = order?.totalAmountValue ?? widget.totalAmount ?? 0;
-    final resolvedTime = order?.orderDateExact.isNotEmpty == true
+    final resolvedTime = (order?.orderDateExact.isNotEmpty == true)
         ? order!.orderDateExact
-        : (widget.paymentTime ?? 'Hari ini');
-    final resolvedMethod = order?.paymentMethod ?? widget.paymentMethod ?? 'Midtrans Payment';
-    final resolvedAddress = order?.customerAddress ??
+        : (widget.paymentTime?.isNotEmpty == true
+              ? widget.paymentTime!
+              : () {
+                  final now = DateTime.now();
+                  const months = [
+                    'Jan',
+                    'Feb',
+                    'Mar',
+                    'Apr',
+                    'Mei',
+                    'Jun',
+                    'Jul',
+                    'Agu',
+                    'Sep',
+                    'Okt',
+                    'Nov',
+                    'Des',
+                  ];
+                  final day = now.day.toString().padLeft(2, '0');
+                  final month = months[now.month - 1];
+                  final year = now.year;
+                  final hour = now.hour.toString().padLeft(2, '0');
+                  final minute = now.minute.toString().padLeft(2, '0');
+                  return '$day $month $year, $hour:$minute WIB';
+                }());
+    final resolvedMethod =
+        order?.paymentMethod ?? widget.paymentMethod ?? 'Midtrans Payment';
+    final resolvedAddress =
+        order?.customerAddress ??
         order?.branchAddress ??
         widget.deliveryAddress ??
-        (isDelivery ? 'Alamat pengantaran pembaca' : 'Gerai Utama Buka Buku Cikini');
-    final resolvedPhone = order?.customerPhone ?? widget.customerPhone ?? '0812-3456-7890';
+        (isDelivery
+            ? 'Alamat pengantaran pembaca'
+            : 'Gerai Utama Buka Buku Cikini');
+    final resolvedPhone = order?.customerPhone ?? widget.customerPhone ?? '';
 
     List<PaymentSuccessItem> displayBooks = [];
     if (order != null && order.items.isNotEmpty) {
       displayBooks = order.items.map((item) {
         return PaymentSuccessItem(
           title: item.title,
-          subtitle: '${item.author.isNotEmpty ? "${item.author} • " : ""}${item.quantity}x',
+          subtitle:
+              '${item.author.isNotEmpty ? "${item.author} • " : ""}${item.quantity}x',
           price: item.subtotal,
           imageUrl: item.coverUrl,
         );
@@ -154,7 +183,9 @@ class _PaymentSuccessScreenState extends State<PaymentSuccessScreen> {
                       if (widget.onBackToHomePressed != null) {
                         widget.onBackToHomePressed!();
                       } else {
-                        Navigator.of(context).popUntil((route) => route.isFirst);
+                        Navigator.of(
+                          context,
+                        ).popUntil((route) => route.isFirst);
                       }
                     },
                     borderRadius: BorderRadius.circular(9999),
@@ -195,7 +226,9 @@ class _PaymentSuccessScreenState extends State<PaymentSuccessScreen> {
                       paymentTime: resolvedTime,
                       paymentMethod: resolvedMethod,
                       books: displayBooks,
-                      deliveryTitle: isDelivery ? 'Kurir Antar ke Rumah' : 'Ambil di Toko',
+                      deliveryTitle: isDelivery
+                          ? 'Kurir Antar ke Rumah'
+                          : 'Ambil di Toko',
                       deliveryAddress: resolvedAddress,
                     ),
 
@@ -203,9 +236,7 @@ class _PaymentSuccessScreenState extends State<PaymentSuccessScreen> {
 
                     // WhatsApp Delivery Notice Banner
                     if (resolvedPhone.isNotEmpty && resolvedPhone != '-')
-                      PaymentSuccessWaBanner(
-                        phoneNumber: resolvedPhone,
-                      ),
+                      PaymentSuccessWaBanner(phoneNumber: resolvedPhone),
 
                     const SizedBox(height: 20),
 
@@ -221,11 +252,14 @@ class _PaymentSuccessScreenState extends State<PaymentSuccessScreen> {
                             Navigator.push(
                               context,
                               MaterialPageRoute(
-                                builder: (context) => OrderDetailScreen(order: order),
+                                builder: (context) =>
+                                    OrderDetailScreen(order: order),
                               ),
                             );
                           } else {
-                            Navigator.of(context).popUntil((route) => route.isFirst);
+                            Navigator.of(
+                              context,
+                            ).popUntil((route) => route.isFirst);
                           }
                         },
                         style: ElevatedButton.styleFrom(
@@ -267,8 +301,9 @@ class _PaymentSuccessScreenState extends State<PaymentSuccessScreen> {
                           if (widget.onBackToHomePressed != null) {
                             widget.onBackToHomePressed!();
                           } else {
-                            Navigator.of(context)
-                                .popUntil((route) => route.isFirst);
+                            Navigator.of(
+                              context,
+                            ).popUntil((route) => route.isFirst);
                           }
                         },
                         style: ElevatedButton.styleFrom(

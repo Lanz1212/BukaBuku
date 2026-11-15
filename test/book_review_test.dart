@@ -1,6 +1,9 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:buka_buku/features/review/models/book_review.dart';
 import 'package:buka_buku/features/order/models/order_item_model.dart';
+import 'package:buka_buku/features/admin/book_management/models/admin_book_item.dart';
+import 'package:buka_buku/features/admin/order_management/models/admin_order_detail.dart';
+import 'package:buka_buku/core/services/order_service.dart';
 
 void main() {
   group('BookReview Model & Logic Tests', () {
@@ -77,6 +80,64 @@ void main() {
 
       final totalSubtotal = item1.subtotalValue + item2.subtotalValue;
       expect(totalSubtotal, 195000);
+    });
+
+    test('AdminBookItem defaults to rating 0.0 and reviewCount 0 for new books', () {
+      const newBook = AdminBookItem(
+        id: 'B015',
+        title: 'Buku Baru',
+        author: 'Penulis Baru',
+        isbn: '978-1234567890',
+        price: 50000,
+        stock: 10,
+        rackLocation: 'Rak A1',
+        status: AdminBookStatus.tersedia,
+        isActive: true,
+        category: 'Non-Fiksi',
+        coverUrl: 'https://example.com/cover.jpg',
+      );
+
+      expect(newBook.rating, 0.0);
+      expect(newBook.reviewCount, 0);
+
+      // Verify fromMap also falls back to 0.0 when rating is null
+      final fromDb = AdminBookItem.fromMap({
+        'id': 'B015',
+        'title': 'Buku Baru',
+        'author': 'Penulis Baru',
+        'isbn': '978-1234567890',
+        'price': 50000,
+        'stock': 10,
+        'rack_location': 'Rak A1',
+        'category': 'Non-Fiksi',
+        'cover_url': 'https://example.com/cover.jpg',
+      });
+      expect(fromDb.rating, 0.0);
+      expect(fromDb.reviewCount, 0);
+    });
+
+    test('AdminOrderDetail and OrderService correctly parse UTC timestamp to local time', () {
+      // 08:00:00 UTC corresponds to local time + timezone offset
+      final utcStr = '2026-11-15T08:00:00+00:00';
+      final expectedLocal = DateTime.parse(utcStr).toLocal();
+      final expectedHour = expectedLocal.hour.toString().padLeft(2, '0');
+      final expectedMinute = expectedLocal.minute.toString().padLeft(2, '0');
+      final expectedTimeStr = '$expectedHour:$expectedMinute WIB';
+
+      final adminOrder = AdminOrderDetail.fromMap({
+        'id': 'ORDTEST001',
+        'customer_name': 'Tester',
+        'created_at': utcStr,
+      });
+
+      expect(adminOrder.orderTime, expectedTimeStr);
+
+      final userOrder = OrderService.mapRowToOrderModel({
+        'id': 'ORDTEST001',
+        'created_at': utcStr,
+        'order_items': [],
+      });
+      expect(userOrder.dateTimeStr.contains(expectedTimeStr), isTrue);
     });
   });
 }

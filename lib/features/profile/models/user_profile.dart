@@ -89,7 +89,7 @@ class UserProfile {
       'full_name': name,
       'phone': phone,
       'avatar_url': avatarUrl,
-      'updated_at': DateTime.now().toIso8601String(),
+      'updated_at': DateTime.now().toUtc().toIso8601String(),
     };
   }
 

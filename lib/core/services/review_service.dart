@@ -181,7 +181,7 @@ class ReviewService {
       'user_avatar': profile['avatar_url'],
       'rating': rating,
       'comment': comment.trim(),
-      'updated_at': DateTime.now().toIso8601String(),
+      'updated_at': DateTime.now().toUtc().toIso8601String(),
     };
 
     if (existingReviewId != null && existingReviewId > 0) {
@@ -198,7 +198,7 @@ class ReviewService {
             .update(data)
             .eq('id', existing.id);
       } else {
-        data['created_at'] = DateTime.now().toIso8601String();
+        data['created_at'] = DateTime.now().toUtc().toIso8601String();
         await _client.from('book_reviews').insert(data);
       }
     }

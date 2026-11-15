@@ -16,16 +16,11 @@ class PickupSuccessScreen extends StatelessWidget {
   const PickupSuccessScreen({
     super.key,
     required this.result,
-    this.kasirName = 'Kasir 1',
+    this.kasirName = 'Kasir',
     this.pickupTime,
   });
 
-  AdminOrderDetail get _order {
-    if (result.fullOrder != null) {
-      return result.fullOrder!;
-    }
-    return AdminOrderDetail.mockOrders.first;
-  }
+  AdminOrderDetail? get _order => result.fullOrder;
 
   String get _formattedPickupTime {
     if (pickupTime != null && pickupTime!.isNotEmpty) {
@@ -33,8 +28,18 @@ class PickupSuccessScreen extends StatelessWidget {
     }
     final now = DateTime.now();
     const months = [
-      'Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun',
-      'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'Mei',
+      'Jun',
+      'Jul',
+      'Agu',
+      'Sep',
+      'Okt',
+      'Nov',
+      'Des',
     ];
     final day = now.day.toString().padLeft(2, '0');
     final month = months[now.month - 1];
@@ -47,6 +52,65 @@ class PickupSuccessScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final order = _order;
+    if (order == null) {
+      return Scaffold(
+        backgroundColor: const Color(0xFFFBF9F5),
+        appBar: AppBar(
+          backgroundColor: const Color(0xFFFBF9F5),
+          elevation: 0,
+          leading: IconButton(
+            icon: const Icon(
+              Icons.arrow_back_rounded,
+              color: AppColors.onSurface,
+            ),
+            onPressed: () => Navigator.of(context).pop(),
+          ),
+          title: Text(
+            'Detail Pengambilan',
+            style: AppTypography.titleMd.copyWith(fontWeight: FontWeight.w700),
+          ),
+        ),
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(
+                  Icons.error_outline,
+                  size: 48,
+                  color: AppColors.error,
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  'Data Pesanan Tidak Ditemukan',
+                  style: AppTypography.titleMd.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Data pesanan untuk hasil scan ini tidak ditemukan di sistem.',
+                  style: AppTypography.bodyMd.copyWith(
+                    color: AppColors.onSurfaceVariant,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 20),
+                ElevatedButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primaryContainer,
+                    foregroundColor: Colors.white,
+                  ),
+                  child: const Text('Kembali'),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
 
     return PopScope(
       canPop: false,
@@ -140,7 +204,10 @@ class PickupSuccessScreen extends StatelessWidget {
             children: [
               Expanded(
                 child: SingleChildScrollView(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 8,
+                  ),
                   child: Column(
                     children: [
                       PickupSuccessHeader(
@@ -154,7 +221,8 @@ class PickupSuccessScreen extends StatelessWidget {
                       ),
                       const SizedBox(height: 14),
                       PickupDigitalReceipt(
-                        customerEmail: order.accountAddress?.contains('@') == true
+                        customerEmail:
+                            order.accountAddress?.contains('@') == true
                             ? order.accountAddress!
                             : '${order.customerName.toLowerCase().replaceAll(' ', '.')}@email.com',
                       ),
@@ -224,7 +292,9 @@ class PickupSuccessScreen extends StatelessWidget {
                     const SizedBox(height: 6),
                     TextButton(
                       onPressed: () {
-                        Navigator.of(context).popUntil((route) => route.isFirst);
+                        Navigator.of(
+                          context,
+                        ).popUntil((route) => route.isFirst);
                       },
                       style: TextButton.styleFrom(
                         minimumSize: const Size.fromHeight(38),
@@ -244,7 +314,11 @@ class PickupSuccessScreen extends StatelessWidget {
                           SnackBar(
                             content: Row(
                               children: const [
-                                Icon(Icons.print_rounded, color: Colors.white, size: 18),
+                                Icon(
+                                  Icons.print_rounded,
+                                  color: Colors.white,
+                                  size: 18,
+                                ),
                                 SizedBox(width: 10),
                                 Text('Mencetak struk fisik kasir...'),
                               ],
@@ -257,7 +331,10 @@ class PickupSuccessScreen extends StatelessWidget {
                       },
                       borderRadius: BorderRadius.circular(4),
                       child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 6,
+                        ),
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [

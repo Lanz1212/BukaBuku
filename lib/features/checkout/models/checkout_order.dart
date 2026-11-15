@@ -12,11 +12,10 @@ class DeliveryAddress {
   final String notes;
 
   const DeliveryAddress({
-    this.recipientName = 'Budi Santoso',
-    this.phone = '0812-3456-7890',
-    this.address =
-        'Jl. Cikini Raya No. 42, RT 05 / RW 01, Menteng, Jakarta Pusat, DKI Jakarta 10330',
-    this.notes = 'Titipkan di meja resepsionis jika tidak di tempat.',
+    this.recipientName = '',
+    this.phone = '',
+    this.address = '',
+    this.notes = '',
   });
 }
 

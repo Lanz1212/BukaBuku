@@ -179,34 +179,43 @@ class _BookSearchCardState extends State<BookSearchCard> {
                 const SizedBox(height: 8),
 
                 // Rating Bar
-                Row(
-                  children: [
-                    Icon(
-                      Icons.star_rounded,
-                      size: 15,
-                      color: isOutOfStock
-                          ? AppColors.outlineVariant
-                          : AppColors.secondary,
-                    ),
-                    const SizedBox(width: 3),
-                    Text(
-                      book.rating.toString(),
-                      style: AppTypography.labelMd.copyWith(
-                        fontWeight: FontWeight.w700,
-                        fontSize: 12,
-                        color: AppColors.onSurface,
+                if (book.rating > 0)
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.star_rounded,
+                        size: 15,
+                        color: isOutOfStock
+                            ? AppColors.outlineVariant
+                            : AppColors.secondary,
                       ),
-                    ),
-                    const SizedBox(width: 3),
-                    Text(
-                      '(${book.reviewCount})',
-                      style: AppTypography.caption.copyWith(
-                        color: AppColors.outline,
-                        fontSize: 11,
+                      const SizedBox(width: 3),
+                      Text(
+                        book.rating.toStringAsFixed(1),
+                        style: AppTypography.labelMd.copyWith(
+                          fontWeight: FontWeight.w700,
+                          fontSize: 12,
+                          color: AppColors.onSurface,
+                        ),
                       ),
+                      const SizedBox(width: 3),
+                      Text(
+                        '(${book.reviewCount})',
+                        style: AppTypography.caption.copyWith(
+                          color: AppColors.outline,
+                          fontSize: 11,
+                        ),
+                      ),
+                    ],
+                  )
+                else
+                  Text(
+                    'Belum ada ulasan',
+                    style: AppTypography.caption.copyWith(
+                      color: AppColors.outline,
+                      fontSize: 11,
                     ),
-                  ],
-                ),
+                  ),
 
                 const SizedBox(height: 6),
 

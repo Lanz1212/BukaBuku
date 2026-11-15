@@ -12,8 +12,10 @@ void main() {
       addTearDown(() => tester.view.resetPhysicalSize());
 
       await tester.pumpWidget(
-        const MaterialApp(
-          home: ScanQrPickupScreen(),
+        MaterialApp(
+          home: ScanQrPickupScreen(
+            preloadedOrder: AdminOrderDetail.mockOrders.first,
+          ),
         ),
       );
       await tester.pump(const Duration(milliseconds: 300));
@@ -70,8 +72,10 @@ void main() {
       addTearDown(() => tester.view.resetPhysicalSize());
 
       await tester.pumpWidget(
-        const MaterialApp(
-          home: ScanQrPickupScreen(),
+        MaterialApp(
+          home: ScanQrPickupScreen(
+            preloadedOrder: AdminOrderDetail.mockOrders.first,
+          ),
         ),
       );
       await tester.pump(const Duration(milliseconds: 300));
@@ -98,8 +102,10 @@ void main() {
       addTearDown(() => tester.view.resetPhysicalSize());
 
       await tester.pumpWidget(
-        const MaterialApp(
-          home: ScanQrPickupScreen(),
+        MaterialApp(
+          home: ScanQrPickupScreen(
+            preloadedOrder: AdminOrderDetail.mockOrders.first,
+          ),
         ),
       );
       await tester.pump(const Duration(milliseconds: 300));

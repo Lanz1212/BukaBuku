@@ -21,10 +21,12 @@ import 'order_detail_screen.dart';
 
 class OrderListScreen extends StatefulWidget {
   final OrderStatus initialFilter;
+  final List<OrderModel>? initialOrders;
 
   const OrderListScreen({
     super.key,
     this.initialFilter = OrderStatus.all,
+    this.initialOrders,
   });
 
   @override
@@ -40,10 +42,22 @@ class _OrderListScreenState extends State<OrderListScreen> {
   void initState() {
     super.initState();
     _selectedStatus = widget.initialFilter;
-    _loadCustomerOrders();
+    if (widget.initialOrders != null) {
+      _customerOrders = widget.initialOrders!;
+      _isLoading = false;
+    } else {
+      _loadCustomerOrders();
+    }
   }
 
   Future<void> _loadCustomerOrders() async {
+    if (widget.initialOrders != null) {
+      setState(() {
+        _customerOrders = widget.initialOrders!;
+        _isLoading = false;
+      });
+      return;
+    }
     setState(() => _isLoading = true);
     try {
       final orders = await OrderService.fetchCustomerOrders();

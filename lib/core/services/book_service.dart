@@ -171,7 +171,7 @@ class BookService {
   static Future<bool> toggleBookStatus(String id, bool newStatus) async {
     await _client.from('books').update({
       'is_active': newStatus,
-      'updated_at': DateTime.now().toIso8601String(),
+      'updated_at': DateTime.now().toUtc().toIso8601String(),
     }).eq('id', id);
     return newStatus;
   }
@@ -184,7 +184,7 @@ class BookService {
     required String type, // 'tambah', 'kurang', 'setTotal'
     String? notes,
   }) async {
-    final now = DateTime.now().toIso8601String();
+    final now = DateTime.now().toUtc().toIso8601String();
 
     // 1. Update books table
     final updatedBookData = await _client

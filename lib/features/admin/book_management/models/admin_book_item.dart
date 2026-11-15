@@ -45,7 +45,7 @@ class AdminBookItem {
     this.description,
     this.format = 'Softcover',
     this.pageCount = 0,
-    this.rating = 4.8,
+    this.rating = 0.0,
     this.reviewCount = 0,
   });
 
@@ -141,7 +141,7 @@ class AdminBookItem {
       description: map['description'] as String?,
       format: map['format'] as String? ?? 'Softcover',
       pageCount: (map['page_count'] as num?)?.toInt() ?? 0,
-      rating: (map['rating'] as num?)?.toDouble() ?? 4.8,
+      rating: (map['rating'] as num?)?.toDouble() ?? 0.0,
       reviewCount: (map['review_count'] as num?)?.toInt() ?? 0,
     );
   }
@@ -167,7 +167,7 @@ class AdminBookItem {
       'page_count': pageCount,
       'rating': rating,
       'review_count': reviewCount,
-      'updated_at': DateTime.now().toIso8601String(),
+      'updated_at': DateTime.now().toUtc().toIso8601String(),
     };
   }
 

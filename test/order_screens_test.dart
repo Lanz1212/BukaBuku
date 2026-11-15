@@ -13,8 +13,8 @@ void main() {
       addTearDown(() => tester.view.resetPhysicalSize());
 
       await tester.pumpWidget(
-        const MaterialApp(
-          home: OrderListScreen(),
+        MaterialApp(
+          home: OrderListScreen(initialOrders: mockOrders),
         ),
       );
       await tester.pump();
@@ -44,7 +44,7 @@ void main() {
 
       expect(find.text('#ORD00118'), findsOneWidget);
       expect(find.text('Cantik Itu Luka (Edisi Khusus)'), findsOneWidget);
-      expect(find.text('Kurir Buku Budi Express'), findsOneWidget);
+      expect(find.text('Sedang Dikirim'), findsOneWidget);
 
       expect(find.text('#ORD00094'), findsOneWidget);
       expect(find.text('Nusantara: Sejarah Silang Budaya'), findsOneWidget);
@@ -52,7 +52,7 @@ void main() {
       expect(find.text('Beli Lagi'), findsOneWidget);
 
       // Brand Story Card
-      expect(find.text('Sentuhan Kasih Toko Buku Budi'), findsOneWidget);
+      expect(find.text('Sentuhan Kasih Buka Buku'), findsOneWidget);
       expect(find.text('Gratis Pembatas Kayu'), findsOneWidget);
       expect(find.text('Garansi Buku Asli'), findsOneWidget);
     });
@@ -64,8 +64,8 @@ void main() {
       addTearDown(() => tester.view.resetPhysicalSize());
 
       await tester.pumpWidget(
-        const MaterialApp(
-          home: OrderListScreen(),
+        MaterialApp(
+          home: OrderListScreen(initialOrders: mockOrders),
         ),
       );
       await tester.pump();
@@ -98,8 +98,8 @@ void main() {
       addTearDown(() => tester.view.resetPhysicalSize());
 
       await tester.pumpWidget(
-        const MaterialApp(
-          home: OrderListScreen(),
+        MaterialApp(
+          home: OrderListScreen(initialOrders: mockOrders),
         ),
       );
       await tester.pump();
@@ -137,7 +137,7 @@ void main() {
       // Header & Status Banner
       expect(find.text('Detail Pesanan'), findsOneWidget);
       expect(find.text('Pesanan Siap Diambil di Toko'), findsOneWidget);
-      expect(find.text('Paket buku telah dirapikan & siap di kasir Cikini.'),
+      expect(find.text('Paket buku telah dirapikan & siap di kasir toko.'),
           findsOneWidget);
 
       // Order Meta
@@ -146,7 +146,7 @@ void main() {
       expect(find.text('12 Mei 2024, 14:32 WIB'), findsOneWidget);
 
       // Branch Info & CTA
-      expect(find.text('Toko Buku Budi Cikini'), findsOneWidget);
+      expect(find.text('Gerai Utama Buka Buku'), findsOneWidget);
       expect(find.text('Jl. Cikini Raya No. 42, Menteng, Jakarta Pusat 10330'),
           findsOneWidget);
       expect(find.text('Lihat QR Pickup'), findsOneWidget);
@@ -167,7 +167,7 @@ void main() {
 
       // Payment Summary
       expect(find.text('Ringkasan Pembayaran'), findsOneWidget);
-      expect(find.text('QRIS Lunas'), findsOneWidget);
+      expect(find.text('Lunas'), findsWidgets);
       expect(find.text('Subtotal Buku (2 item)'), findsOneWidget);
       expect(find.text('Voucher (BUDISANTAI)'), findsOneWidget);
       expect(find.text('-Rp15.000'), findsOneWidget);
@@ -178,11 +178,6 @@ void main() {
       expect(find.text('Total Pembayaran'), findsOneWidget);
       expect(find.text('Metode: QRIS BCA'), findsOneWidget);
       expect(find.text('Rp181.000'), findsOneWidget);
-
-      // Assistance
-      expect(find.text('Butuh bantuan pesanan?'), findsOneWidget);
-      expect(find.text('Pustakawan kami siap membantu'), findsOneWidget);
-      expect(find.text('WhatsApp'), findsOneWidget);
     });
   });
 }

@@ -1,6 +1,5 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/services/order_service.dart';
@@ -76,6 +75,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   Future<void> _loadUserProfile() async {
     try {
       final profile = await AuthService.getCurrentUserProfile();
+      final authUser = AuthService.currentUser;
       if (profile != null && mounted) {
         final fullName = (profile['full_name'] as String?)?.trim();
         final phone = (profile['phone'] as String?)?.trim();
@@ -102,15 +102,17 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
           }
         }
 
+        final fallbackName = authUser?.email?.split('@').first ?? 'Pelanggan';
+
         setState(() {
-          _userId = profile['id'] as String?;
+          _userId = profile['id'] as String? ?? authUser?.id;
           _userEmail = (email != null && email.isNotEmpty)
               ? email
-              : AuthService.currentUser?.email;
+              : authUser?.email;
           _deliveryAddress = DeliveryAddress(
             recipientName: (fullName != null && fullName.isNotEmpty)
                 ? fullName
-                : _deliveryAddress.recipientName,
+                : fallbackName,
             phone: (phone != null && phone.isNotEmpty)
                 ? phone
                 : _deliveryAddress.phone,
@@ -121,39 +123,21 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
         return;
       }
 
-      // Fallback: Ambil data user dari tabel profiles di Supabase
-      SupabaseClient? client;
-      try {
-        client = Supabase.instance.client;
-      } catch (_) {
-        client = null;
-      }
-
-      if (client == null) return;
-
-      final defaultProfile = await client
-          .from('profiles')
-          .select()
-          .eq('role', 'user')
-          .limit(1)
-          .maybeSingle();
-
-      if (defaultProfile != null && mounted) {
-        final fullName = (defaultProfile['full_name'] as String?)?.trim();
-        final phone = (defaultProfile['phone'] as String?)?.trim();
-        final email = (defaultProfile['email'] as String?)?.trim();
-        final addresses = (defaultProfile['addresses'] as String?)?.trim();
+      // Fallback: Jika data profil belum termuat, gunakan akun auth saat ini tanpa data dummy
+      if (authUser != null && mounted) {
+        final email = authUser.email;
+        final fallbackName = email?.split('@').first ?? 'Pelanggan';
 
         setState(() {
-          _userId = defaultProfile['id'] as String?;
-          _userEmail = (email != null && email.isNotEmpty)
-              ? email
-              : AuthService.currentUser?.email;
+          _userId = authUser.id;
+          _userEmail = email;
           _deliveryAddress = DeliveryAddress(
-            recipientName: fullName ?? 'Budi Santoso',
-            phone: phone ?? '081234567890',
-            address: addresses ?? 'Jl. Cikini Raya No. 10, Jakarta Pusat',
-            notes: 'Titipkan di meja resepsionis jika tidak di tempat.',
+            recipientName: _deliveryAddress.recipientName.isNotEmpty
+                ? _deliveryAddress.recipientName
+                : fallbackName,
+            phone: _deliveryAddress.phone,
+            address: _deliveryAddress.address,
+            notes: _deliveryAddress.notes,
           );
         });
       }

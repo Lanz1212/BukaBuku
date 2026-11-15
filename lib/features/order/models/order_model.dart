@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'order_item_model.dart';
 
 enum OrderStatus {
@@ -140,7 +141,8 @@ class OrderModel {
   });
 }
 
-/// Sample Dataset matching Toko Buku Budi Stitch specification
+/// Sample Dataset strictly for testing only. Do NOT use as fallback in production.
+@visibleForTesting
 final List<OrderModel> mockOrders = [
   OrderModel(
     id: '#ORD00125',

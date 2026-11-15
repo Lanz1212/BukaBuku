@@ -30,28 +30,13 @@ class PaymentSuccessBentoCard extends StatefulWidget {
 
   const PaymentSuccessBentoCard({
     super.key,
-    this.totalAmount = 181000,
-    this.orderId = '#ORD00125',
-    this.paymentTime = '12 Mei 2024, 14:32 WIB',
-    this.paymentMethod = 'QRIS (GoPay/BCA)',
-    this.books = const [
-      PaymentSuccessItem(
-        title: 'Atomic Habits',
-        subtitle: 'James Clear • 1x Hardcover',
-        price: 'Rp108.000',
-        imageUrl:
-            'https://lh3.googleusercontent.com/aida-public/AB6AXuDuro3027OrnxnzHhMWNNhxlL6yQ7uRMP4gN56vlkj8gMZdzZ7-U7J-AiMpN9z6agF63Q5IceDcr-ELrDh46dR-dg4sNIRfuvNTfmG0GDGb1H-GjJyb3nBFfSVJREh0B_fT9xfanJsispJlPm4rdAP3oZObX-VkWht5KFxVjOdeqFAeGSlto5ORp0V83N93AtcA-drkc4EIiM7dyJbCUw7h8pSJesulR-EIhER1dmhq5uEeNEB6zrFljQ',
-      ),
-      PaymentSuccessItem(
-        title: 'Filosofi Teras',
-        subtitle: 'Henry Manampiring • 1x Softcover',
-        price: 'Rp73.000',
-        imageUrl:
-            'https://lh3.googleusercontent.com/aida-public/AB6AXuAgMcYIiXw_LcINzOt10Cy-DAbM_FwupVBFcX6ri784BXOkvN1IGR4WjYyuCIDZx6eMRPwmygUvprleq8iia-an8eMjCD6WrDBL9QT5YuUUU9OgzF9p67zeZod1FsUWNcrhXGTK1doxZMRyYpvf1fOgRUrY6D87HxD__vJq4kqCq9lAVY0tM-o9hb6QfgiguyYqQlNN0mvC6U8FQXV6Oy2AAo4-SsE7AQI8b8NMSsZjMpKn9ySqndC-QA',
-      ),
-    ],
-    this.deliveryTitle = 'Kurir Antar ke Rumah',
-    this.deliveryAddress = 'Jl. Cikini Raya No. 42, Menteng, Jakarta Pusat',
+    required this.totalAmount,
+    required this.orderId,
+    required this.paymentTime,
+    required this.paymentMethod,
+    this.books = const [],
+    required this.deliveryTitle,
+    required this.deliveryAddress,
   });
 
   @override
@@ -61,6 +46,33 @@ class PaymentSuccessBentoCard extends StatefulWidget {
 
 class _PaymentSuccessBentoCardState extends State<PaymentSuccessBentoCard> {
   bool _isCopied = false;
+
+  String get _effectivePaymentTime {
+    if (widget.paymentTime.trim().isNotEmpty) {
+      return widget.paymentTime;
+    }
+    final now = DateTime.now();
+    const months = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'Mei',
+      'Jun',
+      'Jul',
+      'Agu',
+      'Sep',
+      'Okt',
+      'Nov',
+      'Des',
+    ];
+    final day = now.day.toString().padLeft(2, '0');
+    final month = months[now.month - 1];
+    final year = now.year;
+    final hour = now.hour.toString().padLeft(2, '0');
+    final minute = now.minute.toString().padLeft(2, '0');
+    return '$day $month $year, $hour:$minute WIB';
+  }
 
   String _formatRupiah(int amount) {
     final str = amount.toString();
@@ -183,7 +195,9 @@ class _PaymentSuccessBentoCardState extends State<PaymentSuccessBentoCard> {
                     child: Icon(
                       _isCopied ? Icons.check_circle : Icons.content_copy,
                       size: 16,
-                      color: _isCopied ? AppColors.success : AppColors.secondary,
+                      color: _isCopied
+                          ? AppColors.success
+                          : AppColors.secondary,
                     ),
                   ),
                 ),
@@ -193,7 +207,7 @@ class _PaymentSuccessBentoCardState extends State<PaymentSuccessBentoCard> {
           const SizedBox(height: 10),
           _buildMetaRow(
             label: 'Waktu Pembayaran',
-            value: widget.paymentTime,
+            value: _effectivePaymentTime,
           ),
           const SizedBox(height: 10),
           _buildMetaRow(
@@ -201,81 +215,89 @@ class _PaymentSuccessBentoCardState extends State<PaymentSuccessBentoCard> {
             value: widget.paymentMethod,
           ),
 
-          const SizedBox(height: 14),
-          const Divider(height: 1, color: AppColors.surfaceContainer),
-          const SizedBox(height: 14),
+          if (widget.books.isNotEmpty) ...[
+            const SizedBox(height: 14),
+            const Divider(height: 1, color: AppColors.surfaceContainer),
+            const SizedBox(height: 14),
 
-          // 3. Books Section Header
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                'RINCIAN BUKU (${widget.books.length})',
-                style: AppTypography.labelMd.copyWith(
-                  color: AppColors.onSurfaceVariant,
-                  fontWeight: FontWeight.w600,
-                  letterSpacing: 0.5,
-                ),
-              ),
-              Text(
-                'Paket Kurir Terproteksi',
-                style: AppTypography.caption.copyWith(
-                  color: AppColors.secondary,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ],
-          ),
-
-          const SizedBox(height: 10),
-
-          // 4. Book Items List
-          ...widget.books.map((book) => _buildBookItemTile(book)),
-
-          const SizedBox(height: 12),
-
-          // 5. Delivery Details Block
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: AppColors.surfaceContainer.withValues(alpha: 0.6),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
+            // 3. Books Section Header
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Icon(
-                  Icons.local_shipping_outlined,
-                  size: 20,
-                  color: AppColors.secondary,
+                Text(
+                  'RINCIAN BUKU (${widget.books.length})',
+                  style: AppTypography.labelMd.copyWith(
+                    color: AppColors.onSurfaceVariant,
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: 0.5,
+                  ),
                 ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        widget.deliveryTitle,
-                        style: AppTypography.titleMd.copyWith(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w700,
-                          color: AppColors.onSurface,
-                        ),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        widget.deliveryAddress,
-                        style: AppTypography.caption.copyWith(
-                          color: AppColors.onSurfaceVariant,
-                          height: 1.35,
-                        ),
-                      ),
-                    ],
+                Text(
+                  'Paket Kurir Terproteksi',
+                  style: AppTypography.caption.copyWith(
+                    color: AppColors.secondary,
+                    fontWeight: FontWeight.w500,
                   ),
                 ),
               ],
             ),
-          ),
+
+            const SizedBox(height: 10),
+
+            // 4. Book Items List
+            ...widget.books.map((book) => _buildBookItemTile(book)),
+          ],
+
+          if (widget.deliveryAddress.isNotEmpty ||
+              widget.deliveryTitle.isNotEmpty) ...[
+            const SizedBox(height: 12),
+
+            // 5. Delivery Details Block
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: AppColors.surfaceContainer.withValues(alpha: 0.6),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Icon(
+                    Icons.local_shipping_outlined,
+                    size: 20,
+                    color: AppColors.secondary,
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        if (widget.deliveryTitle.isNotEmpty)
+                          Text(
+                            widget.deliveryTitle,
+                            style: AppTypography.titleMd.copyWith(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.onSurface,
+                            ),
+                          ),
+                        if (widget.deliveryAddress.isNotEmpty) ...[
+                          const SizedBox(height: 2),
+                          Text(
+                            widget.deliveryAddress,
+                            style: AppTypography.caption.copyWith(
+                              color: AppColors.onSurfaceVariant,
+                              height: 1.35,
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ],
       ),
     );

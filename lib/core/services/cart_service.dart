@@ -58,7 +58,7 @@ class CartService {
           .from('cart_items')
           .update({
             'quantity': newQty,
-            'updated_at': DateTime.now().toIso8601String(),
+            'updated_at': DateTime.now().toUtc().toIso8601String(),
           })
           .eq('id', existing['id']);
     } else {
@@ -80,7 +80,7 @@ class CartService {
         .from('cart_items')
         .update({
           'quantity': newQty,
-          'updated_at': DateTime.now().toIso8601String(),
+          'updated_at': DateTime.now().toUtc().toIso8601String(),
         })
         .eq('id', cartItemId);
   }
@@ -91,7 +91,7 @@ class CartService {
         .from('cart_items')
         .update({
           'is_selected': isSelected,
-          'updated_at': DateTime.now().toIso8601String(),
+          'updated_at': DateTime.now().toUtc().toIso8601String(),
         })
         .eq('id', cartItemId);
   }
@@ -105,7 +105,7 @@ class CartService {
         .from('cart_items')
         .update({
           'is_selected': isSelected,
-          'updated_at': DateTime.now().toIso8601String(),
+          'updated_at': DateTime.now().toUtc().toIso8601String(),
         })
         .eq('user_id', userId);
   }

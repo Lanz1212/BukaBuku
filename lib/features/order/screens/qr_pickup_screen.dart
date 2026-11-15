@@ -15,10 +15,7 @@ import 'pickup_success_screen.dart';
 class QrPickupScreen extends StatefulWidget {
   final OrderModel? order;
 
-  const QrPickupScreen({
-    super.key,
-    this.order,
-  });
+  const QrPickupScreen({super.key, this.order});
 
   @override
   State<QrPickupScreen> createState() => _QrPickupScreenState();
@@ -30,11 +27,12 @@ class _QrPickupScreenState extends State<QrPickupScreen> {
   bool _isLoading = false;
   bool _isSavedToGallery = false;
 
-  OrderModel get _order => _currentOrder ?? widget.order ?? mockOrders.first;
+  OrderModel? get _order => _currentOrder ?? widget.order;
 
   bool get _isReady =>
-      _order.status == OrderStatus.readyPickup ||
-      _order.status == OrderStatus.completed;
+      _order != null &&
+      (_order!.status == OrderStatus.readyPickup ||
+          _order!.status == OrderStatus.completed);
 
   @override
   void initState() {
@@ -49,10 +47,13 @@ class _QrPickupScreenState extends State<QrPickupScreen> {
       setState(() => _isLoading = true);
       final orders = await OrderService.fetchCustomerOrders();
       if (!mounted) return;
-      final pickupOrder = orders.firstWhere(
-        (o) => o.deliveryType == DeliveryType.pickup,
-        orElse: () => orders.isNotEmpty ? orders.first : mockOrders.first,
-      );
+      OrderModel? pickupOrder;
+      for (final o in orders) {
+        if (o.deliveryType == DeliveryType.pickup) {
+          pickupOrder = o;
+          break;
+        }
+      }
       setState(() {
         _currentOrder = pickupOrder;
         _isLoading = false;
@@ -60,6 +61,7 @@ class _QrPickupScreenState extends State<QrPickupScreen> {
     }
 
     final current = _order;
+    if (current == null) return;
     final cleanId = current.id.replaceAll('#', '').trim();
 
     // If order is already completed, redirect immediately to PickupSuccessScreen
@@ -79,17 +81,26 @@ class _QrPickupScreenState extends State<QrPickupScreen> {
       _realtimeChannel = OrderService.subscribeToOrderChanges(
         orderId: cleanId,
         onStatusChanged: (newStatus) async {
-          debugPrint('Realtime status update received for order $cleanId: $newStatus');
+          debugPrint(
+            'Realtime status update received for order $cleanId: $newStatus',
+          );
           if (newStatus == 'selesai') {
-            final freshOrder = await OrderService.fetchOrderByIdForUser(cleanId);
-            if (!mounted) return;
-            Navigator.of(context).pushReplacement(
-              MaterialPageRoute(
-                builder: (_) => PickupSuccessScreen(order: freshOrder ?? _order),
-              ),
+            final freshOrder = await OrderService.fetchOrderByIdForUser(
+              cleanId,
             );
+            if (!mounted) return;
+            final targetOrder = freshOrder ?? _order;
+            if (targetOrder != null) {
+              Navigator.of(context).pushReplacement(
+                MaterialPageRoute(
+                  builder: (_) => PickupSuccessScreen(order: targetOrder),
+                ),
+              );
+            }
           } else if (newStatus == 'siapDiambil') {
-            final freshOrder = await OrderService.fetchOrderByIdForUser(cleanId);
+            final freshOrder = await OrderService.fetchOrderByIdForUser(
+              cleanId,
+            );
             if (!mounted) return;
             setState(() {
               if (freshOrder != null) {
@@ -136,12 +147,131 @@ class _QrPickupScreenState extends State<QrPickupScreen> {
       return Scaffold(
         backgroundColor: AppColors.surface,
         appBar: BookstoreAppBar(
-          title: 'Qr Pickup',
+          title: 'QR Pickup',
           showBackButton: true,
           onBackPressed: () => Navigator.of(context).maybePop(),
         ),
-        body: const Center(
-          child: CircularProgressIndicator(),
+        body: const Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    if (_order == null) {
+      return Scaffold(
+        backgroundColor: AppColors.surface,
+        appBar: BookstoreAppBar(
+          title: 'QR Pickup',
+          showBackButton: true,
+          onBackPressed: () => Navigator.of(context).maybePop(),
+        ),
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 32),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Container(
+                  width: 90,
+                  height: 90,
+                  decoration: const BoxDecoration(
+                    color: AppColors.surfaceContainerHigh,
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.qr_code_2_rounded,
+                    size: 48,
+                    color: AppColors.secondary,
+                  ),
+                ),
+                const SizedBox(height: 20),
+                Text(
+                  'Tidak Ada Pesanan Pickup',
+                  style: AppTypography.headlineSm.copyWith(
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.onSurface,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Saat ini Anda tidak memiliki pesanan aktif dengan metode Ambil di Toko.',
+                  style: AppTypography.bodyMd.copyWith(
+                    color: AppColors.onSurfaceVariant,
+                    fontSize: 13,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 24),
+                ElevatedButton.icon(
+                  onPressed: () => Navigator.of(context).maybePop(),
+                  icon: const Icon(Icons.arrow_back_rounded, size: 18),
+                  label: const Text('Kembali'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primaryContainer,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 24,
+                      vertical: 12,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
+    final order = _order;
+    if (order == null) {
+      return Scaffold(
+        backgroundColor: AppColors.surface,
+        appBar: BookstoreAppBar(
+          title: 'QR Pickup',
+          showBackButton: true,
+          onBackPressed: () => Navigator.of(context).maybePop(),
+        ),
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24.0),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(
+                  Icons.receipt_long_outlined,
+                  size: 64,
+                  color: AppColors.outline,
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  'Belum Ada Pesanan Pickup',
+                  style: AppTypography.titleMd.copyWith(
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.onSurface,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Anda belum memiliki pesanan dengan metode ambil di toko.',
+                  textAlign: TextAlign.center,
+                  style: AppTypography.bodyMd.copyWith(
+                    color: AppColors.onSurfaceVariant,
+                  ),
+                ),
+                const SizedBox(height: 20),
+                ElevatedButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primaryContainer,
+                    foregroundColor: Colors.white,
+                  ),
+                  child: const Text('Kembali'),
+                ),
+              ],
+            ),
+          ),
         ),
       );
     }
@@ -149,7 +279,7 @@ class _QrPickupScreenState extends State<QrPickupScreen> {
     return Scaffold(
       backgroundColor: AppColors.surface,
       appBar: BookstoreAppBar(
-        title: 'Qr Pickup',
+        title: 'QR Pickup',
         showBackButton: true,
         onBackPressed: () => Navigator.of(context).maybePop(),
       ),
@@ -279,6 +409,7 @@ class _QrPickupScreenState extends State<QrPickupScreen> {
   }
 
   Widget _buildReadyView() {
+    final order = _order!;
     return Column(
       key: const ValueKey('ready_view'),
       children: [
@@ -302,22 +433,22 @@ class _QrPickupScreenState extends State<QrPickupScreen> {
           child: Column(
             children: [
               QrPickupStoreCard(
-                storeName: _order.branchName ?? 'Gerai Utama Buka Buku',
+                storeName: order.branchName ?? 'Gerai Utama Buka Buku',
                 deskName: 'Meja Kasir Pengambilan',
-                orderId: _order.id,
-                customerName: _order.customerName,
+                orderId: order.id,
+                customerName: order.customerName,
               ),
               QrPickupCodeDisplay(
-                qrData: _order.qrCode.isNotEmpty ? _order.qrCode : _order.id,
+                qrData: order.qrCode.isNotEmpty ? order.qrCode : order.id,
               ),
               QrPickupOrderMeta(
-                itemCountText: '${_order.items.length} Buku Fisik',
-                bookTitlesText: _order.items.map((i) => i.title).join(' • '),
-                totalAmount: _order.totalAmount,
-                paymentStatus: '${_order.paymentMethod} • ${_order.isPaid ? "Lunas" : "Menunggu"}',
-                pickupLocation: _order.pickupLocation ??
+                itemCountText: '${order.items.length} Buku Fisik',
+                bookTitlesText: order.items.map((i) => i.title).join(' • '),
+                totalAmount: order.totalAmount,
+                paymentStatus: '${order.paymentMethod} • ${order.isPaid ? "Lunas" : "Menunggu"}',
+                pickupLocation: order.pickupLocation ??
                     'Meja Kasir 1, Gerai Utama Buka Buku',
-                pickupSchedule: _order.pickupSchedule ??
+                pickupSchedule: order.pickupSchedule ??
                     'Buka Hari Ini: 08.00 - 21.00 WIB',
               ),
             ],
@@ -374,7 +505,7 @@ class _QrPickupScreenState extends State<QrPickupScreen> {
             onPressed: () {
               Navigator.of(context).push(
                 MaterialPageRoute(
-                  builder: (_) => OrderDetailScreen(order: _order),
+                  builder: (_) => OrderDetailScreen(order: order),
                 ),
               );
             },
@@ -436,6 +567,7 @@ class _QrPickupScreenState extends State<QrPickupScreen> {
   }
 
   Widget _buildLockedView() {
+    final order = _order!;
     return Container(
       key: const ValueKey('locked_view'),
       width: double.infinity,
@@ -628,7 +760,7 @@ class _QrPickupScreenState extends State<QrPickupScreen> {
                   width: 38,
                   height: 52,
                   child: Image.network(
-                    _order.summaryCoverUrl,
+                    order.summaryCoverUrl,
                     fit: BoxFit.cover,
                     errorBuilder: (context, error, stackTrace) => Container(
                       color: AppColors.surfaceContainerHigh,
@@ -647,11 +779,11 @@ class _QrPickupScreenState extends State<QrPickupScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      _order.items.isNotEmpty
-                          ? (_order.items.length > 1
-                              ? '${_order.items.first.title} & ${_order.items.length - 1} lainnya'
-                              : _order.items.first.title)
-                          : _order.summaryTitle,
+                      order.items.isNotEmpty
+                          ? (order.items.length > 1
+                              ? '${order.items.first.title} & ${order.items.length - 1} lainnya'
+                              : order.items.first.title)
+                          : order.summaryTitle,
                       style: AppTypography.labelMd.copyWith(
                         color: AppColors.onSurface,
                         fontWeight: FontWeight.w600,

@@ -81,21 +81,25 @@ class CheckoutDeliveryAddressCard extends StatelessWidget {
                 textBaseline: TextBaseline.alphabetic,
                 children: [
                   Text(
-                    address.recipientName,
+                    address.recipientName.isNotEmpty
+                        ? address.recipientName
+                        : 'Penerima',
                     style: AppTypography.titleMd.copyWith(
                       color: AppColors.onSurface,
                       fontWeight: FontWeight.w700,
                       fontSize: 15,
                     ),
                   ),
-                  const SizedBox(width: 8),
-                  Text(
-                    '(${address.phone})',
-                    style: AppTypography.bodyMd.copyWith(
-                      color: AppColors.onSurfaceVariant,
-                      fontSize: 13,
+                  if (address.phone.isNotEmpty) ...[
+                    const SizedBox(width: 8),
+                    Text(
+                      '(${address.phone})',
+                      style: AppTypography.bodyMd.copyWith(
+                        color: AppColors.onSurfaceVariant,
+                        fontSize: 13,
+                      ),
                     ),
-                  ),
+                  ],
                 ],
               ),
 
@@ -103,11 +107,18 @@ class CheckoutDeliveryAddressCard extends StatelessWidget {
 
               // Full Address
               Text(
-                address.address,
+                address.address.isNotEmpty
+                    ? address.address
+                    : 'Belum ada alamat pengiriman. Ketuk Ubah Alamat untuk menambahkan.',
                 style: AppTypography.bodyMd.copyWith(
-                  color: AppColors.onSurface,
+                  color: address.address.isNotEmpty
+                      ? AppColors.onSurface
+                      : AppColors.onSurfaceVariant,
                   height: 1.4,
                   fontSize: 13.5,
+                  fontStyle: address.address.isNotEmpty
+                      ? FontStyle.normal
+                      : FontStyle.italic,
                 ),
               ),
 

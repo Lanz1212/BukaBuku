@@ -12,12 +12,12 @@ class PickupSuccessDetailCard extends StatelessWidget {
 
   const PickupSuccessDetailCard({
     super.key,
-    this.orderId = '#ORD00125',
-    this.customerName = 'Budi Santoso',
-    this.cashierName = 'Siti (Kasir 1 - Buka Buku)',
-    this.pickupTime = '12 Mei 2024, 16:45 WIB',
-    this.totalAmount = 'Rp181.000',
-    this.paymentMethod = 'Lunas via QRIS',
+    required this.orderId,
+    required this.customerName,
+    required this.cashierName,
+    required this.pickupTime,
+    required this.totalAmount,
+    required this.paymentMethod,
   });
 
   @override
@@ -181,10 +181,7 @@ class PickupSuccessDetailCard extends StatelessWidget {
     );
   }
 
-  Widget _buildInfoRow({
-    required String label,
-    required Widget valueWidget,
-  }) {
+  Widget _buildInfoRow({required String label, required Widget valueWidget}) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       crossAxisAlignment: CrossAxisAlignment.center,

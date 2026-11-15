@@ -310,6 +310,8 @@ class _AddBookScreenState extends State<AddBookScreen> {
         publishYear: int.tryParse(_yearController.text.trim()) ?? 2024,
         description: _descriptionController.text.trim(),
         coverUrl: _coverUrl ?? _presetCovers[0],
+        rating: widget.initialBook?.rating ?? 0.0,
+        reviewCount: widget.initialBook?.reviewCount ?? 0,
       );
 
       AdminBookItem resultBook;

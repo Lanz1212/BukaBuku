@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../../core/services/admin_notification_service.dart';
 import '../../../../core/services/order_service.dart';
 import '../../../../core/services/cashier_log_service.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
+import '../../../auth/services/auth_service.dart';
 import '../../order_management/models/admin_order_detail.dart';
 import '../../pickup_success/screens/pickup_success_screen.dart';
 import '../models/qr_scan_result.dart';
@@ -16,10 +18,7 @@ import '../widgets/scan_scenario_tabs.dart';
 class QrScanResultScreen extends StatefulWidget {
   final QrScanResult result;
 
-  const QrScanResultScreen({
-    super.key,
-    required this.result,
-  });
+  const QrScanResultScreen({super.key, required this.result});
 
   @override
   State<QrScanResultScreen> createState() => _QrScanResultScreenState();
@@ -29,28 +28,134 @@ class _QrScanResultScreenState extends State<QrScanResultScreen> {
   ScanScenario _scenario = ScanScenario.validOnline;
   bool _checklistPassed = true;
   bool _isSubmitting = false;
+  late final String _scanTime;
+  String _kasirName = '';
+  String _kasirInitials = 'K';
 
   @override
   void initState() {
     super.initState();
+    final now = DateTime.now();
+    const monthNames = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'Mei',
+      'Jun',
+      'Jul',
+      'Agu',
+      'Sep',
+      'Okt',
+      'Nov',
+      'Des'
+    ];
+    final day = now.day.toString().padLeft(2, '0');
+    final month = monthNames[now.month - 1];
+    final year = now.year;
+    final hour = now.hour.toString().padLeft(2, '0');
+    final minute = now.minute.toString().padLeft(2, '0');
+    _scanTime = '$day $month $year • $hour:$minute WIB';
+
     final order = _order;
-    if (!order.isPaid || order.paymentMethod.toLowerCase().contains('kasir')) {
+    if (order != null &&
+        (!order.isPaid ||
+            order.paymentMethod.toLowerCase().contains('kasir'))) {
       _scenario = ScanScenario.validCash;
     } else {
       _scenario = ScanScenario.validOnline;
     }
+
+    _loadKasirProfile();
   }
 
-  AdminOrderDetail get _order {
-    if (widget.result.fullOrder != null) {
-      return widget.result.fullOrder!;
-    }
-    return AdminOrderDetail.mockOrders.first;
+  Future<void> _loadKasirProfile() async {
+    try {
+      final profile = await AuthService.getCurrentUserProfile();
+      String name = (profile?['full_name'] as String? ?? '').trim();
+      if (name.isEmpty) {
+        final email = Supabase.instance.client.auth.currentUser?.email;
+        if (email != null && email.isNotEmpty) {
+          name = email.split('@').first;
+        }
+      }
+      if (name.isNotEmpty && mounted) {
+        final parts = name.split(RegExp(r'\s+'));
+        final initials = parts.length >= 2
+            ? '${parts[0][0]}${parts[1][0]}'.toUpperCase()
+            : name.substring(0, name.length >= 2 ? 2 : 1).toUpperCase();
+        setState(() {
+          _kasirName = name;
+          _kasirInitials = initials;
+        });
+      }
+    } catch (_) {}
   }
+
+  AdminOrderDetail? get _order => widget.result.fullOrder;
 
   @override
   Widget build(BuildContext context) {
     final order = _order;
+    if (order == null) {
+      return Scaffold(
+        backgroundColor: const Color(0xFFFBF9F5),
+        appBar: AppBar(
+          backgroundColor: const Color(0xFFFBF9F5),
+          elevation: 0,
+          leading: IconButton(
+            icon: const Icon(
+              Icons.arrow_back_rounded,
+              color: AppColors.onSurface,
+            ),
+            onPressed: () => Navigator.pop(context),
+          ),
+          title: Text(
+            'Hasil Scan QR',
+            style: AppTypography.titleMd.copyWith(fontWeight: FontWeight.w700),
+          ),
+        ),
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(
+                  Icons.qr_code_scanner_rounded,
+                  size: 48,
+                  color: AppColors.error,
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  'Data Pesanan Tidak Valid',
+                  style: AppTypography.titleMd.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'QR Code tidak cocok dengan data pesanan apapun di database toko.',
+                  style: AppTypography.bodyMd.copyWith(
+                    color: AppColors.onSurfaceVariant,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 20),
+                ElevatedButton(
+                  onPressed: () => Navigator.pop(context),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primaryContainer,
+                    foregroundColor: Colors.white,
+                  ),
+                  child: const Text('Scan Ulang'),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
 
     return Scaffold(
       backgroundColor: const Color(0xFFFBF9F5),
@@ -80,9 +185,9 @@ class _QrScanResultScreenState extends State<QrScanResultScreen> {
             child: CircleAvatar(
               radius: 17,
               backgroundColor: AppColors.primaryContainer,
-              child: const Text(
-                'K1',
-                style: TextStyle(
+              child: Text(
+                _kasirInitials,
+                style: const TextStyle(
                   color: Colors.white,
                   fontSize: 12,
                   fontWeight: FontWeight.w700,
@@ -97,7 +202,10 @@ class _QrScanResultScreenState extends State<QrScanResultScreen> {
           children: [
             Expanded(
               child: SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 12,
+                ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
@@ -119,7 +227,7 @@ class _QrScanResultScreenState extends State<QrScanResultScreen> {
                     // QR Valid Header Card
                     QrResultHeaderCard(
                       orderId: widget.result.orderId,
-                      scanTime: 'Hari ini, 10:45 WIB',
+                      scanTime: _scanTime,
                       scenario: _scenario,
                     ),
                     const SizedBox(height: 14),
@@ -362,7 +470,8 @@ class _QrScanResultScreenState extends State<QrScanResultScreen> {
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
-        children: [          ElevatedButton(
+        children: [
+          ElevatedButton(
             style: ElevatedButton.styleFrom(
               backgroundColor: isInvalid
                   ? AppColors.outlineVariant
@@ -389,10 +498,15 @@ class _QrScanResultScreenState extends State<QrScanResultScreen> {
                       return;
                     }
 
+                    final currentOrder = _order;
+                    if (currentOrder == null) return;
+
                     setState(() => _isSubmitting = true);
                     final messenger = ScaffoldMessenger.of(context);
                     final navigator = Navigator.of(context);
-                    final cleanId = _order.orderId.replaceAll('#', '').trim();
+                    final cleanId = currentOrder.orderId
+                        .replaceAll('#', '')
+                        .trim();
 
                     try {
                       // 1. Update status pesanan di database Supabase menjadi selesai
@@ -405,8 +519,9 @@ class _QrScanResultScreenState extends State<QrScanResultScreen> {
                       // Catat ke log aktivitas kasir Supabase
                       CashierLogService.recordLog(
                         action: 'Validasi QR Pickup & Serah Terima',
-                        details: 'Pesanan #${_order.orderId} selesai diserahkan kepada ${_order.customerName}',
-                        orderId: _order.orderId,
+                        details:
+                            'Pesanan #${currentOrder.orderId} selesai diserahkan kepada ${currentOrder.customerName}',
+                        orderId: currentOrder.orderId,
                         tag: 'Pickup',
                       );
 
@@ -416,15 +531,19 @@ class _QrScanResultScreenState extends State<QrScanResultScreen> {
                           type: 'qrScanSuccess',
                           category: 'order',
                           title: 'Scan QR Pickup Berhasil ✅',
-                          body: 'Pesanan #${_order.orderId} (${_order.customerName}) telah selesai diverifikasi QR dan diserahkan di kasir.',
+                          body:
+                              'Pesanan #${currentOrder.orderId} (${currentOrder.customerName}) telah selesai diverifikasi QR dan diserahkan di kasir.',
                           orderId: cleanId,
                         );
                       } catch (e) {
-                        debugPrint('Error broadcasting QR scan success notification: $e');
+                        debugPrint(
+                          'Error broadcasting QR scan success notification: $e',
+                        );
                       }
 
                       // 2. Jika bayar tunai di kasir, tandai is_paid = true
-                      if (!_order.isPaid || _scenario == ScanScenario.validCash) {
+                      if (!currentOrder.isPaid ||
+                          _scenario == ScanScenario.validCash) {
                         await OrderService.updateOrderPaymentStatus(
                           cleanId,
                           true,
@@ -448,22 +567,35 @@ class _QrScanResultScreenState extends State<QrScanResultScreen> {
 
                       final now = DateTime.now();
                       const monthNames = [
-                        'Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun',
-                        'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'
+                        'Jan',
+                        'Feb',
+                        'Mar',
+                        'Apr',
+                        'Mei',
+                        'Jun',
+                        'Jul',
+                        'Agu',
+                        'Sep',
+                        'Okt',
+                        'Nov',
+                        'Des',
                       ];
                       final day = now.day.toString().padLeft(2, '0');
                       final month = monthNames[now.month - 1];
                       final year = now.year;
                       final hour = now.hour.toString().padLeft(2, '0');
                       final minute = now.minute.toString().padLeft(2, '0');
-                      final formattedNow = '$day $month $year • $hour:$minute WIB';
+                      final formattedNow =
+                          '$day $month $year • $hour:$minute WIB';
 
-                      final updatedOrder = _order.copyWith(
+                      final updatedOrder = currentOrder.copyWith(
                         status: AdminOrderStatus.selesai,
                         isPaid: true,
-                        paymentMethod: (!_order.isPaid || _scenario == ScanScenario.validCash)
+                        paymentMethod:
+                            (!currentOrder.isPaid ||
+                                _scenario == ScanScenario.validCash)
                             ? 'Bayar di Kasir (Tunai)'
-                            : _order.paymentMethod,
+                            : currentOrder.paymentMethod,
                       );
                       final updatedResult = QrScanResult(
                         orderId: widget.result.orderId,
@@ -479,17 +611,21 @@ class _QrScanResultScreenState extends State<QrScanResultScreen> {
                         MaterialPageRoute(
                           builder: (context) => PickupSuccessScreen(
                             result: updatedResult,
-                            kasirName: 'Kasir 1',
+                            kasirName: _kasirName.isNotEmpty ? _kasirName : 'Kasir',
                             pickupTime: formattedNow,
                           ),
                         ),
                       );
                     } catch (e) {
-                      debugPrint('Error updating pickup status in Supabase: $e');
+                      debugPrint(
+                        'Error updating pickup status in Supabase: $e',
+                      );
                       if (mounted) {
                         messenger.showSnackBar(
                           SnackBar(
-                            content: Text('Gagal memperbarui status di server: $e'),
+                            content: Text(
+                              'Gagal memperbarui status di server: $e',
+                            ),
                             backgroundColor: AppColors.error,
                             behavior: SnackBarBehavior.floating,
                           ),
@@ -531,9 +667,7 @@ class _QrScanResultScreenState extends State<QrScanResultScreen> {
           const SizedBox(height: 6),
           TextButton(
             onPressed: () => Navigator.pop(context),
-            style: TextButton.styleFrom(
-              minimumSize: const Size.fromHeight(40),
-            ),
+            style: TextButton.styleFrom(minimumSize: const Size.fromHeight(40)),
             child: Text(
               'Batalkan / Pindai Ulang',
               style: AppTypography.labelMd.copyWith(

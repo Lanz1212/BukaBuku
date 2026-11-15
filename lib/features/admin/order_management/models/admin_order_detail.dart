@@ -259,7 +259,12 @@ class AdminOrderDetail {
     String? orderDate;
     if (map['created_at'] != null) {
       try {
-        final dt = DateTime.parse(map['created_at'] as String).toLocal();
+        final rawStr = map['created_at'].toString().trim();
+        final dt = (rawStr.endsWith('Z') ||
+                rawStr.contains('+') ||
+                RegExp(r'-\d{2}:\d{2}$').hasMatch(rawStr))
+            ? DateTime.parse(rawStr).toLocal()
+            : DateTime.parse('${rawStr}Z').toLocal();
         final hour = dt.hour.toString().padLeft(2, '0');
         final minute = dt.minute.toString().padLeft(2, '0');
         orderTime = '$hour:$minute WIB';
@@ -324,6 +329,8 @@ class AdminOrderDetail {
     };
   }
 
+  /// Mock orders strictly for testing only. Do NOT use as fallback in production.
+  @visibleForTesting
   static List<AdminOrderDetail> get mockOrders => [
         const AdminOrderDetail(
           orderId: 'ORD00125',

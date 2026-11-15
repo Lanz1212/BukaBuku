@@ -8,10 +8,7 @@ import 'detail_section_card.dart';
 class OrderHeaderCard extends StatelessWidget {
   final AdminOrderDetail order;
 
-  const OrderHeaderCard({
-    super.key,
-    required this.order,
-  });
+  const OrderHeaderCard({super.key, required this.order});
 
   String _getStatusDescription() {
     switch (order.status) {
@@ -34,7 +31,9 @@ class OrderHeaderCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final dateText = order.orderDate ?? '12 Mei 2024, ${order.orderTime}';
+    final dateText = (order.orderDate != null && order.orderDate!.isNotEmpty)
+        ? order.orderDate!
+        : (order.orderTime.isNotEmpty ? order.orderTime : '—');
 
     return DetailSectionCard(
       child: Column(
@@ -63,7 +62,9 @@ class OrderHeaderCard extends StatelessWidget {
                       Clipboard.setData(ClipboardData(text: order.orderId));
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
-                          content: Text('ID #${order.orderId} disalin ke papan klip'),
+                          content: Text(
+                            'ID #${order.orderId} disalin ke papan klip',
+                          ),
                           behavior: SnackBarBehavior.floating,
                           duration: const Duration(seconds: 2),
                         ),
@@ -81,7 +82,10 @@ class OrderHeaderCard extends StatelessWidget {
                 ],
               ),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 5,
+                ),
                 decoration: BoxDecoration(
                   color: AppColors.surfaceContainerHigh,
                   borderRadius: BorderRadius.circular(9999),
@@ -141,7 +145,10 @@ class OrderHeaderCard extends StatelessWidget {
                 ],
               ),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3.5),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 8,
+                  vertical: 3.5,
+                ),
                 decoration: BoxDecoration(
                   color: const Color(0xFFFDECDA),
                   borderRadius: BorderRadius.circular(6),
@@ -165,10 +172,7 @@ class OrderHeaderCard extends StatelessWidget {
             decoration: BoxDecoration(
               color: const Color(0xFFFFF7EF),
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: const Color(0xFFF0DEC9),
-                width: 1,
-              ),
+              border: Border.all(color: const Color(0xFFF0DEC9), width: 1),
             ),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
