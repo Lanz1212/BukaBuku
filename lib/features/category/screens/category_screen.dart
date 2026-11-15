@@ -11,6 +11,7 @@ import '../../home/home_screen.dart';
 import '../../cart/screens/cart_screen.dart';
 import '../../order/screens/order_list_screen.dart';
 import '../../profile/screens/profile_screen.dart';
+import '../../profile/services/profile_service.dart';
 
 /// Screen displaying all book categories in Toko Buku Budi
 class CategoryScreen extends StatefulWidget {
@@ -25,6 +26,7 @@ class _CategoryScreenState extends State<CategoryScreen> {
   List<BookCategory> _allCategories = [];
   List<BookCategory> _filteredCategories = [];
   bool _isLoading = true;
+  String? _avatarUrl;
   String _searchQuery = '';
 
   @override
@@ -32,6 +34,16 @@ class _CategoryScreenState extends State<CategoryScreen> {
     super.initState();
     _searchController.addListener(_onSearchChanged);
     _loadCategories();
+    _loadAvatarUrl();
+  }
+
+  Future<void> _loadAvatarUrl() async {
+    try {
+      final profile = await ProfileService.fetchCurrentUserProfile();
+      if (mounted) {
+        setState(() => _avatarUrl = profile.avatarUrl);
+      }
+    } catch (_) {}
   }
 
   Future<void> _loadCategories() async {
@@ -129,18 +141,16 @@ class _CategoryScreenState extends State<CategoryScreen> {
       backgroundColor: AppColors.surface,
       appBar: BookstoreAppBar(
         title: 'Kategori',
+        avatarUrl: _avatarUrl,
         showSearchButton: true,
         onSearchPressed: () => _navigateToSearch(),
-        onProfilePressed: () {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: const Text('Membuka profil pembaca...'),
-              backgroundColor: AppColors.primaryContainer,
-              behavior: SnackBarBehavior.floating,
-              duration: const Duration(seconds: 1),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        onProfilePressed: () async {
+          await Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (context) => const ProfileScreen(),
             ),
           );
+          _loadAvatarUrl();
         },
       ),
       body: SingleChildScrollView(

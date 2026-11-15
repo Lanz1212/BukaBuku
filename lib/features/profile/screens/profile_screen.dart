@@ -183,7 +183,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
       backgroundColor: AppColors.surface,
       appBar: BookstoreAppBar(
         title: 'Profil Akun',
+        avatarUrl: _user.avatarUrl,
         showNotificationButton: true,
+        onProfilePressed: () {},
         onNotificationPressed: () {
           Navigator.push(
             context,

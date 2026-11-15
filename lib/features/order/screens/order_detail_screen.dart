@@ -10,6 +10,8 @@ import '../../../shared/widgets/bookstore_app_bar.dart';
 import '../../admin/order_management/models/admin_order_detail.dart';
 import '../../cart/screens/cart_screen.dart';
 import '../../review/screens/write_review_screen.dart';
+import '../../profile/screens/profile_screen.dart';
+import '../../profile/services/profile_service.dart';
 import '../models/order_model.dart';
 import '../widgets/order_detail_book_item.dart';
 import '../widgets/order_detail_stepper.dart';
@@ -33,6 +35,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
   OrderModel get order => _currentOrder;
   RealtimeChannel? _orderChannel;
   bool _isVerifyingPayment = false;
+  String? _avatarUrl;
 
   @override
   void initState() {
@@ -40,6 +43,16 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
     _currentOrder = widget.order;
     _subscribeToOrderUpdates();
     _refreshOrder();
+    _loadAvatarUrl();
+  }
+
+  Future<void> _loadAvatarUrl() async {
+    try {
+      final profile = await ProfileService.fetchCurrentUserProfile();
+      if (mounted) {
+        setState(() => _avatarUrl = profile.avatarUrl);
+      }
+    } catch (_) {}
   }
 
   @override
@@ -205,18 +218,16 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
       backgroundColor: AppColors.surface,
       appBar: BookstoreAppBar(
         title: 'Detail Pesanan',
+        avatarUrl: _avatarUrl,
         showBackButton: true,
         onBackPressed: () => Navigator.of(context).pop(),
-        onProfilePressed: () {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: const Text('Profil pembaca Budi Darmawan.'),
-              behavior: SnackBarBehavior.floating,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10),
-              ),
+        onProfilePressed: () async {
+          await Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (context) => const ProfileScreen(),
             ),
           );
+          _loadAvatarUrl();
         },
       ),
       body: SafeArea(

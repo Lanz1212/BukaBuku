@@ -20,6 +20,8 @@ import '../widgets/checkout_store_pickup_card.dart';
 import '../../order/screens/order_success_screen.dart';
 import '../../order/models/order_simulation_flow.dart';
 import '../../payment/screens/midtrans_snap_screen.dart';
+import '../../profile/screens/profile_screen.dart';
+import '../../profile/services/profile_service.dart';
 import '../../../core/services/midtrans_service.dart';
 
 /// Checkout Screen for Toko Buku Budi
@@ -40,6 +42,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   PaymentMethodOption _selectedPayment = PaymentMethodOption.allOptions.first;
   String? _userId;
   String? _userEmail;
+  String? _avatarUrl;
   bool _isSubmitting = false;
 
   @override
@@ -47,6 +50,16 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     super.initState();
     _loadUserProfile();
     _loadStoreSettings();
+    _loadAvatarUrl();
+  }
+
+  Future<void> _loadAvatarUrl() async {
+    try {
+      final profile = await ProfileService.fetchCurrentUserProfile();
+      if (mounted) {
+        setState(() => _avatarUrl = profile.avatarUrl);
+      }
+    } catch (_) {}
   }
 
   Future<void> _loadStoreSettings() async {
@@ -610,20 +623,16 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       backgroundColor: AppColors.surface,
       appBar: BookstoreAppBar(
         title: 'Checkout',
+        avatarUrl: _avatarUrl,
         showBackButton: true,
         onBackPressed: () => Navigator.of(context).maybePop(),
-        onProfilePressed: () {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: const Text('Membuka profil akun pembaca...'),
-              backgroundColor: AppColors.primaryContainer,
-              behavior: SnackBarBehavior.floating,
-              duration: const Duration(seconds: 1),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10),
-              ),
+        onProfilePressed: () async {
+          await Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (context) => const ProfileScreen(),
             ),
           );
+          _loadAvatarUrl();
         },
       ),
       body: SafeArea(

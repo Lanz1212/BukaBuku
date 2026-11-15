@@ -6,6 +6,10 @@ import '../models/shipping_address.dart';
 
 /// Service for managing user profile and shipping addresses in Supabase.
 class ProfileService {
+  /// Reactive notifier to keep user avatar synchronized across all app bars and screens.
+  static final ValueNotifier<String?> currentAvatarNotifier =
+      ValueNotifier<String?>(null);
+
   static SupabaseClient? get _client {
     try {
       return Supabase.instance.client;
@@ -68,11 +72,13 @@ class ProfileService {
         debugPrint('Error counting favorites: $e');
       }
 
-      return UserProfile.fromSupabase(
+      final userProfile = UserProfile.fromSupabase(
         data,
         orderCount: orderCount,
         favoriteCount: favoriteCount,
       );
+      currentAvatarNotifier.value = userProfile.avatarUrl;
+      return userProfile;
     } catch (e) {
       debugPrint('Error fetching user profile from Supabase: $e');
       return UserProfile.defaultProfile;
@@ -148,6 +154,7 @@ class ProfileService {
         'updated_at': DateTime.now().toUtc().toIso8601String(),
       }).eq('id', userId);
 
+      currentAvatarNotifier.value = timestampedUrl;
       return timestampedUrl;
     } catch (e) {
       debugPrint('Error uploading avatar to Supabase: $e');
@@ -180,6 +187,7 @@ class ProfileService {
         'updated_at': DateTime.now().toUtc().toIso8601String(),
       }).eq('id', userId);
 
+      currentAvatarNotifier.value = null;
       return true;
     } catch (e) {
       debugPrint('Error removing avatar: $e');

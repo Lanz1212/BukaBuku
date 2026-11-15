@@ -15,6 +15,8 @@ import '../../../core/utils/app_navigation.dart';
 import '../../auth/services/auth_service.dart';
 import '../../cart/screens/cart_screen.dart';
 import '../../admin/book_management/models/admin_book_item.dart';
+import '../../profile/screens/profile_screen.dart';
+import '../../profile/services/profile_service.dart';
 
 /// Screen for searching and browsing books in Buka Buku
 class SearchScreen extends StatefulWidget {
@@ -41,6 +43,7 @@ class _SearchScreenState extends State<SearchScreen> {
   String _selectedStockOption = 'all';
   List<AdminBookItem> _dbBooks = [];
   List<String> _availableCategories = [];
+  String? _avatarUrl;
   bool _isLoading = true;
 
   @override
@@ -52,6 +55,16 @@ class _SearchScreenState extends State<SearchScreen> {
         ? {widget.initialCategory!}
         : {};
     _loadDbBooks();
+    _loadAvatarUrl();
+  }
+
+  Future<void> _loadAvatarUrl() async {
+    try {
+      final profile = await ProfileService.fetchCurrentUserProfile();
+      if (mounted) {
+        setState(() => _avatarUrl = profile.avatarUrl);
+      }
+    } catch (_) {}
   }
 
   Future<void> _loadDbBooks() async {
@@ -217,17 +230,15 @@ class _SearchScreenState extends State<SearchScreen> {
       backgroundColor: AppColors.surface,
       appBar: BookstoreAppBar(
         title: 'Pencarian Buku',
+        avatarUrl: _avatarUrl,
         showBackButton: true,
-        onProfilePressed: () {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: const Text('Membuka profil pembaca...'),
-              backgroundColor: AppColors.primaryContainer,
-              behavior: SnackBarBehavior.floating,
-              duration: const Duration(seconds: 1),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        onProfilePressed: () async {
+          await Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (context) => const ProfileScreen(),
             ),
           );
+          _loadAvatarUrl();
         },
       ),
       body: SafeArea(

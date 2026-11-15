@@ -7,6 +7,8 @@ import '../../../shared/widgets/bookstore_app_bar.dart';
 import '../../order/screens/order_detail_screen.dart';
 import '../../order/screens/pickup_success_screen.dart';
 import '../../order/screens/qr_pickup_screen.dart';
+import '../../profile/screens/profile_screen.dart';
+import '../../profile/services/profile_service.dart';
 import '../models/notification_model.dart';
 import '../services/notification_service.dart';
 import '../widgets/notification_filter_tabs.dart';
@@ -23,13 +25,24 @@ class _NotificationScreenState extends State<NotificationScreen> {
   List<NotificationModel> _notifications = [];
   NotificationCategory _selectedCategory = NotificationCategory.all;
   bool _isLoading = true;
+  String? _avatarUrl;
   RealtimeChannel? _realtimeChannel;
 
   @override
   void initState() {
     super.initState();
     _loadNotifications();
+    _loadAvatarUrl();
     _setupRealtime();
+  }
+
+  Future<void> _loadAvatarUrl() async {
+    try {
+      final profile = await ProfileService.fetchCurrentUserProfile();
+      if (mounted) {
+        setState(() => _avatarUrl = profile.avatarUrl);
+      }
+    } catch (_) {}
   }
 
   @override
@@ -133,8 +146,17 @@ class _NotificationScreenState extends State<NotificationScreen> {
       backgroundColor: AppColors.surface,
       appBar: BookstoreAppBar(
         title: 'Notifikasi',
+        avatarUrl: _avatarUrl,
         showBackButton: true,
         onBackPressed: () => Navigator.of(context).maybePop(),
+        onProfilePressed: () async {
+          await Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (context) => const ProfileScreen(),
+            ),
+          );
+          _loadAvatarUrl();
+        },
       ),
       body: SafeArea(
         child: RefreshIndicator(

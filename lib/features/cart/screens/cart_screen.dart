@@ -11,6 +11,7 @@ import '../../category/screens/category_screen.dart';
 import '../../checkout/screens/checkout_screen.dart';
 import '../../order/screens/order_list_screen.dart';
 import '../../profile/screens/profile_screen.dart';
+import '../../profile/services/profile_service.dart';
 import '../models/cart_item.dart';
 import '../widgets/cart_bottom_bar.dart';
 import '../widgets/cart_empty_state.dart';
@@ -29,6 +30,7 @@ class CartScreen extends StatefulWidget {
 class _CartScreenState extends State<CartScreen> {
   List<CartItem> _items = [];
   bool _isLoading = true;
+  String? _avatarUrl;
   final Map<String, Timer> _debounceTimers = {};
 
   bool get _isAllSelected =>
@@ -45,6 +47,16 @@ class _CartScreenState extends State<CartScreen> {
   void initState() {
     super.initState();
     _loadCart();
+    _loadAvatarUrl();
+  }
+
+  Future<void> _loadAvatarUrl() async {
+    try {
+      final profile = await ProfileService.fetchCurrentUserProfile();
+      if (mounted) {
+        setState(() => _avatarUrl = profile.avatarUrl);
+      }
+    } catch (_) {}
   }
 
   @override
@@ -274,14 +286,16 @@ class _CartScreenState extends State<CartScreen> {
       backgroundColor: AppColors.surface,
       appBar: BookstoreAppBar(
         title: 'Keranjang',
+        avatarUrl: _avatarUrl,
         showHelpButton: true,
         onHelpPressed: _showHelpDialog,
-        onProfilePressed: () {
-          Navigator.of(context).push(
+        onProfilePressed: () async {
+          await Navigator.of(context).push(
             MaterialPageRoute(
               builder: (context) => const ProfileScreen(),
             ),
           );
+          _loadAvatarUrl();
         },
       ),
       body: SafeArea(

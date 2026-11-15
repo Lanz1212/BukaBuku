@@ -12,6 +12,7 @@ import '../../category/screens/category_screen.dart';
 import '../../cart/screens/cart_screen.dart';
 import '../../order/screens/order_list_screen.dart';
 import '../../profile/screens/profile_screen.dart';
+import '../../profile/services/profile_service.dart';
 import '../../search/screens/search_screen.dart';
 import '../../book_detail/screens/book_detail_screen.dart';
 import '../models/favorite_item.dart';
@@ -31,6 +32,7 @@ class FavoriteScreen extends StatefulWidget {
 class _FavoriteScreenState extends State<FavoriteScreen> {
   List<FavoriteItem> _items = [];
   bool _isLoading = true;
+  String? _avatarUrl;
 
   int get _favoriteCount => _items.length;
 
@@ -38,6 +40,16 @@ class _FavoriteScreenState extends State<FavoriteScreen> {
   void initState() {
     super.initState();
     _loadFavorites();
+    _loadAvatarUrl();
+  }
+
+  Future<void> _loadAvatarUrl() async {
+    try {
+      final profile = await ProfileService.fetchCurrentUserProfile();
+      if (mounted) {
+        setState(() => _avatarUrl = profile.avatarUrl);
+      }
+    } catch (_) {}
   }
 
   Future<void> _loadFavorites() async {
@@ -196,6 +208,7 @@ class _FavoriteScreenState extends State<FavoriteScreen> {
       backgroundColor: AppColors.surface,
       appBar: BookstoreAppBar(
         title: 'Buku Favorit',
+        avatarUrl: _avatarUrl,
         showBackButton: true,
         showSearchButton: true,
         onSearchPressed: () {
@@ -206,13 +219,14 @@ class _FavoriteScreenState extends State<FavoriteScreen> {
             ),
           );
         },
-        onProfilePressed: () {
-          Navigator.push(
+        onProfilePressed: () async {
+          await Navigator.push(
             context,
             MaterialPageRoute(
               builder: (context) => const ProfileScreen(),
             ),
           );
+          _loadAvatarUrl();
         },
       ),
       body: SafeArea(

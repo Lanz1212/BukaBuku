@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_typography.dart';
+import '../../features/profile/services/profile_service.dart';
+import '../../features/profile/screens/profile_screen.dart';
 
 /// Reusable Top Bar for Toko Buku Budi
 /// Conforms to DESIGN.md and Stitch Toko Buku Budi Mobile UI specifications.
@@ -229,44 +231,60 @@ class BookstoreAppBar extends StatelessWidget implements PreferredSizeWidget {
                     ),
                     const SizedBox(width: 6),
                   ],
-                  GestureDetector(
-                    onTap: onProfilePressed,
-                    child: Container(
-                      width: 34,
-                      height: 34,
-                      decoration: BoxDecoration(
-                        color: AppColors.primaryContainer,
-                        shape: BoxShape.circle,
-                        boxShadow: [
-                          BoxShadow(
-                            color: AppColors.primaryContainer.withValues(alpha: 0.2),
-                            blurRadius: 6,
-                            offset: const Offset(0, 2),
+                  ValueListenableBuilder<String?>(
+                    valueListenable: ProfileService.currentAvatarNotifier,
+                    builder: (context, cachedAvatar, _) {
+                      final effectiveAvatar = (avatarUrl != null && avatarUrl!.trim().isNotEmpty)
+                          ? avatarUrl
+                          : cachedAvatar;
+
+                      return GestureDetector(
+                        onTap: onProfilePressed ??
+                            () {
+                              Navigator.of(context).push(
+                                MaterialPageRoute(
+                                  builder: (_) => const ProfileScreen(),
+                                ),
+                              );
+                            },
+                        child: Container(
+                          width: 34,
+                          height: 34,
+                          decoration: BoxDecoration(
+                            color: AppColors.primaryContainer,
+                            shape: BoxShape.circle,
+                            boxShadow: [
+                              BoxShadow(
+                                color: AppColors.primaryContainer.withValues(alpha: 0.2),
+                                blurRadius: 6,
+                                offset: const Offset(0, 2),
+                              ),
+                            ],
                           ),
-                        ],
-                      ),
-                      child: ClipOval(
-                        child: (avatarUrl != null &&
-                                avatarUrl!.trim().isNotEmpty &&
-                                avatarUrl!.startsWith('http'))
-                            ? Image.network(
-                                avatarUrl!,
-                                fit: BoxFit.cover,
-                                errorBuilder: (context, error, stackTrace) {
-                                  return const Icon(
+                          child: ClipOval(
+                            child: (effectiveAvatar != null &&
+                                    effectiveAvatar.trim().isNotEmpty &&
+                                    effectiveAvatar.startsWith('http'))
+                                ? Image.network(
+                                    effectiveAvatar,
+                                    fit: BoxFit.cover,
+                                    errorBuilder: (context, error, stackTrace) {
+                                      return const Icon(
+                                        Icons.person,
+                                        size: 18,
+                                        color: AppColors.onPrimary,
+                                      );
+                                    },
+                                  )
+                                : const Icon(
                                     Icons.person,
                                     size: 18,
                                     color: AppColors.onPrimary,
-                                  );
-                                },
-                              )
-                            : const Icon(
-                                Icons.person,
-                                size: 18,
-                                color: AppColors.onPrimary,
-                              ),
-                      ),
-                    ),
+                                  ),
+                          ),
+                        ),
+                      );
+                    },
                   ),
                 ],
               ),

@@ -17,6 +17,7 @@ import '../widgets/order_filter_chips.dart';
 import '../widgets/order_qr_pickup_modal.dart';
 import '../../notification/screens/notification_screen.dart';
 import '../../profile/screens/profile_screen.dart';
+import '../../profile/services/profile_service.dart';
 import 'order_detail_screen.dart';
 
 class OrderListScreen extends StatefulWidget {
@@ -37,6 +38,7 @@ class _OrderListScreenState extends State<OrderListScreen> {
   late OrderStatus _selectedStatus;
   List<OrderModel> _customerOrders = [];
   bool _isLoading = true;
+  String? _avatarUrl;
 
   @override
   void initState() {
@@ -48,6 +50,16 @@ class _OrderListScreenState extends State<OrderListScreen> {
     } else {
       _loadCustomerOrders();
     }
+    _loadAvatarUrl();
+  }
+
+  Future<void> _loadAvatarUrl() async {
+    try {
+      final profile = await ProfileService.fetchCurrentUserProfile();
+      if (mounted) {
+        setState(() => _avatarUrl = profile.avatarUrl);
+      }
+    } catch (_) {}
   }
 
   Future<void> _loadCustomerOrders() async {
@@ -356,6 +368,7 @@ class _OrderListScreenState extends State<OrderListScreen> {
       backgroundColor: AppColors.surface,
       appBar: BookstoreAppBar(
         title: 'Pesanan Saya',
+        avatarUrl: _avatarUrl,
         showNotificationButton: true,
         onNotificationPressed: () {
           Navigator.of(context).push(
@@ -364,11 +377,12 @@ class _OrderListScreenState extends State<OrderListScreen> {
             ),
           );
         },
-        onProfilePressed: () {
-          Navigator.push(
+        onProfilePressed: () async {
+          await Navigator.push(
             context,
             MaterialPageRoute(builder: (_) => const ProfileScreen()),
           );
+          _loadAvatarUrl();
         },
       ),
       bottomNavigationBar: BookstoreBottomNav(
